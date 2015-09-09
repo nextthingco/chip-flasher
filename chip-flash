@@ -1,0 +1,44 @@
+#!/bin/bash
+SRCDIR="/srv/tftp"
+OUT_TTY="/dev/tty1"
+DEBUG_OUT_TTY="/dev/tty1"
+
+MODE="$1"
+USBDEV="$2"
+if [ "$MODE" == "fel" ]; then
+	USB_PATH="/dev/chip-usb$USBDEV"
+
+	PORT_STRING=$(readlink -f $USB_PATH | grep "/dev/bus/usb" | sed "s/\/dev\/bus\/usb\/0*\(.*\)\/0*\(.*\)*/\1\:\2/")
+	PORT_PATH=$(readlink -f $USB_PATH )
+
+	if [ "$PORT_STRING" ]; then
+		echo "$USBDEV => CHIP Detected on port $PORT_STRING" > $OUT_TTY
+		echo "$USBDEV => Starting SPL" > $OUT_TTY
+		/root/fel --verbose --dev $PORT_STRING spl $SRCDIR/sunxi-spl.bin > $DEBUG_OUT_TTY
+		sleep 1
+		echo "$USBDEV => Writing u-boot script" >$OUT_TTY
+		/root/fel --verbose --dev $PORT_STRING write 0x43100000 $SRCDIR/uboot.scr > $DEBUG_OUT_TTY
+		echo "$USBDEV => Writing SPL" > $OUT_TTY
+		/root/fel --verbose --dev $PORT_STRING write 0x43000000 $SRCDIR/sunxi-padded-spl > $DEBUG_OUT_TTY
+		echo "$USBDEV => Writing u-boot" > $OUT_TTY
+		/root/fel --verbose --dev $PORT_STRING write 0x4a000000 $SRCDIR/padded-uboot > $DEBUG_OUT_TTY
+		echo "$USBDEV => Launching u-boot" > $OUT_TTY
+		/root/fel --verbose --dev $PORT_STRING exe 0x4a000000 > $DEBUG_OUT_TTY
+	fi
+elif [ "$MODE" == "fastboot" ]; then
+	# exit 1
+	USB_PATH="/dev/fastboot$USBDEV"
+
+	PORT_STRING=$(readlink -f $USB_PATH | grep "/dev/bus/usb" | sed "s/\/dev\/bus\/usb\/0*\(.*\)\/0*\(.*\)*/\1\:\2/")
+	PORT_PATH=$(readlink -f $USB_PATH )
+	FASTBOOT_PORT=$( lsusb -s $PORT_STRING -v | grep iSerial | awk '{ print $3 }' )
+
+	echo "Path: $FASTBOOT_PORT" > $OUT_TTY
+	if [ "$PORT_PATH" ]; then
+		fastboot -s $FASTBOOT_PORT -u flash spl /srv/tftp/sunxi-padded-spl
+		fastboot -s $FASTBOOT_PORT -u flash spl-backup /srv/tftp/sunxi-padded-spl
+		fastboot -s $FASTBOOT_PORT -u flash uboot /srv/tftp/padded-uboot
+		fastboot -s $FASTBOOT_PORT -u flash UBI /srv/tftp/rootfs.ubi.img
+		fastboot -s $FASTBOOT_PORT -u continue
+	fi
+fi

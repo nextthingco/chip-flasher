@@ -1,0 +1,5 @@
+# FEL mode
+SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="1f3a", ATTRS{idProduct}=="efe8", SYMLINK+="chip-usb%n", RUN+="/root/chip-flash fel %n"
+
+# Fastboot mode 18d1:1010
+SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="18d1", ATTRS{idProduct}=="1010", SYMLINK+="fastboot%n"  RUN+="/root/chip-flash fastboot %n"
