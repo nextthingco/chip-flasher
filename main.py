@@ -5,6 +5,7 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
 from kivy.core.window import Window
 import subprocess
+import threading
 import os
 
 # calls a shell command
@@ -44,8 +45,10 @@ def on_verifying( instance ):
 		change_button_state( instance, 6 )
 	else:
 		change_button_state( instance, 7 )
+
 def on_success( instance ):
 	change_button_state( instance, 0 )
+
 def on_failure( instance ):
 	change_button_state( instance, 0 )
 
@@ -53,48 +56,72 @@ states = {
     0: ["Unavailable",	[	0,		0,	0,	1],	on_unavailable],
     1: ["Ready",		[	1,		0,	1,	1],	on_ready],
     2: ["Uploading",	[0.75,	 0.25,	0,	1],	on_uploading],
-    3: ["Flashing",		[	0,		0,	0,	1],	on_flashing],
-    4: ["Booting",		[	0,		0,	0,	1],	on_booting],
-    5: ["Verifying",	[	0,		0,	0,	1],	on_verifying],
+    3: ["Flashing",		[	1,		1,	1,	1],	on_flashing],
+    4: ["Booting",		[	0,		0,	1,	1],	on_booting],
+    5: ["Verifying",	[	0,		1,	1,	1],	on_verifying],
     6: ["Success",		[	0,		1,	0,	1],	on_success],
     7: ["Failure",		[	1,		0,	0,	1],	on_failure],
 }
 
-button_states = {
-	"A1": { "state" : 0 },
-	"A2": { "state" : 0 },
-	"A3": { "state" : 0 },
-	"A4": { "state" : 0 },
-	"A5": { "state" : 0 },
-	"B1": { "state" : 0 },
-	"B2": { "state" : 0 },
-	"B3": { "state" : 0 },
-	"B4": { "state" : 0 },
-	"B5": { "state" : 0 }
+instance_states = {
 }
 
+def add_new_instance( instance ):
+	if not instance.name in instance_states:
+		instance_states[ instance.name ] = {
+			"state" : 0,
+			"thread": None
+		}
+
+def get_instance_thread( instance ):
+	if instance.name in instance_states:
+		current_thread = instance_states[ instance.name ]["thread"]
+		if not current_thread is None and not threading.Thread.is_alive( current_thread ):
+			current_thread.join()
+			current_thread = None
+			instance_states[ instance.name ]["thread"] = None
+
+		return current_thread
+
+def launch_instance_thread( instance, args):
+	if instance.name in instance_states:
+		current_thread = get_instance_thread( instance )
+		if current_thread is None:
+			current_thread = threading.Thread(target=button_thread, args=args)
+			current_thread.start()
+			instance_states[ instance.name ]["thread"] = current_thread
+
 def change_button_state( instance, state ):
-	if instance.name in button_states:
-		button_states[ instance.name ]["state"] = state
+	if instance.name in instance_states:
+		instance_states[ instance.name ]["state"] = state
 
 def update_button_status( instance ):
-	if instance.name in button_states:
-		state_number = button_states[ instance.name ]["state"]
+	if instance.name in instance_states:
+		state_number = instance_states[ instance.name ]["state"]
 		current_state = states[ state_number ]
 		instance.text=current_state[0]
 		instance.background_color=current_state[1]
 
 def call_button_callback( instance ):
-	if instance.name in button_states:
-		current_state = states[ button_states[ instance.name ]["state"] ]
+	if instance.name in instance_states:
+		current_state = states[ instance_states[ instance.name ]["state"] ]
 		current_state[2]( instance )
 
 def button_callback(instance):
-	call_button_callback( instance )
-	update_button_status( instance )
+	launch_instance_thread( instance, [ instance ] )
 
+def button_thread( args ):
+	call_button_callback( args )
+	update_button_status( args )
 
 class LoginScreen(GridLayout):
+
+	def add_button(self, name):
+		self.buttons[ name ] = Button(text=name)
+		self.buttons[ name ].name = name
+		self.buttons[ name ].bind( on_press=button_callback )
+		self.add_widget( self.buttons[ name ] )
+		add_new_instance( self.buttons[ name ] )
 
 	def __init__(self, **kwargs):
 		super(LoginScreen, self).__init__(**kwargs)
@@ -102,66 +129,12 @@ class LoginScreen(GridLayout):
 		self._keyboard.bind(on_key_down=self.on_keyboard_down)
 		self._keyboard.bind(on_key_up=self.on_keyboard_up)
 		self.cols = 5
+		self.buttons = {}
 		
-		# A1
-		self.btnA1=Button(text='A1')
-		self.btnA1.name="A1"
-		self.btnA1.bind(on_press=button_callback)
-		self.add_widget(self.btnA1)
-		
-		# A2
-		self.btnA2=Button(text='A2')
-		self.btnA2.name="A2"
-		self.btnA2.bind(on_press=button_callback)
-		self.add_widget(self.btnA2)
-		
-		# A3
-		self.btnA3=Button(text='A3')
-		self.btnA3.name="A3"
-		self.btnA3.bind(on_press=button_callback)
-		self.add_widget(self.btnA3)
-		
-		# A4
-		self.btnA4=Button(text='A4')
-		self.btnA4.name="A4"
-		self.btnA4.bind(on_press=button_callback)
-		self.add_widget(self.btnA4)
-		
-		# B5
-		self.btnA5=Button(text='A5')
-		self.btnA5.name="A5"
-		self.btnA5.bind(on_press=button_callback)
-		self.add_widget(self.btnA5)
-
-		# B1
-		self.btnB1=Button(text='B1')
-		self.btnB1.name="B1"
-		self.btnB1.bind(on_press=button_callback)
-		self.add_widget(self.btnB1)
-		
-		# B2
-		self.btnB2=Button(text='B2')
-		self.btnB2.name="B2"
-		self.btnB2.bind(on_press=button_callback)
-		self.add_widget(self.btnB2)
-		
-		# B3
-		self.btnB3=Button(text='B3')
-		self.btnB3.name="B3"
-		self.btnB3.bind(on_press=button_callback)
-		self.add_widget(self.btnB3)
-		
-		# B4
-		self.btnB4=Button(text='B4')
-		self.btnB4.name="B4"
-		self.btnB4.bind(on_press=button_callback)
-		self.add_widget(self.btnB4)
-		
-		# B5
-		self.btnB5=Button(text='B5')
-		self.btnB5.name="B5"
-		self.btnB5.bind(on_press=button_callback)
-		self.add_widget(self.btnB5)
+		self.add_button("A1")
+		self.add_button("A2")
+		self.add_button("A3")
+		self.add_button("A4")
 
 	def _keyboard_closed(self):
 		self._keyboard.unbind(on_key_down=self._on_keyboard_down)
