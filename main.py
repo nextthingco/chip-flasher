@@ -17,19 +17,17 @@ def call_and_return( *args, **kwargs ):
 def on_unavailable( instance ):
 	if call_and_return("./test.sh") != 0:
 		change_button_state( instance, 1 )
-	else:
-		change_button_state( instance, 7 )
+
 def on_ready( instance ):
-	if call_and_return("./test.sh") != 0:
-		change_button_state( instance, 2 )
-	else:
-		change_button_state( instance, 7 )
-	pass
+	change_button_state( instance, 2 )
+
 def on_uploading( instance ):
-	if call_and_return("./test.sh") != 0:
-		change_button_state( instance, 3 )
+	if call_and_return("./chip-fel-flash.sh") != 0:
+		change_button_state( instance, 6 )
 	else:
 		change_button_state( instance, 7 )
+
+####
 def on_flashing( instance ):
 	if call_and_return("./test.sh") != 0:
 		change_button_state( instance, 4 )
@@ -80,7 +78,6 @@ def get_instance_thread( instance ):
 			current_thread.join()
 			current_thread = None
 			instance_states[ instance.name ]["thread"] = None
-
 		return current_thread
 
 def launch_instance_thread( instance, args):
@@ -102,6 +99,8 @@ def update_button_status( instance ):
 		instance.text=current_state[0]
 		instance.background_color=current_state[1]
 
+		call_button_callback( instance )
+
 def call_button_callback( instance ):
 	if instance.name in instance_states:
 		current_state = states[ instance_states[ instance.name ]["state"] ]
@@ -122,6 +121,8 @@ class LoginScreen(GridLayout):
 		self.buttons[ name ].bind( on_press=button_callback )
 		self.add_widget( self.buttons[ name ] )
 		add_new_instance( self.buttons[ name ] )
+		update_button_status( self.buttons[ name ] )
+
 
 	def __init__(self, **kwargs):
 		super(LoginScreen, self).__init__(**kwargs)
@@ -131,10 +132,7 @@ class LoginScreen(GridLayout):
 		self.cols = 5
 		self.buttons = {}
 		
-		self.add_button("A1")
-		self.add_button("A2")
-		self.add_button("A3")
-		self.add_button("A4")
+		self.add_button("CHIP 1")
 
 	def _keyboard_closed(self):
 		self._keyboard.unbind(on_key_down=self._on_keyboard_down)
