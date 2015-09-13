@@ -1,53 +1,74 @@
+from kivy.config import Config
+Config.set('graphics', 'fullscreen', '1')
+
 from kivy.app import App
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
 from kivy.core.window import Window
+import usb1
 import subprocess
 import threading
 import os
+import time
 
 # calls a shell command
 def call_and_return( *args, **kwargs ):
-	proc = subprocess.Popen(args, cwd=os.getcwd() )
+	working_dir=os.path.dirname(os.path.realpath(__file__))
+	print("Working dir %s" % working_dir)
+	proc = subprocess.Popen(args, cwd=working_dir+"/tools" )
 	proc.communicate()
 	return proc.returncode
 
 def on_unavailable( instance ):
-	if call_and_return("./test.sh") != 0:
+	if call_and_return("false") != 0:
 		change_button_state( instance, 1 )
 
 def on_ready( instance ):
 	change_button_state( instance, 2 )
 
 def on_uploading( instance ):
-	if call_and_return("./chip-fel-flash.sh") != 0:
-		change_button_state( instance, 6 )
+	if call_and_return("./chip-update-firmware.sh", "-f") != 0:
+		change_button_state( instance, 5 )
 	else:
 		change_button_state( instance, 7 )
 
 ####
 def on_flashing( instance ):
-	if call_and_return("./test.sh") != 0:
+	if call_and_return("false") != 0:
 		change_button_state( instance, 4 )
 	else:
 		change_button_state( instance, 7 )
 def on_booting( instance ):
-	if call_and_return("./test.sh") != 0:
+	if call_and_return("false") != 0:
 		change_button_state( instance, 5 )
 	else:
 		change_button_state( instance, 7 )
 def on_verifying( instance ):
-	if call_and_return("./test.sh") != 0:
-		change_button_state( instance, 6 )
-	else:
-		change_button_state( instance, 7 )
+	#start = time.time()
+	#exit = False
+	#while True:
+	#	time.sleep(1)
+	#	if time.time() >= (start + 30):
+	#		#timeout
+	#		change_button_state( instance, 7 )
+	#		return
+	#	usb = USB()
+	#	devices = usb.find_device("serial-gadget")
+	#	print("Length: " + str(len(devices)))
+	#	if len(devices) > 0:
+	time.sleep(10)
+	change_button_state( instance, 6 )
+	#		return
+		
 
 def on_success( instance ):
+	time.sleep(5)
 	change_button_state( instance, 0 )
 
 def on_failure( instance ):
+	time.sleep(20)
 	change_button_state( instance, 0 )
 
 states = {
@@ -98,8 +119,7 @@ def update_button_status( instance ):
 		current_state = states[ state_number ]
 		instance.text=current_state[0]
 		instance.background_color=current_state[1]
-
-		call_button_callback( instance )
+		button_callback(instance)
 
 def call_button_callback( instance ):
 	if instance.name in instance_states:
@@ -122,6 +142,12 @@ class LoginScreen(GridLayout):
 		self.add_widget( self.buttons[ name ] )
 		add_new_instance( self.buttons[ name ] )
 		update_button_status( self.buttons[ name ] )
+		usb = USB()
+		for device in usb.find_device("fel"):
+			print("Found FEL device: " + str(device.getBusNumber()) + ":" + str(device.getPortNumberList()) + "@" + str(device.getDeviceAddress()) )
+
+		for device in usb.find_device("serial-gadget"):
+			print("Found Serial device: " + str(device.getBusNumber()) + ":" + str(device.getPortNumberList()) + "@" + str(device.getDeviceAddress()) )
 
 
 	def __init__(self, **kwargs):
@@ -152,6 +178,30 @@ class LoginScreen(GridLayout):
 		return True
 
 
+class USB(object):
+	def __init__(self):
+		self.context = usb1.USBContext()
+		self.usb_devices = {
+			"fel": {
+				"vid" : 0x1f3a,
+				"pid" : 0xefe8,
+			},
+			"serial-gadget": {
+				"vid" : 0x0525,
+				"pid" : 0xa4a7,
+			}
+		}
+	def find_vid_pid(self, vid, pid):
+		devices = []
+		for device in self.context.getDeviceList(skip_on_access_error=True, skip_on_error=True):
+			if device.getVendorID() == vid and device.getProductID() == pid:
+				devices.append(device)
+		return devices
+	def find_device(self, device_name):
+		if device_name in self.usb_devices:
+			device = self.usb_devices[ device_name ]
+			return self.find_vid_pid( device["vid"], device["pid"] )
+		return None
 
 class MyApp(App):
 
