@@ -95,6 +95,7 @@ function install_linux {
 	fi
 }
 function install_flasher {
+  install_package git
 	if [[ ! -d "flasher" ]];then
 		git clone https://github.com/NextThingCo/CHIP-flasher.git flasher
 	fi
