@@ -63,5 +63,5 @@ function install_linux {
 
 case "${OS}" in
 	Darwin) install_darwin ;;
-	Linux) install_darwin ;;
+	Linux) install_linux ;;
 esac
