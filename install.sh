@@ -38,11 +38,19 @@ function install_linux {
 	function install_package {
 		PACKAGE_MANAGER=`which apt-get`
 		if [[ ! -z "${PACKAGE_MANAGER}" ]]; then
-			${PACKAGE_MANAGER} --yes --force-yes install ${@} ||
-				error "could not install ${1}!"
+			${PACKAGE_MANAGER} --yes --force-yes install ${@} || \
+				error "could not install ${@}!"
+		fi
+	}
+	function install_package_repo {
+		if [[ ! -z "$(which add-apt-repository)" ]]; then
+			sudo add-apt-repository -y ${1} && \
+			sudo apt-get -y update || \
+				error "could not add repo ${1}!"
 		fi
 	}
 	header "Installing for Linux"
+	export DISPLAY=:0
 
 	if [[ -z "$( which teamviewer)" ]]; then
 		install_package libc6:i386 \
@@ -71,11 +79,19 @@ function install_linux {
 						python-dev
 	fi
 	if [[ -z "$( which gcc )" ]]; then
-		install_package build-essential \
-						git
+		install_package build-essential
 	fi
 	if [[ -z "$( which mkimage )" ]]; then
 		install_package u-boot-tools
+	fi
+	if [[ -z "$(which git)" ]]; then
+		install_package git
+	fi
+	if [[ -z "$(which gksu)" ]]; then
+		install_package gksu
+	fi
+	if [[ -z "$(which fastboot)" ]]; then
+		install_package android-tools-fastboot
 	fi
 	if [[ -z "$( which kivy )" ]]; then
 		install_package mesa-common-dev \
@@ -86,17 +102,22 @@ function install_linux {
 						python-gst0.10 \
 						python-enchant \
 						gstreamer0.10-plugins-good \
-						libgles2-mesa-dev
+						libgles2-mesa-dev \
+						libusb-1.0-0-dev
 		PIP=`which pip`
 		${PIP} install --upgrade Cython==0.21 || error "could not install cython!"
 		${PIP} install kivy || error "could not install kivy!"
 		${PIP} install libusb1 || error "could not install libusb1!"
-		sudo ln -s /usr/bin/python2.7 /usr/bin/kivy
+		sudo ln -s /usr/bin/python2.7 /usr/local/bin/kivy
+	fi
+	if [[ -z "$(which tmate)" ]]; then
+		install_package software-properties-common && \
+		install_package_repo ppa:nviennot/tmate && \
+		install_package tmate || \
+			error "Could not install tmate!"
 	fi
 }
 function install_flasher {
-	install_package git
-	install_package gksu
 	if [[ ! -d "flasher" ]];then
 		git clone https://github.com/NextThingCo/CHIP-flasher.git flasher
 	fi
@@ -104,29 +125,23 @@ function install_flasher {
 		git clone https://github.com/NextThingCo/CHIP-tools flasher/tools
 	fi
 	if [[ ! -f "flasher/sunxi-tools/fel" ]];then
-		install_package libusb-1.0-0-dev android-tools-fastboot
 		if [[ ! -d "flasher/sunxi-tools" ]];then
 			git clone https://github.com/linux-sunxi/sunxi-tools flasher/sunxi-tools
 		fi
 		make -C flasher/sunxi-tools fel
-		ln -s "$(pwd)/flasher/sunxi-tools/fel" /usr/bin/fel
+		ln -s "$(pwd)/flasher/sunxi-tools/fel" /usr/local/bin/fel
 	fi
 	chmod -R 777 flasher
-
+  
+  if [[ "$(uname)" == "Linux" ]]; then
   	cp flasher/chip-flasher.desktop Desktop
-	chown $(logname):$(logname) Desktop/chip-flasher.desktop
+  	chown $(logname):$(logname) Desktop/chip-flasher.desktop
+  fi
+
 #	DISPLAY=:0 kivy flasher/main.py
-}
-function install_tmate {
-	if [[ -z "$(which tmate)" ]]; then
-		sudo apt-get -y install software-properties-common && \
-		sudo add-apt-repository -y ppa:nviennot/tmate      && \
-		sudo apt-get -y update                             && \
-		sudo apt-get -y install tmate
-	fi
 }
 
 case "${OS}" in
 	Darwin) install_darwin; install_flasher ;;
-	Linux) install_linux; install_flasher; install_tmate ;;
+	Linux)	install_linux; install_flasher ;;
 esac
