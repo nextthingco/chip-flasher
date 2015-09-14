@@ -18,18 +18,39 @@ function error { echo "${yellow}==> ${red}${1}${reset}"; exit 1; }
 
 function install_darwin {
 	header "Installing for Darwin"
-	
+
+	# install kivy
 	if [[ -z "$( which kivy )" ]]; then
 		# find brew
 		BREW=`which brew`
 		if [[ -z "${BREW}" ]]; then
 			error "brew command not found!"
 		fi
-		${BREW} install libusb --HEAD || error "could not install libusb!"
 		${BREW} install caskroom/cask/brew-cask || error "could not install cask!"
 		${BREW} cask install kivy || error "could not install kivy!"
 	fi
+
+	# install libusb into kivy
 	KIVY=`which kivy`
+	SCRIPT_PATH="${KIVY}";
+	if([ -h "${SCRIPT_PATH}" ]) then
+	  while([ -h "${SCRIPT_PATH}" ]) do SCRIPT_PATH=`readlink "${SCRIPT_PATH}"`; done
+	fi
+	SCRIPT_PATH=$(python -c "import os; print os.path.realpath(os.path.dirname('${SCRIPT_PATH}'))")
+	
+	if [[ ! -f "${SCRIPT_PATH}/lib/libusb-1.0.dylib" ]]; then
+		TMP_PATH=`mktemp -d -t chipflasher.XXXXXX`
+
+		pushd $TMP_PATH
+			git clone https://github.com/libusb/libusb.git
+			pushd libusb
+				./autogen.sh
+				./configure --disable-dependency-tracking --prefix="${SCRIPT_PATH}"
+				make -j4
+				make install
+			popd
+		popd
+	fi
 	${KIVY} -m pip install libusb1 || error "could not install libusb1!"
 
 
@@ -128,6 +149,29 @@ function install_flasher {
 		if [[ ! -d "flasher/sunxi-tools" ]];then
 			git clone https://github.com/linux-sunxi/sunxi-tools flasher/sunxi-tools
 		fi
+		if [[ "${OS}" == "Darwin" ]]; then
+			if [[ -z "$(which fel)" ]]; then
+				pushd flasher/sunxi-tools
+					cat <<-EOF > fix-osx.patch
+						diff --git a/include/endian_compat.h b/include/endian_compat.h
+						index e463a52..a927bbd 100644
+						--- a/include/endian_compat.h
+						+++ b/include/endian_compat.h
+						@@ -29,6 +29,9 @@
+						 #define le32toh(x) CFSwapInt32LittleToHost(x)
+						 #define htole16(x) CFSwapInt16HostToLittle(x)
+						 #define le16toh(x) CFSwapInt16LittleToHost(x)
+						+
+						+
+						+#define be32toh(x) CFSwapInt32BigToHost(x)
+						 #else
+						 #include <endian.h>
+						 #endif
+					EOF
+				patch -p1 < fix-osx.patch
+				popd
+			fi
+		fi
 		make -C flasher/sunxi-tools fel
 		ln -s "$(pwd)/flasher/sunxi-tools/fel" /usr/local/bin/fel
 	fi
@@ -137,8 +181,6 @@ function install_flasher {
   	cp flasher/chip-flasher.desktop Desktop
   	chown $(logname):$(logname) Desktop/chip-flasher.desktop
   fi
-
-#	DISPLAY=:0 kivy flasher/main.py
 }
 
 case "${OS}" in
