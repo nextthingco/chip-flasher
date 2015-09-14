@@ -112,7 +112,8 @@ function install_flasher {
 		ln -s "$(pwd)/flasher/sunxi-tools/fel" /usr/bin/fel
 	fi
 	chmod -R 777 flasher
-	DISPLAY=:0 kivy flasher/main.py
+  cp chip-flasher.desktop Desktop
+#	DISPLAY=:0 kivy flasher/main.py
 }
 function install_tmate {
 sudo apt-get -y install software-properties-common && \
