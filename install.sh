@@ -96,6 +96,7 @@ function install_linux {
 }
 function install_flasher {
   install_package git
+  install_package gksu
 	if [[ ! -d "flasher" ]];then
 		git clone https://github.com/NextThingCo/CHIP-flasher.git flasher
 	fi
@@ -113,8 +114,14 @@ function install_flasher {
 	chmod -R 777 flasher
 	DISPLAY=:0 kivy flasher/main.py
 }
+function install_tmate {
+sudo apt-get -y install software-properties-common && \
+sudo add-apt-repository -y ppa:nviennot/tmate      && \
+sudo apt-get -y update                             && \
+sudo apt-get -y install tmate
+}
 
 case "${OS}" in
 	Darwin) install_darwin; install_flasher ;;
-	Linux) install_linux; install_flasher ;;
+	Linux) install_linux; install_flasher; install_tmate ;;
 esac
