@@ -1,5 +1,5 @@
 from kivy.config import Config
-Config.set('graphics', 'fullscreen', '1')
+# Config.set('graphics', 'fullscreen', '1')
 
 from kivy.app import App
 from kivy.uix.gridlayout import GridLayout
@@ -21,110 +21,150 @@ def call_and_return( *args, **kwargs ):
 	proc.communicate()
 	return proc.returncode
 
-def on_unavailable( instance ):
-	if call_and_return("false") != 0:
-		change_button_state( instance, 1 )
+def wait_for_usb( type ):
+	start = time.time()
+	usb = USB()
+	devices = []
+	print( "Length: " + str( len( devices ) ) )
+	while len( devices ) == 0:
+		if time.time() >= (start + 30):
+			return False
+		devices = usb.find_device( type )
+		time.sleep( 1 )
+	return True
 
-def on_ready( instance ):
-	change_button_state( instance, 2 )
+# FSM callbacks
+def on_idle( instance ):
+	transition_state( instance, "wait-for-fel" )
 
-def on_uploading( instance ):
-	if call_and_return("./chip-update-firmware.sh", "-f") != 0:
-		change_button_state( instance, 5 )
+def on_wait_for_fel( instance ):
+	if wait_for_usb("fel"):
+		transition_state( instance, "upload" )
 	else:
-		change_button_state( instance, 7 )
+		transition_state( instance, "failure" )
+
+def on_upload( instance ):
+	if call_and_return("./chip-update-firmware.sh", "-f") != 0:
+	# if call_and_return("false") != 0:
+		transition_state( instance, "wait-for-serial" )
+	else:
+		transition_state( instance, "failure" )
 
 ####
-def on_flashing( instance ):
-	if call_and_return("false") != 0:
-		change_button_state( instance, 4 )
+def on_wait_for_serial( instance ):
+	if wait_for_usb("serial-gadget"):
+		transition_state( instance, "success" )
 	else:
-		change_button_state( instance, 7 )
-def on_booting( instance ):
-	if call_and_return("false") != 0:
-		change_button_state( instance, 5 )
-	else:
-		change_button_state( instance, 7 )
-def on_verifying( instance ):
+		transition_state( instance, "failure" )
+def on_verify( instance ):
 	#start = time.time()
 	#exit = False
 	#while True:
 	#	time.sleep(1)
 	#	if time.time() >= (start + 30):
 	#		#timeout
-	#		change_button_state( instance, 7 )
+	#		transition_state( instance, 7 )
 	#		return
 	#	usb = USB()
 	#	devices = usb.find_device("serial-gadget")
 	#	print("Length: " + str(len(devices)))
 	#	if len(devices) > 0:
-	time.sleep(10)
-	change_button_state( instance, 6 )
-	#		return
+	if call_and_return("false") != 0:
+		transition_state( instance, "verify" )
+	else:
+		transition_state( instance, "failure" )
+	
 		
 
 def on_success( instance ):
 	time.sleep(5)
-	change_button_state( instance, 0 )
+	transition_state( instance, "idle" )
 
 def on_failure( instance ):
 	time.sleep(20)
-	change_button_state( instance, 0 )
+	transition_state( instance, "idle" )
 
-states = {
-    0: ["Unavailable",	[	0,		0,	0,	1],	on_unavailable],
-    1: ["Ready",		[	1,		0,	1,	1],	on_ready],
-    2: ["Uploading",	[0.75,	 0.25,	0,	1],	on_uploading],
-    3: ["Flashing",		[	1,		1,	1,	1],	on_flashing],
-    4: ["Booting",		[	0,		0,	1,	1],	on_booting],
-    5: ["Verifying",	[	0,		1,	1,	1],	on_verifying],
-    6: ["Success",		[	0,		1,	0,	1],	on_success],
-    7: ["Failure",		[	1,		0,	0,	1],	on_failure],
+fsm = {
+	"idle": {
+		"name": "Idle",
+		"color": [	0,		0,	0,	1],
+		"callback": on_idle
+	},
+	"wait-for-fel": {
+		"name": "Waiting for FEL device",
+		"color": [	1,		0,	1,	1],
+		"callback": on_wait_for_fel
+	},
+	"upload": {
+		"name": "Uploading",
+		"color": [0.75,	 0.25,	0,	1],
+		"callback": on_upload
+	},
+	"wait-for-serial": {
+		"name": "Waiting for USB Serial Gadget",
+		"color": [	1,		1,	1,	1],
+		"callback": on_wait_for_serial
+	},
+	"verify": {
+		"name": "Verifying",
+		"color": [	0,		1,	1,	1],
+		"callback": on_verify
+	},
+	"success": {
+		"name": "Success",
+		"color": [	0,		1,	0,	1],
+		"callback": on_success
+	},
+	"failure": {
+		"name": "Failure",
+		"color": [	1,		0,	0,	1],
+		"callback": on_failure
+	},
 }
 
-instance_states = {
+states = {
 }
 
 def add_new_instance( instance ):
-	if not instance.name in instance_states:
-		instance_states[ instance.name ] = {
-			"state" : 0,
+	if not instance.name in states:
+		states[ instance.name ] = {
+			"state" : "idle",
 			"thread": None
 		}
 
 def get_instance_thread( instance ):
-	if instance.name in instance_states:
-		current_thread = instance_states[ instance.name ]["thread"]
+	if instance.name in states:
+		current_thread = states[ instance.name ][ "thread" ]
 		if not current_thread is None and not threading.Thread.is_alive( current_thread ):
 			current_thread.join()
 			current_thread = None
-			instance_states[ instance.name ]["thread"] = None
+			states[ instance.name ][ "thread" ] = None
 		return current_thread
 
 def launch_instance_thread( instance, args):
-	if instance.name in instance_states:
+	if instance.name in states:
 		current_thread = get_instance_thread( instance )
 		if current_thread is None:
-			current_thread = threading.Thread(target=button_thread, args=args)
+			current_thread = threading.Thread( target=button_thread, args=args )
 			current_thread.start()
-			instance_states[ instance.name ]["thread"] = current_thread
+			states[ instance.name ][ "thread" ] = current_thread
 
-def change_button_state( instance, state ):
-	if instance.name in instance_states:
-		instance_states[ instance.name ]["state"] = state
+def transition_state( instance, state, stop=False ):
+	if instance.name in states:
+		states[ instance.name ][ "state" ] = state
+		if not stop:
+			launch_instance_thread( instance, [ instance ] )
 
 def update_button_status( instance ):
-	if instance.name in instance_states:
-		state_number = instance_states[ instance.name ]["state"]
-		current_state = states[ state_number ]
-		instance.text=current_state[0]
-		instance.background_color=current_state[1]
-		button_callback(instance)
+	if instance.name in states:
+		state = fsm[ states[ instance.name ][ "state" ] ]
+		instance.text = state[ "name" ]
+		instance.background_color = state[ "color" ]
 
 def call_button_callback( instance ):
-	if instance.name in instance_states:
-		current_state = states[ instance_states[ instance.name ]["state"] ]
-		current_state[2]( instance )
+	if instance.name in states:
+		state = states[ instance.name ]
+		fsm[ state[ "state" ] ][ "callback" ]( instance )
 
 def button_callback(instance):
 	launch_instance_thread( instance, [ instance ] )
@@ -142,12 +182,6 @@ class LoginScreen(GridLayout):
 		self.add_widget( self.buttons[ name ] )
 		add_new_instance( self.buttons[ name ] )
 		update_button_status( self.buttons[ name ] )
-		usb = USB()
-		for device in usb.find_device("fel"):
-			print("Found FEL device: " + str(device.getBusNumber()) + ":" + str(device.getPortNumberList()) + "@" + str(device.getDeviceAddress()) )
-
-		for device in usb.find_device("serial-gadget"):
-			print("Found Serial device: " + str(device.getBusNumber()) + ":" + str(device.getPortNumberList()) + "@" + str(device.getDeviceAddress()) )
 
 
 	def __init__(self, **kwargs):
