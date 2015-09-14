@@ -95,8 +95,8 @@ function install_linux {
 	fi
 }
 function install_flasher {
-  install_package git
-  install_package gksu
+	install_package git
+	install_package gksu
 	if [[ ! -d "flasher" ]];then
 		git clone https://github.com/NextThingCo/CHIP-flasher.git flasher
 	fi
@@ -112,14 +112,18 @@ function install_flasher {
 		ln -s "$(pwd)/flasher/sunxi-tools/fel" /usr/bin/fel
 	fi
 	chmod -R 777 flasher
-  cp chip-flasher.desktop Desktop
+
+  	cp flasher/chip-flasher.desktop Desktop
+	chown $(logname):$(logname) Desktop/chip-flasher.desktop
 #	DISPLAY=:0 kivy flasher/main.py
 }
 function install_tmate {
-sudo apt-get -y install software-properties-common && \
-sudo add-apt-repository -y ppa:nviennot/tmate      && \
-sudo apt-get -y update                             && \
-sudo apt-get -y install tmate
+	if [[ -z "$(which tmate)" ]]; then
+		sudo apt-get -y install software-properties-common && \
+		sudo add-apt-repository -y ppa:nviennot/tmate      && \
+		sudo apt-get -y update                             && \
+		sudo apt-get -y install tmate
+	fi
 }
 
 case "${OS}" in
