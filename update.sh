@@ -8,6 +8,7 @@ git pull
 
 pushd tools
 git reset --hard HEAD
+git pull
 popd
 
 popd
