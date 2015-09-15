@@ -7,8 +7,11 @@ from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
 from kivy.core.window import Window
+from kivy.clock import Clock
 from flasher.instance import Instance
 from flasher import states
+import subprocess
+from os import path
 
 def button_callback( instance ):
 	if not states.get(instance.name) is None:
@@ -61,7 +64,19 @@ class FlasherScreen(GridLayout):
 
 class FlasherApp(App):
 
+	def update_title(self, dt):
+		cwd = path.dirname(path.dirname(path.realpath(__file__)))
+		rev = subprocess.Popen(["git", "rev-parse","HEAD"],cwd=cwd, stdout=subprocess.PIPE).communicate()[0]
+		build = ""
+		try:
+			with open(cwd+"/tools/.firmware/images/build") as myfile:
+				build = myfile.read()
+		except:
+			build = ""
+		self.title = "Flasher Revision: " + rev[0:10] + " | Firmware Build: " + build
+
 	def build(self):
+		Clock.schedule_interval( self.update_title, 0.5 )
 		return FlasherScreen()
 
 	def on_stop(self):
