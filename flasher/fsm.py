@@ -25,7 +25,7 @@ def on_wait_for_serial( instance ):
 	else:
 		return "failure"
 def on_verify( instance ):
-	if call_and_return("./verify.sh") != 0:
+	if call_and_return("./verify.sh") == 0:
 		return "success"
 	else:
 		return "failure"
