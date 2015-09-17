@@ -51,31 +51,31 @@ def on_failure( instance ):
 
 fsm = {
 	"idle": {
-		"name": "Idle",
+		"name": "Ready",
 		"color": [	0,		0,	0,	1],
 		"callback": on_idle,
 		"trigger-automatically": False
 	},
 	"wait-for-fel": {
-		"name": "Waiting for FEL device",
+		"name": "Waiting for FEL",
 		"color": [	1,		0,	1,	1],
 		"callback": on_wait_for_fel,
 		"trigger-automatically": True
 	},
 	"upload": {
-		"name": "Uploading",
+		"name": "Uploading...",
 		"color": [0.75,	 0.25,	0,	1],
 		"callback": on_upload,
 		"trigger-automatically": True
 	},
 	"wait-for-serial": {
-		"name": "Waiting for USB Serial Gadget",
+		"name": "Booting...",
 		"color": [	1,		1,	1,	1],
 		"callback": on_wait_for_serial,
 		"trigger-automatically": True
 	},
 	"verify": {
-		"name": "Verifying",
+		"name": "Verifying...",
 		"color": [	0,		1,	1,	1],
 		"callback": on_verify,
 		"trigger-automatically": True
