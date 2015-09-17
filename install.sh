@@ -167,6 +167,22 @@ function install_flasher {
 						 #else
 						 #include <endian.h>
 						 #endif
+
+						diff --git a/fel.c b/fel.c
+						old mode 100644
+						new mode 100755
+						index 98e8d89..5f55d34
+						--- a/fel.c
+						+++ b/fel.c
+						@@ -1081,6 +1081,8 @@ int main(int argc, char **argv)
+						 		aw_fel_execute(handle, uboot_entry);
+						 	}
+						 
+						+	libusb_release_interface(handle, 0);
+						+
+						 #if defined(__linux__)
+						 	if (iface_detached >= 0)
+						 		libusb_attach_kernel_driver(handle, iface_detached);
 					EOF
 				patch -p1 < fix-osx.patch
 				popd
