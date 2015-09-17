@@ -1,40 +1,50 @@
 import time
 from flasher.utils import call_and_return
 from flasher.usb import USB,wait_for_usb
+import logging
+log = logging.getLogger('flasher')
 
 # FSM callbacks
 def on_idle( instance ):
 	return "wait-for-fel"
 
 def on_wait_for_fel( instance ):
+	log.info( "Waiting for FEL device to be found..." )
 	if wait_for_usb("fel"):
 		return "upload"
 	else:
 		return "failure"
 
 def on_upload( instance ):
+	log.info( "Updating CHIP firmware and pushing to CHIP" )
 	if call_and_return("./chip-update-firmware.sh", "-f") != 0:
+		log.info( "Found" )
 		return "wait-for-serial"
 	else:
 		return "failure"
 
 ####
 def on_wait_for_serial( instance ):
+	log.info( "Updating CHIP firmware and pushing to CHIP" )
 	if wait_for_usb("serial-gadget"):
+		log.info( "Found" )
 		return "verify"
 	else:
 		return "failure"
 def on_verify( instance ):
+	log.info( "Updating CHIP firmware and pushing to CHIP" )
 	if call_and_return("./verify.sh") == 0:
 		return "success"
 	else:
 		return "failure"
 
 def on_success( instance ):
+	log.info( "Successfully updated CHIP firmware" )
 	time.sleep(5)
 	return "idle"
 
 def on_failure( instance ):
+	log.error( "Failed to push firmware to CHIP" )
 	time.sleep(5)
 	return "idle"
 

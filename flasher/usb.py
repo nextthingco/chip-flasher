@@ -1,5 +1,7 @@
 import usb1
 import time
+import logging
+log = logging.getLogger('flasher')
 
 class USB(object):
 	def __init__(self):

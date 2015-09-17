@@ -12,6 +12,8 @@ from flasher.instance import Instance
 from flasher import states
 import subprocess
 from os import path
+import logging
+log = logging.getLogger('flasher')
 
 def button_callback( instance ):
 	if not states.get(instance.name) is None:
@@ -67,15 +69,32 @@ class FlasherApp(App):
 	def update_title(self, dt):
 		cwd = path.dirname(path.dirname(path.realpath(__file__)))
 		rev = subprocess.Popen(["git", "rev-parse","HEAD"],cwd=cwd, stdout=subprocess.PIPE).communicate()[0]
-		build = ""
+		if rev != self.rev:
+			log.info( "Flasher Revision: " + rev[0:10] )
+		
 		try:
 			with open(cwd+"/tools/.firmware/images/build") as myfile:
-				build = myfile.read()
+				build = myfile.read().strip("\n")
 		except:
 			build = ""
-		self.title = "Flasher Revision: " + rev[0:10] + " | Firmware Build: " + build
+
+		if build != self.build:
+			log.info( "Firmware Build: " + build )
+		self.build = build
+		self.rev = rev
+		self.title = "Flasher Revision: " + self.rev[0:10] + " | Firmware Build: " + self.build
 
 	def build(self):
+		self.rev = 0
+		self.build = ""
+		cwd = path.dirname( path.dirname( path.realpath( __file__ ) ) )
+		
+		handler = logging.FileHandler(cwd+"/flasher.log")
+		formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+		handler.setFormatter(formatter)
+		log.addHandler(handler)
+		log.setLevel(logging.INFO)
+
 		Clock.schedule_interval( self.update_title, 0.5 )
 		return FlasherScreen()
 

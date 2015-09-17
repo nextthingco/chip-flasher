@@ -1,6 +1,8 @@
 import threading
 import time
 from flasher.fsm import fsm
+import logging
+log = logging.getLogger('flasher')
 
 class Instance(object):
 	def __init__(self, instance):
@@ -31,6 +33,7 @@ class Instance(object):
 			# thread callback
 			next_state = fsm[ self.state ][ "callback" ]( self.instance )
 			if not next_state is None:
+				log.info( "Transitioning from " + self.state + " to " + next_state )
 				print( "Transitioning from " + self.state + " to " + next_state )
 				self.trigger = fsm[ next_state ][ "trigger-automatically" ]
 				self.state = next_state
