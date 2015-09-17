@@ -17,7 +17,7 @@ def on_wait_for_fel( instance ):
 
 def on_upload( instance ):
 	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if call_and_return("./chip-update-firmware.sh", "-f") != 0:
+	if call_and_return("./chip-update-firmware.sh", "-f") == 0:
 		log.info( "Found" )
 		return "wait-for-serial"
 	else:
@@ -40,12 +40,12 @@ def on_verify( instance ):
 
 def on_success( instance ):
 	log.info( "Successfully updated CHIP firmware" )
-	time.sleep(5)
+#	time.sleep(5)
 	return "idle"
 
 def on_failure( instance ):
 	log.error( "Failed to push firmware to CHIP" )
-	time.sleep(5)
+#	time.sleep(5)
 	return "idle"
 
 
@@ -84,12 +84,12 @@ fsm = {
 		"name": "Success",
 		"color": [	0,		1,	0,	1],
 		"callback": on_success,
-		"trigger-automatically": True
+		"trigger-automatically": False
 	},
 	"failure": {
 		"name": "Failure",
 		"color": [	1,		0,	0,	1],
 		"callback": on_failure,
-		"trigger-automatically": True
+		"trigger-automatically": False
 	},
 }
