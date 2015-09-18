@@ -4,6 +4,7 @@ from kivy.config import Config
 from kivy.app import App
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
+from kivy.uix.progressbar import ProgressBar
 from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
 from kivy.core.window import Window
@@ -15,26 +16,22 @@ from os import path
 import logging
 log = logging.getLogger('flasher')
 
-def button_callback( instance ):
-	if not states.get(instance.name) is None:
-		if not states.get(instance.name).state is None:
-			states.get(instance.name).trigger = True
 
-def add_new_instance( instance, state ):
-	if states.get( instance.name ) is None:
-		new_instance = Instance( instance )
+def add_new_instance( name, state ):
+	if states.get( name ) is None:
+		new_instance = Instance( name )
 		new_instance.state = state
-		states.set( instance.name, new_instance )
+		states.set( name, new_instance )
+		return new_instance.get_widget()
 
 
 class FlasherScreen(GridLayout):
 
 	def add_button(self, name):
-		self.buttons[ name ] = Button(text=name, font_size=76)
-		self.buttons[ name ].name = name
-		self.buttons[ name ].bind( on_press=button_callback )
-		self.add_widget( self.buttons[ name ] )
-		add_new_instance( self.buttons[ name ], "idle" )
+		self.instances[ name ] = add_new_instance( name, "idle" )
+		self.instances[ name ].name = name
+		self.add_widget( self.instances[ name ] )
+		
 
 
 	def __init__(self, **kwargs):
@@ -43,7 +40,7 @@ class FlasherScreen(GridLayout):
 		self._keyboard.bind(on_key_down=self.on_keyboard_down)
 		self._keyboard.bind(on_key_up=self.on_keyboard_up)
 		self.cols = 5
-		self.buttons = {}
+		self.instances = {}
 		
 		self.add_button("CHIP 1")
 

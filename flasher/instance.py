@@ -1,16 +1,39 @@
 import threading
 import time
 from flasher.fsm import fsm
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.button import Button
+from kivy.uix.progressbar import ProgressBar
+from flasher import states
 import logging
 log = logging.getLogger('flasher')
 
+def button_callback( instance ):
+	if not states.get(instance.name) is None:
+		if not states.get(instance.name).state is None:
+			states.get(instance.name).trigger = True
+
 class Instance(object):
-	def __init__(self, instance):
-		self.instance = instance
+	def __init__(self, name):
+		self.name = name
 		self.state = None
 		self.thread = None
 		self.trigger = False
+
+		self.widget = GridLayout(cols=1)
+
+		button = Button(text=name, font_size=76)
+		button.name = name
+		button.bind( on_press=button_callback )
+		self.widget.add_widget( button )
+
+		pb = ProgressBar(value=25, max=100)
+		self.widget.add_widget( pb )
+
 		self.run()
+
+	def get_widget(self):
+		return self.widget
 
 	def _thread(self):
 		print("Thread started")
@@ -22,8 +45,8 @@ class Instance(object):
 				print("No state")
 				continue
 
-			self.instance.text = fsm[ self.state ][ "name" ]
-			self.instance.background_color = fsm[ self.state ][ "color" ]
+			self.widget.children[1].text = fsm[ self.state ][ "name" ]
+			self.widget.children[1].background_color = fsm[ self.state ][ "color" ]
 
 			if self.trigger is False:
 				continue
@@ -31,7 +54,7 @@ class Instance(object):
 				print("Trigger is enabled")
 
 			# thread callback
-			next_state = fsm[ self.state ][ "callback" ]( self.instance )
+			next_state = fsm[ self.state ][ "callback" ]( self.widget )
 			if not next_state is None:
 				log.info( "Transitioning from " + self.state + " to " + next_state )
 				print( "Transitioning from " + self.state + " to " + next_state )
