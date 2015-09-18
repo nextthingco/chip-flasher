@@ -10,7 +10,7 @@ def on_idle( instance ):
 
 def on_wait_for_fel( instance ):
 	log.info( "Waiting for FEL device to be found..." )
-	if wait_for_usb("fel"):
+	if wait_for_usb("fel", timeout=5):
 		return "upload"
 	else:
 		return "failure"

@@ -48,7 +48,9 @@ def wait_for_usb( type, timeout=60):
       time.sleep( 1 )
       devices = usb.find_device( type )
       if len( devices ) > 0:
-        return True
+        log.info("Found FEL devices")
+        break
   finally:
     timer.cancel()
-    return False
+    log.info("Devices: " + str(len( devices )))
+    return ( len( devices ) > 0)
