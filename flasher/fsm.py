@@ -17,7 +17,7 @@ def on_wait_for_fel( instance ):
 
 def on_upload( instance ):
 	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if call_and_return("./chip-update-firmware.sh", "-f") == 0:
+	if call_and_return(60, "./chip-update-firmware.sh", "-f") == 0:
 		log.info( "Found" )
 		return "wait-for-serial"
 	else:
@@ -26,14 +26,14 @@ def on_upload( instance ):
 ####
 def on_wait_for_serial( instance ):
 	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if wait_for_usb("serial-gadget"):
+	if wait_for_usb("serial-gadget", timeout=40):
 		log.info( "Found" )
 		return "verify"
 	else:
 		return "failure"
 def on_verify( instance ):
 	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if call_and_return("./verify.sh") == 0:
+	if call_and_return(30, "./verify.sh") == 0:
 		return "success"
 	else:
 		return "failure"

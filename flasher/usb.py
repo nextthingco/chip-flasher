@@ -1,6 +1,7 @@
 import usb1
 import time
 import logging
+from threading import Timer
 log = logging.getLogger('flasher')
 
 class USB(object):
@@ -28,17 +29,25 @@ class USB(object):
       return self.find_vid_pid( device["vid"], device["pid"] )
     return None
 
+kill = False
+def timer_kill():
+  global kill
+  kill = True
 
-def wait_for_usb( type ):
+def wait_for_usb( type, timeout=60):
+  global kill
   start = time.time()
   usb = USB()
   devices = []
-  print( "Length: " + str( len( devices ) ) )
-  while len( devices ) == 0:
-    if time.time() >= (start + 30):
-      print("wait_for_usb: "+type+" TIMEOUT")
-      log.error("wait_for_usb: "+type+" TIMEOUT")
-      return False
-    devices = usb.find_device( type )
-    time.sleep( 1 )
-  return True
+  timer = Timer(timeout, timer_kill)
+  kill = False
+  try:
+    timer.start()
+    while kill is False:
+      time.sleep( 1 )
+      devices = usb.find_device( type )
+      if len( devices ) > 0:
+        return True
+  finally:
+    timer.cancel()
+    return False
