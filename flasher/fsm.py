@@ -26,14 +26,14 @@ def on_upload( instance ):
 ####
 def on_wait_for_serial( instance ):
 	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if wait_for_usb("serial-gadget", timeout=40):
+	if wait_for_usb("serial-gadget", timeout=60):
 		log.info( "Found" )
 		return "verify"
 	else:
 		return "failure"
 def on_verify( instance ):
 	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if call_and_return(30, "./verify.sh") == 0:
+	if call_and_return(120, "./verify.sh") == 0:
 		return "success"
 	else:
 		return "failure"
