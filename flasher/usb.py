@@ -30,16 +30,17 @@ class USB(object):
     return None
 
 kill = False
-def timer_kill():
+def timer_kill( type ):
   global kill
   kill = True
+  log.error("Timed out while waiting for usb device: " + type)
 
 def wait_for_usb( type, timeout=60):
   global kill
   start = time.time()
   usb = USB()
   devices = []
-  timer = Timer(timeout, timer_kill)
+  timer = Timer(timeout, timer_kill, [ type ])
   kill = False
   try:
     timer.start()
