@@ -6,6 +6,7 @@ log = logging.getLogger('flasher')
 
 # FSM callbacks
 def on_idle( instance ):
+	instance.reset_labels()
 	return "wait-for-fel"
 
 def on_wait_for_fel( instance ):
@@ -46,7 +47,7 @@ def on_failure( instance ):
 	log.error( "Failed to push firmware to CHIP" )
 	return "idle"
 
-
+fsm_order = ['idle', 'wait-for-fel', 'upload', 'wait-for-serial', 'verify', 'success', 'failure']
 fsm = {
 	"idle": {
 		"name": "Ready",

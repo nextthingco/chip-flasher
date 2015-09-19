@@ -1,6 +1,6 @@
 import threading
 import time
-from flasher.fsm import fsm
+from flasher.fsm import fsm, fsm_order
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.progressbar import ProgressBar
@@ -23,19 +23,18 @@ class Instance(object):
 		self.trigger = False
 		self.button = None
 		self.progressbar = None
+		self.fsm_labels={}
 
 		self.widget = GridLayout(cols=2)
-
 		innergrid = GridLayout(cols=1)
-
-		listview = ListView( size_hint=(1, 2), item_strings=[str(key) for key,value in fsm.iteritems()])
-
-		#for key, value in fsm.iteritems():
-		#	listview.add_widget( Label( text=key ) )
+		listview = GridLayout(cols=1, size_hint=(0.25, 1) ) #ListView( size_hint=(1, 2), item_strings=[ str(key) for key,value in fsm.iteritems() ])
+		
+		for key in fsm_order:
+			self.fsm_labels[ key ] = Label( text=fsm[ key ][ "name" ] )
+			listview.add_widget( self.fsm_labels[ key ] )
 
 		self.widget.add_widget( listview )
 		self.widget.add_widget( innergrid )
-
 
 		self.button = Button(text=name, font_size=76)
 		self.button.name = name
@@ -58,35 +57,42 @@ class Instance(object):
 		return self.widget
 
 	def _thread(self):
-		log.info("Thread started")
+		log.info( "Thread started" )
 		while True:
 			if self.is_running is False:
 				break
+
 			time.sleep( 0.5 )
 			if self.state is None:
-				log.error("No state")
+				log.error( "No state" )
 				continue
 
+			self.fsm_labels[ self.state ].color = ( 0, 0, 1, 0.75 )
 			self.button.text = fsm[ self.state ][ "name" ]
 			self.button.background_color = fsm[ self.state ][ "color" ]
 
 			if self.trigger is False:
 				continue
 			else:
-				log.info("Trigger is enabled")
+				log.info( "Trigger is enabled" )
 
 			# thread callback
 			next_state = fsm[ self.state ][ "callback" ]( self )
 			if not next_state is None:
 				log.info( "Transitioning from " + self.state + " to " + next_state )
+				self.fsm_labels[ self.state ].color = ( 0, 1, 0, 0.75 )
 				self.trigger = fsm[ next_state ][ "trigger-automatically" ]
 				self.state = next_state
 
-	def stop(self):
+	def reset_labels( self ):
+		for key in fsm_order:
+			self.fsm_labels[ key ].color = ( 1, 1, 1, 1 )
+
+	def stop( self ):
 		log.info("Stopping...")
 		self.is_running = False
 
-	def run(self):
+	def run( self ):
 		if self.thread is None:
 			self.is_running = True
 			self.thread = threading.Thread( target=self._thread )
