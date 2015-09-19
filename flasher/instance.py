@@ -42,7 +42,7 @@ class Instance(object):
 		self.button.bind( on_press=button_callback )
 		innergrid.add_widget( self.button )
 
-		self.progressbar = ProgressBar(value=25, max=100, size_hint=(1, 1.0/15) )
+		self.progressbar = ProgressBar(value=0, max=100, size_hint=(1, 1.0/15) )
 		innergrid.add_widget( self.progressbar )
 
 		self.run()
