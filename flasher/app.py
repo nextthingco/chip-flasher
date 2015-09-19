@@ -22,32 +22,28 @@ def add_new_instance( name, state ):
 		new_instance = Instance( name )
 		new_instance.state = state
 		states.set( name, new_instance )
-		return new_instance.get_widget()
+		return new_instance
 
 
 class FlasherScreen(GridLayout):
-
-	def add_button(self, name):
+	def add_instance(self, name):
 		self.instances[ name ] = add_new_instance( name, "idle" )
 		self.instances[ name ].name = name
-		self.add_widget( self.instances[ name ] )
-		
-
+		self.add_widget( self.instances[ name ].get_widget() )
 
 	def __init__(self, **kwargs):
 		super(FlasherScreen, self).__init__(**kwargs)
-		self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
-		self._keyboard.bind(on_key_down=self.on_keyboard_down)
-		self._keyboard.bind(on_key_up=self.on_keyboard_up)
+		self.keyboard = Window.request_keyboard(self.keyboard_closed, self)
+		self.keyboard.bind( on_key_down=self.on_keyboard_down )
+		self.keyboard.bind( on_key_up=self.on_keyboard_up )
 		self.cols = 5
 		self.instances = {}
-		
-		self.add_button("CHIP 1")
+		self.add_instance("CHIP 1")
 
-	def _keyboard_closed(self):
-		self._keyboard.unbind(on_key_down=self._on_keyboard_down)
-		self._keyboard.unbind(on_key_up=self.on_keyboard_up)
-		self._keyboard = None
+	def keyboard_closed(self):
+		self.keyboard.unbind( on_key_down=self._on_keyboard_down )
+		self.keyboard.unbind( on_key_up=self.on_keyboard_up )
+		self.keyboard = None
 
 	def on_keyboard_down(self, keyboard, keycode, text, modifiers):
 		root = BoxLayout()
@@ -62,13 +58,11 @@ class FlasherScreen(GridLayout):
 		return True
 
 class FlasherApp(App):
-
-	def update_title(self, dt):
-		cwd = path.dirname(path.dirname(path.realpath(__file__)))
-		rev = subprocess.Popen(["git", "rev-parse","HEAD"],cwd=cwd, stdout=subprocess.PIPE).communicate()[0]
+	def update_title( self, dt ):
+		cwd = path.dirname( path.dirname( path.realpath( __file__ ) ) )
+		rev = subprocess.Popen( ["git", "rev-parse","HEAD"],cwd=cwd, stdout=subprocess.PIPE ).communicate()[0]
 		if rev != self.rev:
 			log.info( "Flasher Revision: " + rev[0:10] )
-		
 		try:
 			with open(cwd+"/tools/.firmware/images/build") as myfile:
 				build = myfile.read().strip("\n")
@@ -81,19 +75,19 @@ class FlasherApp(App):
 		self.rev = rev
 		self.title = "Flasher Revision: " + self.rev[0:10] + " | Firmware Build: " + self.build
 
-	def build(self):
+	def build( self ):
 		self.rev = 0
 		self.build = ""
 		cwd = path.dirname( path.dirname( path.realpath( __file__ ) ) )
 		
-		handler = logging.FileHandler(cwd+"/flasher.log")
-		formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-		handler.setFormatter(formatter)
-		log.addHandler(handler)
-		log.setLevel(logging.INFO)
+		handler = logging.FileHandler( cwd+"/flasher.log" )
+		formatter = logging.Formatter( '%(asctime)s %(levelname)s %(message)s' )
+		handler.setFormatter( formatter )
+		log.addHandler( handler )
+		log.setLevel( logging.INFO )
 
 		Clock.schedule_interval( self.update_title, 0.5 )
 		return FlasherScreen()
 
-	def on_stop(self):
+	def on_stop( self ):
 		states.stop()

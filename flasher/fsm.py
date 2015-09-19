@@ -10,14 +10,14 @@ def on_idle( instance ):
 
 def on_wait_for_fel( instance ):
 	log.info( "Waiting for FEL device to be found..." )
-	if wait_for_usb("fel", timeout=5):
+	if wait_for_usb( instance=instance, type="fel", timeout=5 ):
 		return "upload"
 	else:
 		return "failure"
 
 def on_upload( instance ):
 	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if call_and_return(60, "./chip-update-firmware.sh", "-f") == 0:
+	if call_and_return( instance=instance, cmd=["./chip-update-firmware.sh", "-f"], timeout=60 ) == 0:
 		log.info( "Found" )
 		return "wait-for-serial"
 	else:
@@ -26,26 +26,24 @@ def on_upload( instance ):
 ####
 def on_wait_for_serial( instance ):
 	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if wait_for_usb("serial-gadget", timeout=60):
+	if wait_for_usb( instance=instance, type="serial-gadget", timeout=60 ):
 		log.info( "Found" )
 		return "verify"
 	else:
 		return "failure"
 def on_verify( instance ):
 	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if call_and_return(120, "./verify.sh") == 0:
+	if call_and_return( instance=instance, cmd="./verify.sh", timeout=120 ) != 0:
 		return "success"
 	else:
 		return "failure"
 
 def on_success( instance ):
 	log.info( "Successfully updated CHIP firmware" )
-#	time.sleep(5)
 	return "idle"
 
 def on_failure( instance ):
 	log.error( "Failed to push firmware to CHIP" )
-#	time.sleep(5)
 	return "idle"
 
 
