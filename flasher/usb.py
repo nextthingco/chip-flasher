@@ -64,5 +64,6 @@ def wait_for_usb( instance, type, timeout=60 ):
   finally:
     timer.cancel()
     Clock.unschedule( update_progress_bar )
+    instance.set_progress( 1, 1 )
     log.info("Devices: " + str(len( devices )))
     return ( len( devices ) > 0)

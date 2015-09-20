@@ -39,6 +39,7 @@ def call_and_return(instance, cmd, timeout=1):
 	finally:
 		timer.cancel()
 		Clock.unschedule( update_progress_bar )
+		instance.set_progress( 1, 1 )
 		log.info('error code='+str(proc.returncode))
 		log.info('LEAVE: call_and_return()')
 		if proc.returncode < 0:

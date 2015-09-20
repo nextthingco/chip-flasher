@@ -61,7 +61,11 @@ class FlasherScreen(GridLayout):
 class FlasherApp(App):
 	def update_title( self, dt ):
 		cwd = path.dirname( path.dirname( path.realpath( __file__ ) ) )
-		rev = subprocess.Popen( ["git", "rev-parse","HEAD"],cwd=cwd, stdout=subprocess.PIPE ).communicate()[0]
+		hostname = subprocess.Popen( ["hostname"],cwd=cwd, stdout=subprocess.PIPE ).communicate()[0].strip("\n")
+		if hostname != self.hostname:
+			log.info( "Host: " + hostname[0:10] )
+		
+		rev = subprocess.Popen( ["git", "rev-parse","HEAD"],cwd=cwd, stdout=subprocess.PIPE ).communicate()[0].strip("\n")
 		if rev != self.rev:
 			log.info( "Flasher Revision: " + rev[0:10] )
 		try:
@@ -74,10 +78,12 @@ class FlasherApp(App):
 			log.info( "Firmware Build: " + build )
 		self.build = build
 		self.rev = rev
-		self.title = "Flasher Revision: " + self.rev[0:10] + " | Firmware Build: " + self.build
+		self.hostname = hostname
+		self.title = "Host: " + self.hostname + " | Flasher Revision: " + self.rev[0:10] + " | Firmware Build: " + self.build
 
 	def build( self ):
 		self.rev = 0
+		self.hostname = ""
 		self.build = ""
 		cwd = path.dirname( path.dirname( path.realpath( __file__ ) ) )
 		
