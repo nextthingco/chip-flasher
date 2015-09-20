@@ -81,13 +81,13 @@ fsm = {
 		"trigger-automatically": True
 	},
 	"success": {
-		"name": "PASS 通过",
+		"name": "PASS\n通过",
 		"color": [	0,		1,	0,	1],
 		"callback": on_success,
 		"trigger-automatically": False
 	},
 	"failure": {
-		"name": "FAIL 失败",
+		"name": "FAIL\n失败",
 		"color": [	1,		0,	0,	1],
 		"callback": on_failure,
 		"trigger-automatically": False
