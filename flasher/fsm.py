@@ -51,43 +51,43 @@ def on_failure( instance ):
 fsm_order = ['idle', 'wait-for-fel', 'upload', 'wait-for-serial', 'verify', 'success', 'failure']
 fsm = {
 	"idle": {
-		"name": "Ready",
+		"name": "Ready\n已准备，待连接",
 		"color": [	0,		0,	0,	1],
 		"callback": on_idle,
 		"trigger-automatically": False
 	},
 	"wait-for-fel": {
-		"name": "Searching for FEL...\n在搜索...",
+		"name": "Searching for FEL...\n连接中",
 		"color": [	1,		0,	1,	1],
 		"callback": on_wait_for_fel,
 		"trigger-automatically": True
 	},
 	"upload": {
-		"name": "Uploading...",
+		"name": "Uploading...\n正在加载固件",
 		"color": [0.75,	 0.25,	0,	1],
 		"callback": on_upload,
 		"trigger-automatically": True
 	},
 	"wait-for-serial": {
-		"name": "Booting...",
+		"name": "Booting...\n启动中",
 		"color": [	1,		1,	1,	1],
 		"callback": on_wait_for_serial,
 		"trigger-automatically": True
 	},
 	"verify": {
-		"name": "Verifying...",
+		"name": "Verifying...\n验证中",
 		"color": [	0,		1,	1,	1],
 		"callback": on_verify,
 		"trigger-automatically": True
 	},
 	"success": {
-		"name": "PASS 行",
+		"name": "PASS 通过",
 		"color": [	0,		1,	0,	1],
 		"callback": on_success,
 		"trigger-automatically": False
 	},
 	"failure": {
-		"name": "FAIL 剔",
+		"name": "FAIL 失败",
 		"color": [	1,		0,	0,	1],
 		"callback": on_failure,
 		"trigger-automatically": False
