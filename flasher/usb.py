@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import usb1
 import time
 import logging

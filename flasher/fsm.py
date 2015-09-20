@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import time
 from flasher.utils import call_and_return
 from flasher.usb import USB,wait_for_usb

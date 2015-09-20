@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import threading
 import time
 from flasher.fsm import fsm, fsm_order
@@ -25,10 +26,10 @@ class Instance(object):
 		self.progressbar = None
 		self.fsm_labels={}
 
-		self.widget = GridLayout(cols=2)
-		innergrid = GridLayout(cols=1)
-		listview = GridLayout(cols=1, size_hint=(0.25, 1) ) #ListView( size_hint=(1, 2), item_strings=[ str(key) for key,value in fsm.iteritems() ])
-		
+		self.widget = GridLayout( cols=2 )
+		innergrid = GridLayout( cols=1 )
+		listview = GridLayout( cols=1, size_hint=(0.25, 1) ) #ListView( size_hint=(1, 2), item_strings=[ str(key) for key,value in fsm.iteritems() ])
+
 		for key in fsm_order:
 			self.fsm_labels[ key ] = Label( text=fsm[ key ][ "name" ] )
 			listview.add_widget( self.fsm_labels[ key ] )
@@ -67,7 +68,7 @@ class Instance(object):
 				log.error( "No state" )
 				continue
 
-			self.fsm_labels[ self.state ].color = ( 0, 0, 1, 0.75 )
+			self.fsm_labels[ self.state ].color = ( 0, 1, 0, 1 )
 			self.button.text = fsm[ self.state ][ "name" ]
 			self.button.background_color = fsm[ self.state ][ "color" ]
 
@@ -80,7 +81,7 @@ class Instance(object):
 			next_state = fsm[ self.state ][ "callback" ]( self )
 			if not next_state is None:
 				log.info( "Transitioning from " + self.state + " to " + next_state )
-				self.fsm_labels[ self.state ].color = ( 0, 1, 0, 0.75 )
+				self.fsm_labels[ self.state ].color = ( 0, 0, 1, 1 )
 				self.trigger = fsm[ next_state ][ "trigger-automatically" ]
 				self.state = next_state
 

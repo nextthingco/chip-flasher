@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 states = {}
 def get(key):
 	if key in states:
