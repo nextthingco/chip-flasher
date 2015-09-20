@@ -11,6 +11,8 @@ from flasher import states
 import logging
 log = logging.getLogger('flasher')
 
+FONT_NAME='/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf'
+
 def button_callback( instance ):
 	if not states.get( instance.name ) is None:
 		if not states.get( instance.name ).state is None:
@@ -31,13 +33,13 @@ class Instance(object):
 		listview = GridLayout( cols=1, size_hint=(0.25, 1) ) #ListView( size_hint=(1, 2), item_strings=[ str(key) for key,value in fsm.iteritems() ])
 
 		for key in fsm_order:
-			self.fsm_labels[ key ] = Label( text=fsm[ key ][ "name" ] )
+			self.fsm_labels[ key ] = Label( text=fsm[ key ][ "name" ], font_name=FONT_NAME )
 			listview.add_widget( self.fsm_labels[ key ] )
 
 		self.widget.add_widget( listview )
 		self.widget.add_widget( innergrid )
 
-		self.button = Button(text=name, font_size=76)
+		self.button = Button(text=name, font_size=76, font_name=FONT_NAME)
 		self.button.name = name
 		self.button.bind( on_press=button_callback )
 		innergrid.add_widget( self.button )

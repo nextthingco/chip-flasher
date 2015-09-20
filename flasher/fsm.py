@@ -57,7 +57,7 @@ fsm = {
 		"trigger-automatically": False
 	},
 	"wait-for-fel": {
-		"name": "Waiting for FEL",
+		"name": "Searching for FEL...\n在搜索...",
 		"color": [	1,		0,	1,	1],
 		"callback": on_wait_for_fel,
 		"trigger-automatically": True
@@ -81,13 +81,13 @@ fsm = {
 		"trigger-automatically": True
 	},
 	"success": {
-		"name": "Success",
+		"name": "PASS 行",
 		"color": [	0,		1,	0,	1],
 		"callback": on_success,
 		"trigger-automatically": False
 	},
 	"failure": {
-		"name": "Failure",
+		"name": "FAIL 剔",
 		"color": [	1,		0,	0,	1],
 		"callback": on_failure,
 		"trigger-automatically": False
