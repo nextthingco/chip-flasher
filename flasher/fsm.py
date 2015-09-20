@@ -34,7 +34,7 @@ def on_wait_for_serial( instance ):
 		return "failure"
 def on_verify( instance ):
 	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if call_and_return( instance=instance, cmd="./verify.sh", timeout=120 ) != 0:
+	if call_and_return( instance=instance, cmd="./verify.sh", timeout=120 ) == 0:
 		return "success"
 	else:
 		return "failure"
