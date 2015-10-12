@@ -6,16 +6,30 @@ import serial
 import re
 
 #------------------------------------------------------------------
-def answer_prompt(sio,prompt_to_wait_for,answer_to_write):
+def answer_prompt(sio,prompt_to_wait_for,answer_to_write,send_cr=True):
 #------------------------------------------------------------------
+  sio.flush()
   prompt_found = False
   data = ''
-  while not prompt_found:
-    data += sio.read(100);
+  #if send_cr:
+    #sio.write(unicode('\n'))
+
+  d='something'
+  while not len(d)==0:
+    d = sio.read(2000);
+    data += d
     print '-' * 50
     print ' %d bytes read' % (len(data))
     print '-' * 50
-    print data
+
+  print data
+
+  while not prompt_found:
+    d = sio.read(100);
+    data += d
+    print '-' * 50
+    print ' %d bytes read' % (len(data))
+    print '-' * 50
     if(data[:-1].endswith(prompt_to_wait_for)):
         sio.write(unicode(answer_to_write+'\n'))
         print '-' * 50
@@ -23,8 +37,10 @@ def answer_prompt(sio,prompt_to_wait_for,answer_to_write):
         print '-' * 50
         prompt_found = True
     else:
-        sio.write(unicode('\n'))
+        if send_cr:
+          sio.write(unicode('\n'))
     sio.flush()
+    #sys.stdin.readline()
 
 #------------------------------------------------------------------
 def scanfor(sio,regexp_to_scan_for,answer_to_write):
@@ -64,6 +80,7 @@ def main():
   #login
 
   answer_prompt(sio,'login:','root')
+  answer_prompt(sio,'Password:','chip',False)
   answer_prompt(sio,'#','hwtest')
   d=scanfor(sio,r'.*### [^#]+ ###.*','poweroff')
 
