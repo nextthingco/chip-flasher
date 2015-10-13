@@ -8,10 +8,16 @@ from kivy.uix.progressbar import ProgressBar
 from kivy.uix.listview import ListView
 from kivy.uix.label import Label
 from flasher import states
+import os.path
 import logging
 log = logging.getLogger('flasher')
 
-FONT_NAME='/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf'
+OSX_FONT="/Library/Fonts/Arial Unicode.ttf"
+UBUNTU_FONT="/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
+if os.path.isfile( OSX_FONT ):
+	FONT_NAME = OSX_FONT
+else:
+	FONT_NAME = UBUNTU_FONT
 
 def button_callback( instance ):
 	if not states.get( instance.name ) is None:
@@ -33,13 +39,13 @@ class Instance(object):
 		listview = GridLayout( cols=1, size_hint=(0.25, 1) ) #ListView( size_hint=(1, 2), item_strings=[ str(key) for key,value in fsm.iteritems() ])
 
 		for key in fsm_order:
-			self.fsm_labels[ key ] = Label( text=fsm[ key ][ "name" ], font_name=FONT_NAME )
+			self.fsm_labels[ key ] = Label( text=fsm[ key ][ "name" ], font_name=FONT_NAME, halign="center" )
 			listview.add_widget( self.fsm_labels[ key ] )
 
 		self.widget.add_widget( listview )
 		self.widget.add_widget( innergrid )
 
-		self.button = Button(text=name, font_size=76, font_name=FONT_NAME)
+		self.button = Button(text=name, font_size=76, font_name=FONT_NAME, halign="center")
 		self.button.name = name
 		self.button.bind( on_press=button_callback )
 		innergrid.add_widget( self.button )
