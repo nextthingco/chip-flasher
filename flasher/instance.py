@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
 import threading
 import time
-from flasher.fsm import fsm, fsm_order
+from flasher.fsm import FSM
+import flasher.station_b
+import flasher.station_c
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.listview import ListView
 from kivy.uix.label import Label
+from kivy.core.text import LabelBase
 from flasher import states
 import os.path
 import logging
+import sys
 log = logging.getLogger('flasher')
 
 OSX_FONT="/Library/Fonts/Arial Unicode.ttf"
@@ -38,7 +42,8 @@ class Instance(object):
 		innergrid = GridLayout( cols=1 )
 		listview = GridLayout( cols=1, size_hint=(0.25, 1) ) #ListView( size_hint=(1, 2), item_strings=[ str(key) for key,value in fsm.iteritems() ])
 
-		for key in fsm_order:
+		fsm = FSM.get_fsm( )
+		for key in fsm:
 			self.fsm_labels[ key ] = Label( text=fsm[ key ][ "name" ], font_name=FONT_NAME, halign="center" )
 			listview.add_widget( self.fsm_labels[ key ] )
 
@@ -76,6 +81,8 @@ class Instance(object):
 				log.error( "No state" )
 				continue
 
+			fsm = FSM.get_fsm( )
+
 			self.fsm_labels[ self.state ].color = ( 0, 1, 0, 1 )
 			self.button.text = fsm[ self.state ][ "name" ]
 			self.button.background_color = fsm[ self.state ][ "color" ]
@@ -94,7 +101,8 @@ class Instance(object):
 				self.state = next_state
 
 	def reset_labels( self ):
-		for key in fsm_order:
+		fsm = FSM.get_fsm( )
+		for key in fsm:
 			self.fsm_labels[ key ].color = ( 1, 1, 1, 1 )
 
 	def stop( self ):

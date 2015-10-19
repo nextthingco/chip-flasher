@@ -1,95 +1,86 @@
 # -*- coding: utf-8 -*-
 import time
-from flasher.utils import call_and_return
-from flasher.usb import USB,wait_for_usb
-import logging
-log = logging.getLogger('flasher')
+from collections import OrderedDict
 
-# FSM callbacks
-def on_idle( instance ):
-	instance.reset_labels()
-	return "wait-for-fel"
 
-def on_wait_for_fel( instance ):
-	log.info( "Waiting for FEL device to be found..." )
-	if wait_for_usb( instance=instance, type="fel", timeout=5 ):
-		return "upload"
-	else:
-		return "failure"
+# this is some strange form of python black magic
+def station( implementation_name ):
+	def cls_call( cls ):
+		if not hasattr(cls, "_attributes"):
+			cls._attributes = {}
+		for name, method in cls.__dict__.iteritems():
+			if hasattr(method, "_attributes"):
+				method._attributes["callback"] = method
+				cls._attributes[name] = method._attributes
 
-def on_upload( instance ):
-	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if call_and_return( instance=instance, cmd=["./chip-update-firmware.sh", "-f"], timeout=60 ) == 0:
-		log.info( "Found" )
-		return "wait-for-serial"
-	else:
-		return "failure"
+		FSM.add_implementation( implementation_name, cls.get_attributes() )
+		return cls
+	return cls_call
 
-####
-def on_wait_for_serial( instance ):
-	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if wait_for_usb( instance=instance, type="serial-gadget", timeout=60 ):
-		log.info( "Found" )
-		return "verify"
-	else:
-		return "failure"
-def on_verify( instance ):
-	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if call_and_return( instance=instance, cmd="./verify.sh", timeout=120 ) == 0:
-		return "success"
-	else:
-		return "failure"
+# there is probably some way to even further clean this up with
+# a metadecorator or something
+def list_index( index ):
+	def method_call( method ):
+		if not hasattr(method, "_attributes"):
+			method._attributes = {}
+		method._attributes["list-index"] = index
+		return method
+	return method_call
 
-def on_success( instance ):
-	log.info( "Successfully updated CHIP firmware" )
-	return "idle"
+def name( name ):
+	def method_call( method ):
+		if not hasattr(method, "_attributes"):
+			method._attributes = {}
+		method._attributes["name"] = name
+		return method
+	return method_call
 
-def on_failure( instance ):
-	log.error( "Failed to push firmware to CHIP" )
-	return "idle"
+def color( color ):
+	def method_call( method ):
+		if not hasattr(method, "_attributes"):
+			method._attributes = {}
+		method._attributes["color"] = color
+		return method
+	return method_call
 
-fsm_order = ['idle', 'wait-for-fel', 'upload', 'wait-for-serial', 'verify', 'success', 'failure']
-fsm = {
-	"idle": {
-		"name": "Ready\n已准备，待连接",
-		"color": [	0,		0,	0,	1],
-		"callback": on_idle,
-		"trigger-automatically": False
-	},
-	"wait-for-fel": {
-		"name": "Searching for FEL...\n连接中",
-		"color": [	1,		0,	1,	1],
-		"callback": on_wait_for_fel,
-		"trigger-automatically": True
-	},
-	"upload": {
-		"name": "Uploading...\n正在加载固件",
-		"color": [0.75,	 0.25,	0,	1],
-		"callback": on_upload,
-		"trigger-automatically": True
-	},
-	"wait-for-serial": {
-		"name": "Booting...\n启动中",
-		"color": [	1,		1,	1,	1],
-		"callback": on_wait_for_serial,
-		"trigger-automatically": True
-	},
-	"verify": {
-		"name": "Verifying...\n验证中",
-		"color": [	0,		1,	1,	1],
-		"callback": on_verify,
-		"trigger-automatically": True
-	},
-	"success": {
-		"name": "PASS\n通过",
-		"color": [	0,		1,	0,	1],
-		"callback": on_success,
-		"trigger-automatically": False
-	},
-	"failure": {
-		"name": "FAIL\n失败",
-		"color": [	1,		0,	0,	1],
-		"callback": on_failure,
-		"trigger-automatically": False
-	},
-}
+def trigger_automatically( trigger_automatically ):
+	def method_call( method ):
+		if not hasattr(method, "_attributes"):
+			method._attributes = {}
+		method._attributes["trigger-automatically"] = trigger_automatically
+		return method
+	return method_call
+
+
+class FSM( object ):
+	current = ""
+	fsm = {}
+
+	@staticmethod
+	def set_implementation( implementation_name ):
+		FSM.current = implementation_name
+
+	@staticmethod
+	def get_implementation( ):
+		return FSM.current
+
+	@staticmethod
+	def add_implementation( implementation_name, implementation ):
+		if not FSM.fsm:
+			FSM.current = implementation_name
+		FSM.fsm[ implementation_name ] = implementation
+
+	@classmethod
+	def get_attributes( cls ):
+		if hasattr(cls, "_attributes"):
+			return cls._attributes
+		else:
+			return None
+
+	@staticmethod
+	def get_fsm( ):
+		if not FSM.current in FSM.fsm:
+			return None
+		od =  OrderedDict(sorted( FSM.fsm[ FSM.current ].items(),
+						key=lambda (k, v): v[ "list-index" ] ) )
+		return od

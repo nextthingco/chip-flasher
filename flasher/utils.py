@@ -7,11 +7,9 @@ from os import path
 from kivy.clock import Clock
 from functools import partial
 from threading import Timer
-import logging
-log = logging.getLogger('flasher')
 
 # calls a shell command
-def call_and_return(instance, cmd, timeout=1):
+def call_and_return(instance, cmd, log, timeout=1):
 	def update_progress_bar( dt ):
 		progress = instance.get_progress()
 		progress["value"] = progress["value"] + dt

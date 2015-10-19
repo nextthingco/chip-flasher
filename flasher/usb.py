@@ -4,7 +4,6 @@ import time
 import logging
 from kivy.clock import Clock
 from threading import Timer
-log = logging.getLogger('flasher')
 
 class USB(object):
   def __init__(self):
@@ -32,12 +31,12 @@ class USB(object):
     return None
 
 kill = False
-def timer_kill( type ):
+def timer_kill( type, log ):
   global kill
   kill = True
   log.error("Timed out while waiting for usb device: " + type)
 
-def wait_for_usb( instance, type, timeout=60 ):
+def wait_for_usb( instance, type, log, timeout=60 ):
   def update_progress_bar( dt ):
     progress = instance.get_progress()
     progress["value"] = progress["value"] + dt
@@ -49,7 +48,7 @@ def wait_for_usb( instance, type, timeout=60 ):
   start = time.time()
   usb = USB()
   devices = []
-  timer = Timer(timeout, timer_kill, [ type ])
+  timer = Timer(timeout, timer_kill, [ type, log ])
   kill = False
   try:
     timer.start()
