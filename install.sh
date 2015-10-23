@@ -147,7 +147,7 @@ function install_flasher {
 	fi
 	if [[ ! -f "flasher/sunxi-tools/fel" ]];then
 		if [[ ! -d "flasher/sunxi-tools" ]];then
-			git clone https://github.com/linux-sunxi/sunxi-tools flasher/sunxi-tools
+			git clone https://github.com/nextthingco/sunxi-tools flasher/sunxi-tools
 		fi
 		if [[ "${OS}" == "Darwin" ]]; then
 			if [[ -z "$(which fel)" ]]; then

@@ -21,7 +21,9 @@ def call_and_return(instance, cmd, log, timeout=1):
 
 	log.info('ENTER: call_and_return()')
 	working_dir=path.dirname( path.dirname( path.realpath( __file__ ) ) )
-	proc = subprocess.Popen( cmd, cwd=working_dir+"/tools", shell=False, preexec_fn=os.setsid )
+	my_env = os.environ.copy()
+	my_env["BUILDROOT_OUTPUT_DIR"] = working_dir+"/tools/.firmware/"
+	proc = subprocess.Popen( cmd, cwd=working_dir+"/tools", shell=False, preexec_fn=os.setsid, env=my_env )
 	timer = Timer( timeout, os.killpg, [ proc.pid, signal.SIGTERM ] )
 	returncode = None
 	time_elapsed = 0
