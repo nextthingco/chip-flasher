@@ -56,6 +56,10 @@ function install_darwin {
 
 }
 function install_linux {
+	if [ "$(whoami)" != "root" ]; then
+		sudo su -s "$0"
+		exit
+	fi
 	function install_package {
 		PACKAGE_MANAGER=`which apt-get`
 		if [[ ! -z "${PACKAGE_MANAGER}" ]]; then
@@ -140,7 +144,7 @@ function install_linux {
 }
 function install_flasher {
 	if [[ ! -d "flasher" ]];then
-		git clone https://github.com/NextThingCo/CHIP-flasher.git flasher
+		git clone --branch=ww/develop https://github.com/NextThingCo/CHIP-flasher.git flasher
 	fi
 	if [[ ! -d "flasher/tools" ]];then
 		git clone https://github.com/NextThingCo/CHIP-tools flasher/tools
@@ -153,122 +157,36 @@ function install_flasher {
 			if [[ -z "$(which fel)" ]]; then
 				pushd flasher/sunxi-tools
 					cat <<-EOF > fix-osx.patch
-					diff --git a/include/endian_compat.h b/include/endian_compat.h
-					index e463a52..a927bbd 100644
-					--- a/include/endian_compat.h
-					+++ b/include/endian_compat.h
-					@@ -29,6 +29,9 @@
-					 #define le32toh(x) CFSwapInt32LittleToHost(x)
-					 #define htole16(x) CFSwapInt16HostToLittle(x)
-					 #define le16toh(x) CFSwapInt16LittleToHost(x)
-					+
-					+
-					+#define be32toh(x) CFSwapInt32BigToHost(x)
-					 #else
-					 #include <endian.h>
-					 #endif
+						diff --git a/include/endian_compat.h b/include/endian_compat.h
+						index e463a52..a927bbd 100644
+						--- a/include/endian_compat.h
+						+++ b/include/endian_compat.h
+						@@ -29,6 +29,9 @@
+						 #define le32toh(x) CFSwapInt32LittleToHost(x)
+						 #define htole16(x) CFSwapInt16HostToLittle(x)
+						 #define le16toh(x) CFSwapInt16LittleToHost(x)
+						+
+						+
+						+#define be32toh(x) CFSwapInt32BigToHost(x)
+						 #else
+						 #include <endian.h>
+						 #endif
 
-					diff --git a/fel.c b/fel.c
-					old mode 100644
-					new mode 100755
-					index 98e8d89..5f55d34
-					--- a/fel.c
-					+++ b/fel.c
-					@@ -1081,6 +1081,8 @@ int main(int argc, char **argv)
-					 		aw_fel_execute(handle, uboot_entry);
-					 	}
-					 
-					+	libusb_release_interface(handle, 0);
-					+
-					 #if defined(__linux__)
-					 	if (iface_detached >= 0)
-					 		libusb_attach_kernel_driver(handle, iface_detached);
-					diff --git a/fel.c b/fel.c
-					old mode 100644
-					new mode 100755
-					index 98e8d89..3c0c6a2
-					--- a/fel.c
-					+++ b/fel.c
-					@@ -954,12 +954,14 @@ int main(int argc, char **argv)
-					 	int rc;
-					 	libusb_device_handle *handle = NULL;
-					 	int iface_detached = -1;
-					+	int busnum = -1, devnum = -1;
-					 	rc = libusb_init(NULL);
-					 	assert(rc == 0);
-					 
-					 	if (argc <= 1) {
-					 		printf("Usage: %s [options] command arguments... [command...]\n"
-					 			"	-v, --verbose			Verbose logging\n"
-					+			"	-d, --dev busnum:devnum		Specify the USB device to use\n"
-					 			"\n"
-					 			"	spl file			Load and execute U-Boot SPL\n"
-					 			"		If file additionally contains a main U-Boot binary\n"
-					@@ -984,6 +986,55 @@ int main(int argc, char **argv)
-					 	}
-					 
-					 	handle = libusb_open_device_with_vid_pid(NULL, 0x1f3a, 0xefe8);
-					+	while (argc > 1) {
-					+		if (argv[1][0] != '-')
-					+			break;
-					+	
-					+		if (strcmp(argv[1], "--verbose") == 0 ||
-					+		    strcmp(argv[1], "-v") == 0)
-					+			verbose = 1;
-					+	
-					+		if (strcmp(argv[1], "--dev") == 0 ||
-					+		    strcmp(argv[1], "-d") == 0) {
-					+			char *dev = argv[2];
-					+	
-					+			busnum = strtoul(dev, &dev, 0);
-					+			devnum = strtoul(dev + 1, NULL, 0);
-					+			argc -= 1;
-					+			argv += 1;
-					+		}
-					+	
-					+		argc -= 1;
-					+		argv += 1;
-					+	}
-					+	
-					+	if (busnum >= 0 && devnum >= 0) {
-					+		struct libusb_device_descriptor desc;
-					+		size_t ndevs, i;
-					+		libusb_device **list;
-					+		libusb_device *dev = NULL;
-					+	
-					+		ndevs = libusb_get_device_list(NULL, &list);
-					+		for (i = 0; i < ndevs; i++) {
-					+			if (libusb_get_bus_number(list[i]) != busnum ||
-					+			    libusb_get_device_address(list[i]) != devnum)
-					+				continue;
-					+	
-					+			libusb_get_device_descriptor(list[i], &desc);
-					+			if (desc.idVendor == 0x1f3a &&
-					+			    desc.idProduct == 0xefe8)
-					+				dev = list[i];
-					+			break;
-					+		}
-					+	
-					+		if (dev) {
-					+			libusb_ref_device(dev);
-					+			libusb_open(dev, &handle);
-					+		}
-					+		libusb_free_device_list (list, 1);
-					+	} else {
-					+		handle = libusb_open_device_with_vid_pid(NULL, 0x1f3a, 0xefe8);
-					+	}
-					 	if (!handle) {
-					 		switch (errno) {
-					 		case EACCES:
-					@@ -1081,6 +1132,8 @@ int main(int argc, char **argv)
-					 		aw_fel_execute(handle, uboot_entry);
-					 	}
-					 
-					+	libusb_release_interface(handle, 0);
-					+
-					 #if defined(__linux__)
-					 	if (iface_detached >= 0)
-					 		libusb_attach_kernel_driver(handle, iface_detached);
+						diff --git a/fel.c b/fel.c
+						old mode 100644
+						new mode 100755
+						index 98e8d89..5f55d34
+						--- a/fel.c
+						+++ b/fel.c
+						@@ -1081,6 +1081,8 @@ int main(int argc, char **argv)
+						 		aw_fel_execute(handle, uboot_entry);
+						 	}
+						 
+						+	libusb_release_interface(handle, 0);
+						+
+						 #if defined(__linux__)
+						 	if (iface_detached >= 0)
+						 		libusb_attach_kernel_driver(handle, iface_detached);
 					EOF
 				patch -p1 < fix-osx.patch
 				popd
@@ -280,8 +198,13 @@ function install_flasher {
 	chmod -R 777 flasher
   
   if [[ "$(uname)" == "Linux" ]]; then
-  	cp flasher/chip-flasher.desktop Desktop
-  	chown $(logname):$(logname) Desktop/chip-flasher.desktop
+	SCRIPTDIR="$(dirname $(dirname $(readlink -e $0) ) )/flasher"
+	HOMEDIR="$(eval echo "~${SUDO_USER}")"
+	sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/chip-flasher.desktop
+	sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/start.sh%" $SCRIPTDIR/chip-flasher.desktop
+  	cp flasher/chip-flasher.desktop ${HOMEDIR}/Desktop
+  	chown $(logname):$(logname) ${HOMEDIR}/Desktop/chip-flasher.desktop
+  	usermod -a -G dialout "${SUDO_USER}"
   fi
 }
 
