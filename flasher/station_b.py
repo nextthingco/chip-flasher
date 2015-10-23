@@ -44,7 +44,7 @@ class StationB( fsm.FSM ):
 		log.info( "Updating CHIP firmware and pushing to CHIP" )
 		if call_and_return( instance=instance, cmd=["./chip-fel-flash.sh", "-f"], log=log, timeout=60 ) == 0:
 			log.info( "Found" )
-			return "wait_for_serial"
+			return "on_success"
 		else:
 			return "on_failure"
 
