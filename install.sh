@@ -195,14 +195,13 @@ function install_flasher {
 		make -C flasher/sunxi-tools fel
 		ln -s "$(pwd)/flasher/sunxi-tools/fel" /usr/local/bin/fel
 	fi
-	chmod -R 777 flasher
-  
+
   if [[ "$(uname)" == "Linux" ]]; then
 	SCRIPTDIR="$(dirname $(dirname $(readlink -e $0) ) )/flasher"
 	HOMEDIR="$(eval echo "~${SUDO_USER}")"
 	sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/chip-flasher.desktop
 	sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/start.sh%" $SCRIPTDIR/chip-flasher.desktop
-  	cp flasher/chip-flasher.desktop ${HOMEDIR}/Desktop
+  	cp ${SCRIPTDIR}/flasher/chip-flasher.desktop ${HOMEDIR}/Desktop
   	chown $(logname):$(logname) ${HOMEDIR}/Desktop/chip-flasher.desktop
   	usermod -a -G dialout "${SUDO_USER}"
   fi
