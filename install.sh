@@ -197,11 +197,11 @@ function install_flasher {
 	fi
 
   if [[ "$(uname)" == "Linux" ]]; then
-	SCRIPTDIR="$(dirname $(dirname $(readlink -e $0) ) )/flasher"
+	SCRIPTDIR="$(dirname $(readlink -e $0) )/flasher"
 	HOMEDIR="$(eval echo "~${SUDO_USER}")"
 	sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/chip-flasher.desktop
 	sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/start.sh%" $SCRIPTDIR/chip-flasher.desktop
-  	cp ${SCRIPTDIR}/flasher/chip-flasher.desktop ${HOMEDIR}/Desktop
+  	cp ${SCRIPTDIR}/chip-flasher.desktop ${HOMEDIR}/Desktop
   	chown $(logname):$(logname) ${HOMEDIR}/Desktop/chip-flasher.desktop
   	usermod -a -G dialout "${SUDO_USER}"
   fi
