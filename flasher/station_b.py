@@ -42,7 +42,7 @@ class StationB( fsm.FSM ):
 		chip_id = PersistentData.get( "flash-count" )
 		log = LogManager.get_instanced_log( chip_id )
 		log.info( "Updating CHIP firmware and pushing to CHIP" )
-		if call_and_return( instance=instance, cmd=["./chip-fel-flash.sh", "-f"], log=log, timeout=60 ) == 0:
+		if call_and_return( instance=instance, cmd=["./chip-fel-flash.sh", "-f"], log=log, timeout=120 ) == 0:
 			log.info( "Found" )
 			return "on_success"
 		else:
