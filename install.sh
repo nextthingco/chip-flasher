@@ -196,15 +196,22 @@ function install_flasher {
 		ln -s "$(pwd)/flasher/sunxi-tools/fel" /usr/local/bin/fel
 	fi
 
-  if [[ "$(uname)" == "Linux" ]]; then
-	SCRIPTDIR="$(dirname $(readlink -e $0) )/flasher"
-	HOMEDIR="$(eval echo "~${SUDO_USER}")"
-	sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/chip-flasher.desktop
-	sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/start.sh%" $SCRIPTDIR/chip-flasher.desktop
-  	cp ${SCRIPTDIR}/chip-flasher.desktop ${HOMEDIR}/Desktop
-  	chown $(logname):$(logname) ${HOMEDIR}/Desktop/chip-flasher.desktop
-  	usermod -a -G dialout "${SUDO_USER}"
-  fi
+	if [[ "$(uname)" == "Linux" ]]; then
+		SCRIPTDIR="$(dirname $(readlink -e $0) )/flasher"
+		HOMEDIR="$(eval echo "~${SUDO_USER}")"
+		sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/chip-flasher.desktop
+		sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/start.sh%" $SCRIPTDIR/chip-flasher.desktop
+		cp ${SCRIPTDIR}/chip-flasher.desktop ${HOMEDIR}/Desktop
+		chown $(logname):$(logname) ${HOMEDIR}/Desktop/chip-flasher.desktop
+		usermod -a -G dialout "${SUDO_USER}"
+		usermod -a -G dialout "${SUDO_USER}"
+
+		cat <<-EOF | sudo tee /etc/udev/rules.d/99-allwinner.rules
+			SUBSYSTEM=="usb", ATTRS{idVendor}=="1f3a", ATTRS{idProduct}=="efe8", GROUP="plugdev", MODE="0660" SYMLINK+="usb-chip"
+			SUBSYSTEM=="usb", ATTRS{idVendor}=="18d1", ATTRS{idProduct}=="1010", GROUP="plugdev", MODE="0660" SYMLINK+="usb-chip-fastboot"
+		EOF
+		sudo udevadm control --reload-rules
+	fi
 }
 
 case "${OS}" in
