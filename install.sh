@@ -203,6 +203,7 @@ function install_flasher {
 		sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/start.sh%" $SCRIPTDIR/chip-flasher.desktop
 		cp ${SCRIPTDIR}/chip-flasher.desktop ${HOMEDIR}/Desktop
 		chown $(logname):$(logname) ${HOMEDIR}/Desktop/chip-flasher.desktop
+        chown -R $(logname):$(logname) ${SCRIPTDIR}
 		usermod -a -G dialout "${SUDO_USER}"
 		usermod -a -G dialout "${SUDO_USER}"
 
