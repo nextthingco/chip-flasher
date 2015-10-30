@@ -213,6 +213,10 @@ function install_flasher {
 		EOF
 		sudo udevadm control --reload-rules
 	fi
+
+	pushd "${SCRIPTDIR}/tools"
+		./chip-update-firmware.sh -fd
+	popd
 }
 
 case "${OS}" in
