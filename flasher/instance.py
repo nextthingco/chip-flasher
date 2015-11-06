@@ -37,6 +37,7 @@ class Instance(object):
 		self.button = None
 		self.progressbar = None
 		self.fsm_labels={}
+		self.errcode = None
 
 		self.widget = GridLayout( cols=2 )
 		innergrid = GridLayout( cols=1 )
@@ -83,8 +84,13 @@ class Instance(object):
 
 			fsm = FSM.get_fsm( )
 
+			if self.errcode is None:
+				errvalue = ""
+			else:
+				errvalue = "\n\n" + str( self.errcode )
+
 			self.fsm_labels[ self.state ].color = ( 0, 1, 0, 1 )
-			self.button.text = fsm[ self.state ][ "name" ]
+			self.button.text = fsm[ self.state ][ "name" ] + errvalue
 			self.button.background_color = fsm[ self.state ][ "color" ]
 
 			if self.trigger is False:
@@ -93,7 +99,13 @@ class Instance(object):
 				log.info( "Trigger is enabled" )
 
 			# thread callback
-			next_state = fsm[ self.state ][ "callback" ]( self )
+			retvalues = fsm[ self.state ][ "callback" ]( self )
+			self.errcode = None
+			if type(retvalues) is str:
+				next_state = retvalues
+			elif type(retvalues) is tuple:
+				next_state = retvalues[0]
+				self.errcode = retvalues[1]
 			if not next_state is None:
 				log.info( "Transitioning from " + self.state + " to " + next_state )
 				self.fsm_labels[ self.state ].color = ( 0, 0, 1, 1 )

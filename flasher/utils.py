@@ -34,8 +34,6 @@ def call_and_return(instance, cmd, log, timeout=1):
 		proc.communicate()
 		proc.wait()
 		returncode = proc.returncode
-		log.info('error code='+str(proc.returncode))
-		log.info('LEAVE: call_and_return()')
 	finally:
 		timer.cancel()
 		Clock.unschedule( update_progress_bar )

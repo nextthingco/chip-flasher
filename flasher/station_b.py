@@ -32,21 +32,32 @@ class StationB( fsm.FSM ):
 		if wait_for_usb( instance=instance, type="fel", log=log, timeout=5 ):
 			return "on_upload"
 		else:
-			return "on_failure"
+			return ( "on_failure", "FEL Not Found!" )
 
 	@fsm.list_index( 2 )
 	@fsm.name( "Uploading...\n正在加载固件" )
 	@fsm.color( [0.75,	 0.25,	0,	1] )
 	@fsm.trigger_automatically( True )
 	def on_upload( instance ):
+		err_codes = {
+			128: "FEL Error.",
+			129: "DRAM Error?",
+			130: "Upload Error.",
+			131: "Upload Error.",
+			132: "Bad Cable?",
+			133: "Fastboot fail.",
+			134: "Fastboot fail.",
+			135: "Bad U-boot."
+		}
 		chip_id = PersistentData.get( "flash-count" )
 		log = LogManager.get_instanced_log( chip_id )
 		log.info( "Updating CHIP firmware and pushing to CHIP" )
-		if call_and_return( instance=instance, cmd=["./chip-fel-flash.sh", "-f"], log=log, timeout=120 ) == 0:
+		errcode = call_and_return( instance=instance, cmd=["./chip-fel-fastboot.sh", "-f"], log=log, timeout=120 )
+		if errcode == 0:
 			log.info( "Found" )
 			return "on_success"
 		else:
-			return "on_failure"
+			return ( "on_failure", err_codes[ errcode ] )
 
 	@fsm.list_index( 3 )
 	@fsm.name( "PASS\n通过" )
