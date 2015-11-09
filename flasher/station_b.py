@@ -40,6 +40,7 @@ class StationB( fsm.FSM ):
 	@fsm.trigger_automatically( True )
 	def on_upload( instance ):
 		err_codes = {
+			-1: "Unknown Failure",
 			128: "FEL Error.",
 			129: "DRAM Error?",
 			130: "Upload Error.",
@@ -52,11 +53,13 @@ class StationB( fsm.FSM ):
 		chip_id = PersistentData.get( "flash-count" )
 		log = LogManager.get_instanced_log( chip_id )
 		log.info( "Updating CHIP firmware and pushing to CHIP" )
-		errcode = call_and_return( instance=instance, cmd=["./chip-fel-fastboot.sh", "-f"], log=log, timeout=120 )
+		errcode = call_and_return( instance=instance, cmd=["./chip-fel-flash.sh", "-f"], log=log, timeout=400 )
 		if errcode == 0:
 			log.info( "Found" )
 			return "on_success"
 		else:
+			if not errcode in err_codes:
+				errcode = -1
 			return ( "on_failure", err_codes[ errcode ] )
 
 	@fsm.list_index( 3 )

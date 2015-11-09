@@ -118,6 +118,9 @@ function install_linux {
 	if [[ -z "$(which fastboot)" ]]; then
 		install_package android-tools-fastboot
 	fi
+	if [[ -z "img2simg" ]]; then
+		install_package android-tools-fsutils
+	fi
 	if [[ -z "$( which kivy )" ]]; then
 		install_package mesa-common-dev \
 						libgl1-mesa-dev \
@@ -147,7 +150,7 @@ function install_flasher {
 		git clone --branch=ww/develop https://github.com/NextThingCo/CHIP-flasher.git flasher
 	fi
 	if [[ ! -d "flasher/tools" ]];then
-		git clone https://github.com/NextThingCo/CHIP-tools flasher/tools
+		git clone --branch=chip/next https://github.com/NextThingCo/CHIP-tools flasher/tools
 	fi
 	if [[ ! -f "flasher/sunxi-tools/fel" ]];then
 		if [[ ! -d "flasher/sunxi-tools" ]];then
@@ -210,13 +213,11 @@ function install_flasher {
 		cat <<-EOF | sudo tee /etc/udev/rules.d/99-allwinner.rules
 			SUBSYSTEM=="usb", ATTRS{idVendor}=="1f3a", ATTRS{idProduct}=="efe8", GROUP="plugdev", MODE="0660" SYMLINK+="usb-chip"
 			SUBSYSTEM=="usb", ATTRS{idVendor}=="18d1", ATTRS{idProduct}=="1010", GROUP="plugdev", MODE="0660" SYMLINK+="usb-chip-fastboot"
+			SUBSYSTEM=="usb", ATTRS{idVendor}=="1f3a", ATTRS{idProduct}=="1010", GROUP="plugdev", MODE="0660" SYMLINK+="usb-chip-fastboot"
+
 		EOF
 		sudo udevadm control --reload-rules
 	fi
-
-	pushd "${SCRIPTDIR}/tools"
-		./chip-update-firmware.sh -fd
-	popd
 }
 
 case "${OS}" in
