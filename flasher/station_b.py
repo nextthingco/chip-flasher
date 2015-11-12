@@ -56,13 +56,47 @@ class StationB( fsm.FSM ):
 		errcode = call_and_return( instance=instance, cmd=["./chip-fel-flash.sh", "-f"], log=log, timeout=400 )
 		if errcode == 0:
 			log.info( "Found" )
-			return "on_success"
+			return "on_wait_for_operator"
 		else:
 			if not errcode in err_codes:
 				errcode = -1
 			return ( "on_failure", err_codes[ errcode ] )
 
 	@fsm.list_index( 3 )
+	@fsm.name( "Flip power switch\n on/off then touch\nto continue." )
+	@fsm.color( [   1,              1,      1,      1] )
+	@fsm.trigger_automatically( False )
+	def on_wait_for_operator( instance ):
+		return "on_wait_for_serial"
+
+	@fsm.list_index( 4 )
+	@fsm.name( "Searching for CHIP" )
+	@fsm.color( [   1,              1,      1,      1] )
+	@fsm.trigger_automatically( True )
+	def on_wait_for_serial( instance ):
+		chip_id = PersistentData.get( "flash-count" )
+		log = LogManager.get_instanced_log( chip_id )
+		if wait_for_usb( instance=instance, type="serial-gadget", log=log, timeout=120 ):
+			log.info( "Found" )
+			return "on_verify"
+		else:
+			return "on_failure"
+
+	@fsm.list_index( 5 )
+	@fsm.name( "Verifying...\n验证中" )
+	@fsm.color( [   0,              1,      1,      1] )
+	@fsm.trigger_automatically( True )
+	def on_verify( instance ):
+		chip_id = PersistentData.get( "flash-count" )
+		log = LogManager.get_instanced_log( chip_id )
+		log.info( "Updating CHIP firmware and pushing to CHIP" )
+		if call_and_return( instance=instance, cmd="./verify.sh", log=log, timeout=120 ) == 0:
+			return "on_success"
+		else:
+			return "on_failure"
+
+
+	@fsm.list_index( 6 )
 	@fsm.name( "PASS\n通过" )
 	@fsm.color( [	0,		1,	0,	1] )
 	@fsm.trigger_automatically( False )
@@ -72,7 +106,7 @@ class StationB( fsm.FSM ):
 		log.info( "Successfully updated CHIP firmware" )
 		return "on_idle"
 
-	@fsm.list_index( 4 )
+	@fsm.list_index( 7 )
 	@fsm.name( "FAIL\n失败" )
 	@fsm.color( [	1,		0,	0,	1] )
 	@fsm.trigger_automatically( False )
