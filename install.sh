@@ -121,6 +121,9 @@ function install_linux {
 	if [[ -z "img2simg" ]]; then
 		install_package android-tools-fsutils
 	fi
+	
+	PIP=`which pip`
+
 	if [[ -z "$( which kivy )" ]]; then
 		install_package mesa-common-dev \
 						libgl1-mesa-dev \
@@ -132,11 +135,15 @@ function install_linux {
 						gstreamer0.10-plugins-good \
 						libgles2-mesa-dev \
 						libusb-1.0-0-dev
-		PIP=`which pip`
 		${PIP} install --upgrade Cython==0.21 || error "could not install cython!"
 		${PIP} install kivy || error "could not install kivy!"
-		${PIP} install libusb1 || error "could not install libusb1!"
 		sudo ln -s /usr/bin/python2.7 /usr/local/bin/kivy
+	fi
+	if [[ -z "$( ${PIP} show libusb1)" ]]
+		${PIP} install libusb1 || error "could not install libusb1!"
+	fi
+	if [[ -z "$( ${PIP} show pyserial)" ]]
+		${PIP} install pyserial || error "could not install pyserial!"
 	fi
 	if [[ -z "$(which tmate)" ]]; then
 		install_package software-properties-common && \
@@ -146,14 +153,30 @@ function install_linux {
 	fi
 }
 function install_flasher {
-	if [[ ! -d "flasher" ]];then
-		git clone --branch=ww/develop https://github.com/NextThingCo/CHIP-flasher.git flasher
+	if [[ ! -d "flasher" ]]; then
+		git clone --branch=ww/develop https://github.com/NextThingCo/CHIP-flasher flasher
+	else
+		pushd flasher
+		git pull
+		popd
 	fi
-	if [[ ! -d "flasher/tools" ]];then
+	if [[ ! -d "flasher/tools" ]]; then
 		git clone --branch=chip/next https://github.com/NextThingCo/CHIP-tools flasher/tools
+	else
+		pushd flasher/tools
+		git pull
+		popd
 	fi
-	if [[ ! -f "flasher/sunxi-tools/fel" ]];then
-		if [[ ! -d "flasher/sunxi-tools" ]];then
+
+	if [[ ! -d "flasher/testjig" ]]; then
+		git clone https://github.com/NextThingCo/ChipTestJig flasher/testjig
+	else
+		pushd flasher/testjig
+		git pull
+		popd
+	fi
+	if [[ ! -f "flasher/sunxi-tools/fel" ]]; then
+		if [[ ! -d "flasher/sunxi-tools" ]]; then
 			git clone https://github.com/nextthingco/sunxi-tools flasher/sunxi-tools
 		fi
 		if [[ "${OS}" == "Darwin" ]]; then
