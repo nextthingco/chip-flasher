@@ -48,10 +48,12 @@ def wait_for_usb( instance, type, log, timeout=60 ):
   start = time.time()
   usb = USB()
   devices = []
-  timer = Timer(timeout, timer_kill, [ type, log ])
+  if timeout is not -1:
+    timer = Timer(timeout, timer_kill, [ type, log ])
   kill = False
   try:
-    timer.start()
+    if timeout is not -1:
+      timer.start()
     instance.set_progress( 0, timeout )
     Clock.schedule_interval( update_progress_bar, 1.0/60.0 )
     while kill is False:
@@ -61,7 +63,8 @@ def wait_for_usb( instance, type, log, timeout=60 ):
         log.info("Found FEL devices")
         break
   finally:
-    timer.cancel()
+    if timeout is not -1:
+      timer.cancel()
     Clock.unschedule( update_progress_bar )
     instance.set_progress( 1, 1 )
     log.info("Devices: " + str(len( devices )))
