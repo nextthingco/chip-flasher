@@ -37,6 +37,7 @@ def timer_kill( type, log ):
   log.error("Timed out while waiting for usb device: " + type)
 
 def wait_for_usb( instance, type, log, timeout=60 ):
+  return True
   def update_progress_bar( dt ):
     progress = instance.get_progress()
     progress["value"] = progress["value"] + dt

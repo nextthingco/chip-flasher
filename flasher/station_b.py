@@ -74,13 +74,6 @@ class StationB( fsm.FSM ):
 			print( "Failed Test Suite: \n" + str( e.args ) )
 			return ( "on_failure", e.args[0] )
 
-	#@fsm.list_index( 40 )
-	#@fsm.name( "Flip power switch\n on/off then touch\nto continue." )
-	#@fsm.color( [   1,              1,      1,      1] )
-	#@fsm.trigger_automatically( False )
-	#def on_wait_for_operator( instance ):
-	#	return "on_verify"
-
 	@fsm.list_index( 60 )
 	@fsm.name( "Verifying...\n验证中" )
 	@fsm.color( [   0,              1,      1,      1] )

@@ -40,9 +40,12 @@ class FlasherScreen( GridLayout ):
 		self.keyboard = Window.request_keyboard( self.keyboard_closed, self )
 		self.keyboard.bind( on_key_down=self.on_keyboard_down )
 		self.keyboard.bind( on_key_up=self.on_keyboard_up )
-		self.cols = 3
+		self.cols = 2
 		self.instances = {}
 		self.add_instance( "CHIP 1" )
+		#	self.add_instance( "CHIP 2" )
+		#	self.add_instance( "CHIP 3" )
+		#	self.add_instance( "CHIP 4" )
 
 	def keyboard_closed( self ):
 		self.keyboard.unbind( on_key_down=self._on_keyboard_down )
