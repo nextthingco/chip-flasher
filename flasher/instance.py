@@ -1,15 +1,21 @@
 import threading
 import time
+import socket #for getting hostname
 from flasher.fsm import fsm
 import logging
 log = logging.getLogger('flasher')
-
+UBUNTU = 0
+CHIP = 1
 class Instance(object):
 	def __init__(self, instance):
 		self.instance = instance
 		self.state = None
 		self.thread = None
 		self.trigger = False
+		hostname = socket.gethostname()
+		# Figure out what machine is doing the flashing. This will determine which timeout values to use
+		self.flashingDevice = CHIP if hostname == 'chip' else UBUNTU
+		self.timeout = 0 #States can specify a timeout which gets used by the callbacks
 		self.run()
 
 	def _thread(self):
@@ -24,7 +30,10 @@ class Instance(object):
 
 			self.instance.text = fsm[ self.state ][ "name" ]
 			self.instance.background_color = fsm[ self.state ][ "color" ]
-
+			if "timeout" in fsm[self.state]:
+				self.instance.timeout = fsm[self.state]["timeout"][self.flashingDevice]
+			else:
+				self.instance.timeout = 0
 			if self.trigger is False:
 				continue
 			else:
@@ -49,3 +58,5 @@ class Instance(object):
 			self.is_running = True
 			self.thread = threading.Thread( target=self._thread )
 			self.thread.start()
+
+		
