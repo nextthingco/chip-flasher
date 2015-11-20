@@ -54,7 +54,7 @@ def main():
   if( len(sys.argv)>1 ):
     serial_port=sys.argv[1]
   else:
-    serial_port='/dev/ttyACM0';
+    serial_port='/dev/relay_board';
 
   print 'reading from %s:' % serial_port
 

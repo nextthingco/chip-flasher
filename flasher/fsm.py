@@ -10,14 +10,14 @@ def on_idle( instance ):
 
 def on_wait_for_fel( instance ):
 	log.info( "Waiting for FEL device to be found..." )
-	if wait_for_usb("fel", timeout=5):
+	if wait_for_usb("fel", timeout=instance.timeout):
 		return "upload"
 	else:
 		return "failure"
 
 def on_upload( instance ):
 	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if call_and_return(60, "./chip-update-firmware.sh", "-f") == 0:
+	if call_and_return(instance.timeout, "./chip-update-firmware.sh", "-f") == 0:
 		log.info( "Found" )
 		return "wait-for-serial"
 	else:
@@ -26,14 +26,14 @@ def on_upload( instance ):
 ####
 def on_wait_for_serial( instance ):
 	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if wait_for_usb("serial-gadget", timeout=60):
+	if wait_for_usb("serial-gadget", timeout=instance.timeout):
 		log.info( "Found" )
 		return "verify"
 	else:
 		return "failure"
 def on_verify( instance ):
 	log.info( "Updating CHIP firmware and pushing to CHIP" )
-	if call_and_return(120, "./verify.sh") == 0:
+	if call_and_return(instance.timeout, "./verify.sh") == 0:
 		return "success"
 	else:
 		return "failure"
@@ -60,25 +60,29 @@ fsm = {
 		"name": "Waiting for FEL",
 		"color": [	1,		0,	1,	1],
 		"callback": on_wait_for_fel,
-		"trigger-automatically": True
+		"trigger-automatically": True,
+		"timeout": [5,5]
 	},
 	"upload": {
 		"name": "Uploading...",
 		"color": [0.75,	 0.25,	0,	1],
 		"callback": on_upload,
-		"trigger-automatically": True
+		"trigger-automatically": True,
+		"timeout": [60,16000]
 	},
 	"wait-for-serial": {
 		"name": "Booting...",
 		"color": [	1,		1,	1,	1],
 		"callback": on_wait_for_serial,
-		"trigger-automatically": True
+		"trigger-automatically": True,
+		"timeout": [60,60]
 	},
 	"verify": {
 		"name": "Verifying...",
 		"color": [	0,		1,	1,	1],
 		"callback": on_verify,
-		"trigger-automatically": True
+		"trigger-automatically": True,
+		"timeout": [120,16000]
 	},
 	"success": {
 		"name": "Success",
