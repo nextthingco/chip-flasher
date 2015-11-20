@@ -139,10 +139,10 @@ function install_linux {
 		${PIP} install kivy || error "could not install kivy!"
 		sudo ln -s /usr/bin/python2.7 /usr/local/bin/kivy
 	fi
-	if [[ -z "$( ${PIP} show libusb1)" ]]
+	if [[ -z "$( ${PIP} show libusb1)" ]]; then
 		${PIP} install libusb1 || error "could not install libusb1!"
 	fi
-	if [[ -z "$( ${PIP} show pyserial)" ]]
+	if [[ -z "$( ${PIP} show pyserial)" ]]; then
 		${PIP} install pyserial || error "could not install pyserial!"
 	fi
 	if [[ -z "$(which tmate)" ]]; then
@@ -223,7 +223,7 @@ function install_flasher {
 	fi
 
 	if [[ "$(uname)" == "Linux" ]]; then
-		SCRIPTDIR="$(dirname $(readlink -e $0) )/flasher"
+		SCRIPTDIR="$(dirname $(readlink -e $0) )" #/flasher"
 		HOMEDIR="$(eval echo "~${SUDO_USER}")"
 		sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/chip-flasher.desktop
 		sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/start.sh%" $SCRIPTDIR/chip-flasher.desktop
