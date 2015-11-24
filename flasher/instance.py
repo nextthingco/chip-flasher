@@ -2,7 +2,7 @@
 import threading
 import time
 from flasher.fsm import FSM
-import flasher.station_b
+# import flasher.station_b
 import flasher.station_c
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
@@ -99,6 +99,7 @@ class Instance(object):
 				log.info( "Trigger is enabled" )
 
 			# thread callback
+			log.debug("State: " + self.state)
 			retvalues = fsm[ self.state ][ "callback" ]( self )
 			self.errcode = None
 			if type(retvalues) is str:

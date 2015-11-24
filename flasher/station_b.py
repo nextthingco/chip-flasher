@@ -21,7 +21,8 @@ class StationB( fsm.FSM ):
 		chip_id = chip_id + 1
 		PersistentData.set( "flash-count", chip_id )
 		PersistentData.write()
-		return "on_power_test"
+		return "on_upload"
+#		return "on_power_test"
 
 	@fsm.list_index( 5 )
 	@fsm.name( "Power Test" )
