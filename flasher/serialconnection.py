@@ -4,17 +4,19 @@ import os
 import serial
 import sys
 import time
+# from usb import USB #it would be nice if we could get the device this way, but I don't see how -HK
 # import termios
 from pexpect import fdpexpect
 import pexpect
 
-COMMAND_PROMPT = 'root@chip:~# '
+COMMAND_PROMPT = '.*@chip.*[$#] '
 # COMMAND_PROMPT = '# '
 LOGIN = "root"
 PASSWORD = "chip"
 BAUD=115200
 SERIAL_DEVICE_NAME="/dev/chip_usb" 
 TIMEOUT = 30
+
 log = logging.getLogger("serial")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -29,10 +31,17 @@ class SerialConnection(object):
         :param login: remote login
         :param password: remote password
         '''
+#         if serialDeviceName is None:
+#             self.usb = USB()
+#             device = self.usb.find_device("serial-gadget")
+#             pass
+#             
+            
+#         usb1.USBContext.getByVendorIDAndProductID(self, vendor_id, product_id, skip_on_access_error, skip_on_error)
         self.login = login;
         self.password = password;
         # self.serialDeviceName = "/dev/tty.usbmodem1421"
-    	self.serialDeviceName = serialDeviceName
+        self.serialDeviceName = serialDeviceName
         self.timeout = TIMEOUT #how long commands should wait for until timing out.
         
         self.tty = None
@@ -84,7 +93,7 @@ class SerialConnection(object):
                 if e.errno != 2: # device not found
                     log.error("Could not connect")
                     return None
-            time.sleep(1)
+                time.sleep(1)
                 
         
         
@@ -97,7 +106,8 @@ class SerialConnection(object):
             while True:
                 if self.tty is None: #if first time or the session closed on us
                     self.connect()
-                    self.tty.sendline("\n")  # send a blank line
+                    self.tty.sendline("\n\n\n")  # send blank lines to wakeup the device
+                    time.sleep(.3) #wait for device to process these empty lines
                 try:
                     index = self.tty.expect([".*login: ",".*assword.*", COMMAND_PROMPT, pexpect.EOF, pexpect.TIMEOUT], timeout=self.timeout)
                 except Exception, e:
@@ -123,6 +133,7 @@ class SerialConnection(object):
                     break  # we have a command prompt, either through login or already there
                 elif index == 3: #benign, try again
                     log.debug("EOF on login. benign")
+                    time.sleep(.1) #wait and try again
                 elif index == 4: # The session was closed by the remote.
                     self.close()
         except Exception, e:
@@ -144,18 +155,18 @@ class SerialConnection(object):
             return None
         try:
             if delimiter:
-                cmd = cmd + "; echo '" + delimiter + "';"
+                cmd = cmd + " && echo '" + delimiter + "'"
             self.tty.sendline(cmd) #send command to remote
             if (blind): #if don't care about the result. For example, poweroff
                 return None
 
-#             time.sleep(.01) # give time for command to arrive on remote before we look for its echo back
             self.__expect(cmd+"\r\n",expectTimeout=timeout) #First, expect that the command is echoed back to us. We're not interested in it
             if delimiter:
-                self.__expect("\r\n" + delimiter + "\r\n" + COMMAND_PROMPT) #Now __expect the newline and command prompt
+                self.__expect("" + delimiter + "\r\n" + COMMAND_PROMPT) #Now __expect the newline and command prompt
             else:      
                 self.__expect("\r\n" + COMMAND_PROMPT) #Now __expect the newline and command prompt
             result = self.tty.before #everything up to the newline and command prompt is our result
+            result = result.rstrip("\r\n") #in most cases there will be a new line. Only if the return is blank will it be empty
             self.tty.sendline("") #For next time, we want to have a prompt ready
             return result
         except Exception, e: # This will happen if the command is invalid on the remote. 
@@ -191,8 +202,10 @@ def main():
     ser = SerialConnection()
     for i in range(1,2):
         print ser.send("hostname")
-        print ser.send("ps -x")
-        print ser.send("sleep 12; echo hi; ",timeout=1) 
+        print "result: " + ser.send("ip link set wlan0 up")
+        print "____"
+#         print ser.send("ps -x")
+#         print ser.send("sleep 12; echo hi; ",timeout=1) 
 #         ser.send("poweroff",blind=True)
     ser.close()
 
