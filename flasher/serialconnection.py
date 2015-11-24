@@ -13,7 +13,7 @@ COMMAND_PROMPT = 'root@chip:~# '
 LOGIN = "root"
 PASSWORD = "chip"
 BAUD=115200
-SERIAL_DEVICE_NAME="/dev/ttyACM0"
+SERIAL_DEVICE_NAME="/dev/chip_usb"
 TIMEOUT = 30
 log = logging.getLogger("serial")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
