@@ -1,5 +1,15 @@
 *.pyc
+*.log
+logs/*
+.idea/*
+.settings/*
 .Python
 .hide/*
+*.deb
+.stats.json
+flasher/testjig
+flasher/testjig/*
+.project
+.pydevproject
 .DS_Store
 pip-selfcheck.json
