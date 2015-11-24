@@ -6,7 +6,8 @@ from flasher.persistentdata import PersistentData
 from flasher.logmanager import LogManager
 from testjig.ChipTest import TestSuite as ChipTester
 
-test = ChipTester("/dev/ttyACM2")
+# test = ChipTester("/dev/ttyACM0")
+test = None
 # FSM callbacks
 @fsm.station( "station-b" )
 class StationB( fsm.FSM ):

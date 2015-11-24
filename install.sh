@@ -142,6 +142,9 @@ function install_linux {
 	if [[ -z "$( ${PIP} show libusb1)" ]]; then
 		${PIP} install libusb1 || error "could not install libusb1!"
 	fi
+    if [[ -z "$( ${PIP} show pexpect)" ]]; then
+        ${PIP} install pexpect || error "could not install pexpect!"
+    fi
 	if [[ -z "$( ${PIP} show pyserial)" ]]; then
 		${PIP} install pyserial || error "could not install pyserial!"
 	fi

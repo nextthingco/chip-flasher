@@ -2,8 +2,8 @@
 import threading
 import time
 from flasher.fsm import FSM
-# import flasher.station_b
-import flasher.station_c
+import flasher.station_b
+# import flasher.station_c
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.progressbar import ProgressBar
