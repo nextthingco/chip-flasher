@@ -13,7 +13,7 @@ COMMAND_PROMPT = 'root@chip:~# '
 LOGIN = "root"
 PASSWORD = "chip"
 BAUD=115200
-SERIAL_DEVICE_NAME="/dev/ttyACM1"
+SERIAL_DEVICE_NAME="/dev/ttyACM0"
 TIMEOUT = 30
 log = logging.getLogger("serial")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -64,14 +64,16 @@ class SerialConnection(object):
         try:
             self.ser = serial.Serial(port=self.serialDeviceName, baudrate=BAUD, timeout=self.timeout)  # open the serial port. Must make a class member so it won't get cleaned up
         except Exception, e:
-            log.exception(e)
-            return None
+            if e.errno == 2:
+                log.debug("Could not open serial device: " + self.serialDeviceName)
+            else:
+                log.exception(e)
 
         try:
             self.tty = fdpexpect.fdspawn(self.ser)  # , 'wb', timeout=50)
             assert (self.tty.isalive())
         except Exception, e:
-            log.exception(e)
+            log.debug("Could not open serial device [2]: " + self.serialDeviceName)
             
     def connect(self):
         log.debug("connecting")
