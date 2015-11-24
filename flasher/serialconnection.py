@@ -155,14 +155,14 @@ class SerialConnection(object):
             return None
         try:
             if delimiter:
-                cmd = cmd + " && echo '" + delimiter + "'"
+                cmd = cmd + " && echo " + delimiter + ""
             self.tty.sendline(cmd) #send command to remote
             if (blind): #if don't care about the result. For example, poweroff
                 return None
 
-            self.__expect(cmd+"\r\n",expectTimeout=timeout) #First, expect that the command is echoed back to us. We're not interested in it
+            self.__expect(delimiter+"\r\n", expectTimeout=timeout) #First, expect that the command is echoed back to us. We're not interested in it
             if delimiter:
-                self.__expect("" + delimiter + "\r\n" + COMMAND_PROMPT) #Now __expect the newline and command prompt
+                self.__expect("" + delimiter + "\r\n" + COMMAND_PROMPT, exact=False) #Now __expect the newline and command prompt
             else:      
                 self.__expect("\r\n" + COMMAND_PROMPT) #Now __expect the newline and command prompt
             result = self.tty.before #everything up to the newline and command prompt is our result
@@ -173,7 +173,7 @@ class SerialConnection(object):
             log.exception(e)
             return None
         
-    def __expect(self,regex,expectTimeout=TIMEOUT):
+    def __expect(self,findString , expectTimeout=TIMEOUT, exact = False):
 
         index = 0
         start = time.clock()
@@ -184,7 +184,10 @@ class SerialConnection(object):
             if time.clock() > end: #this timeout behavior isn't really coret since the __expect below has its own timeout
                 return None
             time.sleep(step)
-            index = self.tty.expect([pexpect.EOF, regex]) 
+            if exact:
+                index = self.tty.expect_exact([pexpect.EOF, findString]) 
+            else:
+                index = self.tty.expect([pexpect.EOF, findString]) 
             
            
     def close(self):
