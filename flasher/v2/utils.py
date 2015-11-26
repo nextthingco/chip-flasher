@@ -8,6 +8,7 @@ from kivy.clock import Clock
 from functools import partial
 from threading import Timer
 import cmd
+# from observed import observable_method
 
 class Progress(object):
 	def __init__(self, start = 0.0, finish=100.0):
@@ -18,6 +19,7 @@ class Progress(object):
 	def addProgress(self,change):
 		self.setProgress(self.current + change)
 
+# 	@observable_method	
 	def setProgress(self, value):
 		self.current = value
 		
@@ -46,8 +48,7 @@ class CommandRunner:
 			timer.start()
 			Clock.schedule_interval(self.progress.addProgress.__get__(self.progress, Progress), 1.0/expectedTime ) # callback for bound method
 			proc.communicate()
-			proc.wait()	@observable_method	
-
+			proc.wait()
 			returncode = proc.returncode
 		finally:
 			timer.cancel()
