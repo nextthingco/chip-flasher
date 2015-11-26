@@ -2,11 +2,11 @@
 
 from flasher.serialconnection import SerialConnection
 import re
-from test_case import TestCase
+from test_case import ObservableTestCase
 from obsub import event
-class HardwareTest(TestCase):
+class HardwareTest(ObservableTestCase):
     def __init__(self,name):
-        TestCase.__init__(self, name)
+        ObservableTestCase.__init__(self, name)
         self.ser = None #maybe pass one in?
 
     @event
