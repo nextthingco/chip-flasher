@@ -15,7 +15,7 @@ log = logging.getLogger("serial")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
-class Upload():
+class Upload(unittest.TestCase):
     
     stateNames = { "test_00_dummy":"Dummy...\ndum",
                   "test_00_dummy2":"Dummy2...\ndum",
