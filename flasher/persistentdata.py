@@ -1,6 +1,6 @@
 import json
 from os import path
-from flasher.logmanager import LogManager
+from logmanager import LogManager
 
 cwd = path.dirname( path.dirname( path.realpath( __file__ ) ) )
 log = LogManager.get_global_log()

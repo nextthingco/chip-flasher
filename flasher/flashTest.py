@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from flasher.usb import USB,wait_for_usb
+from usb import USB,wait_for_usb
 from unittest import TestCase
 import logging
 import sys
 from observable_test import *
 # from observable_test import label
 # from observed import observable_method
-from utils import CommandRunner
+from commandRunner import CommandRunner
 
 log = logging.getLogger("serial")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -38,10 +38,24 @@ class Upload(TestCase):
 #             raise Exception( "Flashing failed: ", "Could not find FEL device" )
         pass  
     
+    
+    @label("Waiting to plug in...\n chinese")
+    @progress(60)
+    @timeout(400)
+    def test_00_plugin(self):
+        time.sleep(5)
+
+    @label("Idle\Idle in chinese...")
+    def test_001_Idle(self):    
+        time.sleep(5)
+        if not wait_for_usb( instance=None, type="fel", log=log, timeout=30 ):
+            raise Exception( "Flashing failed: ", "Could not find FEL device" )
+    
 
     @label("Waiting for FEL\nFEL in chinese...")
     @progress(30)
     @timeout(50)
+    @promptBefore("Click to begin\n in Chinese")
     def test_01_FEL(self):    
         time.sleep(5)
         if not wait_for_usb( instance=None, type="fel", log=log, timeout=30 ):

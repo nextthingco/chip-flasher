@@ -84,6 +84,24 @@ def progress(seconds):
         return _addAttribute(method, "progress", seconds)
     return method_call
 
+def promptBefore(text):
+    '''
+    @label decorator
+    :param value: user should be prompted for input (click) with this text before test execution
+    '''
+    def method_call(method):
+        return _addAttribute(method, "promptBefore", text)
+    return method_call
+    
+def promptAfter(text):
+    '''
+    @label decorator
+    :param value: user should be prompted for input (click) with this text after test execution
+    '''
+    def method_call(method):
+        return _addAttribute(method, "promptAfter", text)
+    return method_call
+
 def timeout(seconds):
     '''
     @timeout decorator
@@ -126,6 +144,20 @@ def labelForTest(test):
     '''
     return _decoratedAttribute(test, 'label')
 
+def promptBeforeForTest(test):
+    '''
+    Get the @promptBefore
+    :param test:
+    '''
+    return _decoratedAttribute(test, 'promptBefore')
+
+def promptAfterForTest(test):
+    '''
+    Get the @promptAfter
+    :param test:
+    '''
+    return _decoratedAttribute(test, 'promptAfter')
+
 def timeoutForTest(test):
     '''
     Get the @timeout
@@ -145,9 +177,13 @@ def methodForTest(test):
     Get the method for a test. This can serve as a key with which to refer to this test
     :param test:
     '''
+    #TODO this should return a unique value- the pointer ideally
     return test._testMethodName
 
 class Progress(object):
+    '''
+    Small class to keep track of progress and update progress observers on change
+    '''
     def __init__(self, progressObservers = [], start = 0.0, finish=1.0):
         self.progressObservers = progressObservers
         self.start = start

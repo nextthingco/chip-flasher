@@ -12,11 +12,8 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
 from kivy.core.window import Window
 from kivy.clock import Clock
-from flasher.instance import Instance
-from flasher import states
-from flasher.fsm import FSM
-from flasher.persistentdata import PersistentData
-from flasher.logmanager import LogManager
+from persistentdata import PersistentData
+from logmanager import LogManager
 from os import path
 from observable_test import *
 import os
@@ -25,7 +22,7 @@ import sys
 import subprocess
 import unittest
 from flashTest import Upload
-from hwtest import HardwareTest
+from hardwareUnitTest import HardwareTest
 from kivy.uix.label import Label
 
 OSX_FONT="/Library/Fonts/Arial Unicode.ttf"
@@ -187,6 +184,10 @@ class FlasherApp( App ):
 # 		if testCase.stateNames and method in testCase.stateNames:
 		label = self.labelMap[method]
 		if stateInfo['when']== "before":
+			promptBefore = promptBeforeForTest(testCase)
+			if promptBefore:
+				#TODO suspend the thread and awaken it on button click
+				print "Prompt " + promptBefore
 			label.color = self.screen.activeColor
 # Not working yet				
 # 				progressSeconds =  progressForTest(testCase)
