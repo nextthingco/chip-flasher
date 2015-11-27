@@ -1,15 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
+from observable_test import *
 from flasher.serialconnection import SerialConnection
 import re
-from test_case import ObservableTestCase
-from obsub import event
-class HardwareTest(ObservableTestCase):
-    def __init__(self,name):
-        ObservableTestCase.__init__(self, name)
-        self.ser = None #maybe pass one in?
+from unittest import TestCase
+class HardwareTest(TestCase):
 
-    @event
     def setUp (self):
         if not self.ser:
             try:
@@ -19,18 +16,17 @@ class HardwareTest(ObservableTestCase):
             except:
                 self.fail("Could not create serial connection. (except)")
 
-    @event        
     def tearDown (self):
         self.ser = None # will call destructor
   
-    @event    
+    @label("Verifying...\n验证中" )
     def runTest(self):
         try:
             hostname = self.ser.send("hostname")
             print hostname
-            hwTestResult = self.ser.send("ls -l",timeout=60)
+            hwTestResult = self.ser.send("hwtest",timeout=60)
             print hwTestResult
-    #         ser.send("poweroff",blind=True);
+            self.ser.send("poweroff",blind=True);
         
             if re.search(r'.*### ALL TESTS PASSED ###.*',hwTestResult):
                 result = 0
