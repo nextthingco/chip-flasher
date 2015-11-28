@@ -18,10 +18,7 @@ class FactoryHardwareTest:
             self.i2cTest(0)
             self.i2cTest(1)
             self.i2cTest(2)
-            print( "ok!")
-            print( "NO1")
             self.hardwareListTest()
-            print( "OK")
 
             self.AXPtest()
 
