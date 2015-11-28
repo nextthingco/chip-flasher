@@ -18,8 +18,10 @@ class FactoryHardwareTest:
             self.i2cTest(0)
             self.i2cTest(1)
             self.i2cTest(2)
-        
+            print( "ok!")
+            print( "NO1")
             self.hardwareListTest()
+            print( "OK")
 
             self.AXPtest()
 
@@ -30,11 +32,13 @@ class FactoryHardwareTest:
             self.stressTest()
 
         except Exception, e:
+            self.error+=1
             print( "FAILED TO CONNECT TO CHIP!")
 
     def initalTest(self):
-        print( "Waiting for CHIP...")
+        print( "Waiting for CHIP to boot...")
         hostname = self.ser.send("hostname",timeout=90)
+        print hostname
         if re.search(r'.*chip.*',hostname):
             print( "CHIP FOUND! Running tests...")
         else:
@@ -42,13 +46,14 @@ class FactoryHardwareTest:
             print( "FAILED! Hostname not found." )
 
     def hardwareListTest(self):
-        print( "Testing hardware list..."),
-        hardwareList = self.ser.send("lshw -disable usb -disable scsi |grep -v size|grep -v self.serial| grep -v physical |grep -v configuration",timeout=1.5)
+        print( "Testing hardware list...")
+        hardwareList = self.ser.send("lshw -disable usb -disable scsi |grep -v size|grep -v self.serial| grep -v physical |grep -v configuration")
         compareList = self.ser.send("cat /usr/lib/hwtest/lshw_ref.txt")
         compareList = hardwareList.replace( "network:1 DISABLED", "network:1") #Hack. Sometimes network1 is disabled, which isn't a failure.
         hardwareList = compareList.replace( "network:1 DISABLED", "network:1")
         hardwareList = ''.join(hardwareList.split())
         compareList = ''.join(compareList.split())
+        
         if( compareList == hardwareList ):
             print( "PASSED")
         else:
@@ -118,7 +123,7 @@ class FactoryHardwareTest:
         GPIO = 408
         while GPIO < 415:
             print( "Testing XIO pin " + str(GPIO) + "..." ),
-            self.ser.send( "echo " + str( GPIO ) + " > /sys/class/gpio/export",timeout=2)
+            self.ser.send( "echo " + str( GPIO ) + " > /sys/class/gpio/export")
             self.ser.send( "echo " + str( GPIO+1 ) + " > /sys/class/gpio/export")
             self.ser.send( "echo \"out\" > /sys/class/gpio/gpio" + str(GPIO) + "/direction" )
             self.ser.send( "echo 1 > /sys/class/gpio/gpio" + str(GPIO) + "/active_low")
@@ -140,7 +145,7 @@ class FactoryHardwareTest:
     def stressTest(self):
         print( "Starting stress test..." )
         time.sleep(0.5)
-        stress = self.ser.send("stress --cpu 8 --io 4 --vm 2 --vm-bytes 128M --timeout 10s",timeout=10.5)
+        stress = self.ser.send("stress --cpu 8 --io 4 --vm 2 --vm-bytes 128M --timeout 10s")
         if re.search(r'.*successful run completed.*',stress):
             print( "STRESS TEST PASSED\n")
         else:

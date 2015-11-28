@@ -109,7 +109,7 @@ class SerialConnection(object):
                     self.tty.sendline("\n\n\n")  # send blank lines to wakeup the device
                     time.sleep(.3) #wait for device to process these empty lines
                 try:
-                    index = self.tty.expect([".*login: ",".*assword.*", COMMAND_PROMPT, pexpect.EOF, pexpect.TIMEOUT], timeout=self.timeout)
+                    index = self.tty.expect([".*login: ",".*assword.*", "=>", COMMAND_PROMPT, pexpect.EOF, pexpect.TIMEOUT], timeout=self.timeout)
                 except Exception, e:
                     print e
                     if e.errno == 11: #in use error
@@ -129,12 +129,17 @@ class SerialConnection(object):
                     self.tty.sendline(self.password)
                     time.sleep(2)
                 elif index == 2:
+                    log.debug("Uboot prompt detected")
+                    self.tty.sendline("reset") # Reset CHIP so that we're no longer in the uboot environment.
+                    time.sleep(5) # Wait to make sure we're passed the "press any key to stop autoboot" prompt
+                    self.tty = None
+                elif index == 3:
                     log.debug("Have prompt, logged in")
                     break  # we have a command prompt, either through login or already there
-                elif index == 3: #benign, try again
+                elif index == 4: #benign, try again
                     log.debug("EOF on login. benign")
                     time.sleep(.1) #wait and try again
-                elif index == 4: # The session was closed by the remote.
+                elif index == 5: # The session was closed by the remote.
                     self.close()
         except Exception, e:
             logging.exception(e)
