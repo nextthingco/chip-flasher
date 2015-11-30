@@ -14,10 +14,6 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 class Upload(TestCase):
-    stateNames = { 
-                  "test_01_FEL":"xxxx",
-                  "test_02_flash":"Uploading...\n正在加载固件",
-                  }
     
     err_codes = {
         -1: "Unknown Failure",
