@@ -1,13 +1,24 @@
 #!/usr/bin/env python
 from serialconnection import SerialConnection
+import os
 import re
 import time
 
 class FactoryHardwareTest:
     def __init__(self):
         try:
+            if( not os.path.exists("/etc/udev/rules.d/uart.rules") ):
+                # Create udev rule for our UART serial cable if it doesn't already exist.
+                # This code will probably need to change once we're testing more than one CHIP at once.
+                file = open("/etc/udev/rules.d/uart.rules", "w")
+                file.write("ACTION==\"add\", ATTRS{idVendor}==\"067b\", ATTRS{idProduct}==\"2303\", SYMLINK+=\"uart\"")
+                file.close()
+                os.system("sudo udevadm trigger")
+                print( "UART udev rule created! You may need to unplug and replug the USB device and restart.")
+                print( "Please try again.")
+
             self.error = 0
-            self.ser = SerialConnection()
+            self.ser = SerialConnection("root","chip","/dev/uart")
             self.initalTest()
 
             self.wlanTest(0)
