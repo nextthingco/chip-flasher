@@ -88,8 +88,9 @@ class FlasherScreen( GridLayout ):
 		return True
 	
 	def onStateChange(self,stateInfo):
-		self.button.text = stateInfo['label']
-		self.button.color = self.activeColor
+		if stateInfo['label']:
+			self.button.text = stateInfo['label']
+			self.button.color = self.activeColor
 
 	def set_progress(self, value, max=100 ):
 		self.progressbar.value = value*100.0
@@ -127,9 +128,11 @@ class FlasherApp( App ):
 
 		suite = self._loadSuite()
 		for test in suite:
-			label = Label( text = labelForTest(test), color = self.screen.passiveColor, font_name=FONT_NAME, halign="center" )
-			labels.append(label)
-			self.labelMap[methodForTest(test)] = label
+			text = labelForTest(test)
+			if text:
+				label = Label( text = labelForTest(test), color = self.screen.passiveColor, font_name=FONT_NAME, halign="center" )
+				labels.append(label)
+				self.labelMap[methodForTest(test)] = label
 		
 # 		labels.append(Label( text='pass', font_name=FONT_NAME, halign="center" ))
 # 		labels.append(Label( text='fail', font_name=FONT_NAME, halign="center" ))
@@ -182,21 +185,22 @@ class FlasherApp( App ):
 		testCase = stateInfo['testCase']
 		# update the color of the label assocated with this test
 # 		if testCase.stateNames and method in testCase.stateNames:
-		label = self.labelMap[method]
-		if stateInfo['when']== "before":
-			promptBefore = promptBeforeForTest(testCase)
-			if promptBefore:
-				#TODO suspend the thread and awaken it on button click
-				print "Prompt " + promptBefore
-			label.color = self.screen.activeColor
-# Not working yet				
-# 				progressSeconds =  progressForTest(testCase)
-# 				if progressSeconds:
-# 					progress = Progress(progressObservers = [self.onProgressChange.__get__(self,FlasherApp)])
-# 					Clock.schedule_interval(progress.addProgress.__get__(progress, Progress), 1.0/progressSeconds ) # callback for bound method
-		else:
-			label.color = self.screen.passiveColor
-		self.screen.onStateChange(stateInfo)
+		label = self.labelMap.get(method,None)
+		if label:
+			if stateInfo['when']== "before":
+				promptBefore = promptBeforeForTest(testCase)
+				if promptBefore:
+					#TODO suspend the thread and awaken it on button click
+					print "Prompt " + promptBefore
+				label.color = self.screen.activeColor
+	# Not working yet				
+	# 				progressSeconds =  progressForTest(testCase)
+	# 				if progressSeconds:
+	# 					progress = Progress(progressObservers = [self.onProgressChange.__get__(self,FlasherApp)])
+	# 					Clock.schedule_interval(progress.addProgress.__get__(progress, Progress), 1.0/progressSeconds ) # callback for bound method
+			else:
+				label.color = self.screen.passiveColor
+			self.screen.onStateChange(stateInfo)
 	
 	def onProgressChange(self,progress):
 		value = progress * 100
@@ -234,9 +238,10 @@ class FlasherApp( App ):
 		return self.screen
 
 	def on_stop( self ):
-		states.stop()
-		PersistentData.write()
-		LogManager.close_all_logs()
+# 		PersistentData.write()
+# 		LogManager.close_all_logs()
+		pass
+
 		
 
 if __name__ == '__main__':

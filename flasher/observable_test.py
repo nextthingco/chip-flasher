@@ -74,6 +74,7 @@ def label(text):
     def method_call(method):
         return _addAttribute(method, "label", text)
     return method_call
+    
         
 def progress(seconds):
     '''
@@ -140,6 +141,7 @@ def _decoratedAttribute(test, name):
 def labelForTest(test):
     '''
     Get the @label
+    Note that a None value for the label indicates that the test is run 'quietly', without a label showing up
     :param test:
     '''
     return _decoratedAttribute(test, 'label')

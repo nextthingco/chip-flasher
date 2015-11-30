@@ -38,21 +38,23 @@ class Upload(TestCase):
     @label("Waiting to plug in...\n chinese")
     @progress(60)
     @timeout(400)
-    def test_00_plugin(self):
+    def test_000_plugin(self):
         time.sleep(5)
 
-    @label("Idle\Idle in chinese...")
+    @label(None)
     def test_001_Idle(self):    
+        print "test 001 idle"
         time.sleep(5)
         if not wait_for_usb( instance=None, type="fel", log=log, timeout=30 ):
             raise Exception( "Flashing failed: ", "Could not find FEL device" )
     
 
-    @label("Waiting for FEL\nFEL in chinese...")
+    @label("wait for usb")
     @progress(30)
     @timeout(50)
     @promptBefore("Click to begin\n in Chinese")
     def test_01_FEL(self):    
+        print "zzzzzzzzzzzclick to begin"
         time.sleep(5)
         if not wait_for_usb( instance=None, type="fel", log=log, timeout=30 ):
             raise Exception( "Flashing failed: ", "Could not find FEL device" )
