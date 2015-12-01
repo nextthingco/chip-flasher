@@ -66,6 +66,15 @@ def _addAttribute(meth, att, name):
     meth._attributes[att] = name
     return meth
           
+def requiresFixture(name):
+    '''
+    @label decorator
+    :param value: Indicate that this test requires a certain hardware fixture in place
+    '''
+    def method_call(method):
+        return _addAttribute(method, "requiresFixture", name)
+    return method_call
+    
 def label(text):
     '''
     @label decorator
@@ -169,6 +178,14 @@ def timeoutForTest(test):
     :param test:
     '''
     return _decoratedAttribute(test, 'timeout')
+
+def requiredFixtureForTest(test):
+    '''
+    Get the method for a test. This can serve as a key with which to refer to this test
+    :param test:
+    '''
+    #TODO this should return a unique value- the pointer ideally
+    return _decoratedAttribute(test, 'requiredFixture')
 
 def progressForTest(test):
     '''

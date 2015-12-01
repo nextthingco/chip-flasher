@@ -10,18 +10,19 @@ import time
 class FactoryHardwareTest(TestCase):
     def setUp(self):
         try:
-            if( not os.path.exists("/etc/udev/rules.d/uart.rules") ):
-                # Create udev rule for our UART serial cable if it doesn't already exist.
-                # This code will probably need to change once we're testing more than one CHIP at once.
-                file = open("/etc/udev/rules.d/uart.rules", "w")
-                file.write("ACTION==\"add\", ATTRS{idVendor}==\"067b\", ATTRS{idProduct}==\"2303\", SYMLINK+=\"uart\"")
-                file.close()
-                os.system("sudo udevadm trigger")
-                print( "UART udev rule created! You may need to unplug and replug the USB device and restart.")
-                print( "Please try again.")
-
-            self.ser = SerialConnection("root","chip","/dev/uart")
-#             self.ser = SerialConnection("root","chip","/dev/chip_usb")
+            if False:
+                if( not os.path.exists("/etc/udev/rules.d/uart.rules") ):
+                    # Create udev rule for our UART serial cable if it doesn't already exist.
+                    # This code will probably need to change once we're testing more than one CHIP at once.
+                    file = open("/etc/udev/rules.d/uart.rules", "w")
+                    file.write("ACTION==\"add\", ATTRS{idVendor}==\"067b\", ATTRS{idProduct}==\"2303\", SYMLINK+=\"uart\"")
+                    file.close()
+                    os.system("sudo udevadm trigger")
+                    print( "UART udev rule created! You may need to unplug and replug the USB device and restart.")
+                    print( "Please try again.")
+    
+                self.ser = SerialConnection("root","chip","/dev/uart")
+            self.ser = SerialConnection("root","chip","/dev/chip_usb")
 
         except Exception, e:
             raise Exception( "Failed to connect to CHIP" )
@@ -33,7 +34,7 @@ class FactoryHardwareTest(TestCase):
 
     def test_001_initial(self):
         #print( "Waiting for CHIP to boot...")
-        hostname = self.ser.sendOld("hostname",timeout=90)
+        hostname = self.ser.send("hostname",timeout=90)
         if re.search(r'.*chip.*',hostname):
             print( "CHIP FOUND! Running tests...")
         else:
@@ -45,10 +46,8 @@ class FactoryHardwareTest(TestCase):
 
     def test_002_wlan(self):
         for x in range(3):
-            print( "Activating WLAN" + str(x) + "..."),
-            wlan = self.ser.send("sudo ip link set wlan0 up")
-            time.sleep(1)
-            code = self.ser.send("echo $?")
+            print( "Activating WLAN" + str(x) + "...")
+            code = self.ser.send("sudo ip link set wlan0 up && echo $?")
             if( code == "0" ):
                 print( "PASSED" )
             else:
