@@ -26,7 +26,7 @@ from flashTest import Upload
 from hardwareUnitTest import HardwareTest
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
-
+from hwtest import FactoryHardwareTest
 OSX_FONT="/Library/Fonts/Arial Unicode.ttf"
 UBUNTU_FONT="/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
 if os.path.isfile( OSX_FONT ):
@@ -279,7 +279,7 @@ class TestingThread(threading.Thread):
 		self.screen.set_progress(progress * 100)
 
 if __name__ == '__main__':
-	app = FlasherApp("Upload")
+	app = FlasherApp("FactoryHardwareTest")
 	try:
 		app.run()
 	except (KeyboardInterrupt, SystemExit):

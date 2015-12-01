@@ -18,7 +18,7 @@ SERIAL_DEVICE_NAME="/dev/chip_usb"
 TIMEOUT = 30
 
 log = logging.getLogger("serial")
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class SerialConnection(object):
     '''
@@ -121,6 +121,7 @@ class SerialConnection(object):
                     continue # try again. A new connection will be made
                 # Go through the various possibilities. The index corresponds to the array passed into expect() above
 #                 print self.tty.before
+                print index
                 if index == 0:
                     log.debug("Sending login")
                     self.tty.sendline(self.login)
@@ -135,7 +136,7 @@ class SerialConnection(object):
                     self.tty = None
                 elif index == 3:
                     log.debug("Have prompt, logged in")
-                    self.tty.sendLine("stty -echo") #turn echo off
+#                     self.tty.sendLine("stty -echo") #turn echo off
                     break  # we have a command prompt, either through login or already there
                 elif index == 4: #benign, try again
                     log.debug("EOF on login. benign")
@@ -143,7 +144,7 @@ class SerialConnection(object):
                 elif index == 5: # The session was closed by the remote.
                     self.close()
         except Exception, e:
-            logging.exception(e)
+            log.exception(e)
             log.error("unable to log in")
             return False
         return True

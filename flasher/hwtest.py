@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from serialconnection import SerialConnection
-from unittest import TestCase
+from unittest import TestCase, TextTestRunner, TestLoader
 from observable_test import *
 from commandRunner import CommandRunner
 import os
@@ -21,6 +21,7 @@ class FactoryHardwareTest(TestCase):
                 print( "Please try again.")
 
             self.ser = SerialConnection("root","chip","/dev/uart")
+#             self.ser = SerialConnection("root","chip","/dev/chip_usb")
 
         except Exception, e:
             raise Exception( "Failed to connect to CHIP" )
@@ -32,7 +33,7 @@ class FactoryHardwareTest(TestCase):
 
     def test_001_initial(self):
         #print( "Waiting for CHIP to boot...")
-        hostname = self.ser.send("hostname",timeout=90)
+        hostname = self.ser.sendOld("hostname",timeout=90)
         if re.search(r'.*chip.*',hostname):
             print( "CHIP FOUND! Running tests...")
         else:
@@ -46,6 +47,7 @@ class FactoryHardwareTest(TestCase):
         for x in range(3):
             print( "Activating WLAN" + str(x) + "..."),
             wlan = self.ser.send("sudo ip link set wlan0 up")
+            time.sleep(1)
             code = self.ser.send("echo $?")
             if( code == "0" ):
                 print( "PASSED" )
@@ -174,11 +176,15 @@ class FactoryHardwareTest(TestCase):
             raise Exception( "Stress test failed." )
 
 def main():
-    test = FactoryHardwareTest()
-    if( test.error > 0 ):
-        print ( "!!!! TEST FAILED - TOTAL ERRORS: " + str( test.error ) + " !!!!")
-    else:
-        print( "Test completed! ALL PASSED")
+    tl = TestLoader()
+    suite = tl.loadTestsFromTestCase(FactoryHardwareTest)
+    result = TextTestRunner(verbosity=2, failfast=True).run(suite) # This runs the whole suite of tests. For now, using TextTestRunner
+    print result
+
+#     if( test.error > 0 ):
+#         print ( "!!!! TEST FAILED - TOTAL ERRORS: " + str( test.error ) + " !!!!")
+#     else:
+#         print( "Test completed! ALL PASSED")
 #------------------------------------------------------------------
 if __name__ == "__main__":
 #------------------------------------------------------------------
