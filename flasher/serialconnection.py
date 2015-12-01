@@ -199,7 +199,7 @@ class SerialConnection(object):
             print "error could not login"
             return None
         try:
-            self.tty.expect(pexpect.EOF) #Ignore anything currently in stream; move to the end
+#             self.tty.expect(pexpect.EOF) #Ignore anything currently in stream; move to the end
             cmd = cmd + " && echo " + COMMAND_DELIMETER + ""
             self.tty.sendline(cmd) #send command to remote
             if (blind): #if don't care about the result. For example, poweroff
