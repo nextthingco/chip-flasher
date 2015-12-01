@@ -5,6 +5,7 @@ class Progress(object):
     '''
     def __init__(self, progressObservers = [], timeoutObservers = [], start = 0.0, finish=1.0, timeout=None):
         self.progressObservers = progressObservers
+        self.timeoutObservers = timeoutObservers
         self.start = start
         self.finish = finish
         self.current = start
