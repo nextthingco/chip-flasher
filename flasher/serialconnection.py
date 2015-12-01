@@ -135,6 +135,7 @@ class SerialConnection(object):
                     self.tty = None
                 elif index == 3:
                     log.debug("Have prompt, logged in")
+                    self.tty.sendLine("stty -echo") #turn echo off
                     break  # we have a command prompt, either through login or already there
                 elif index == 4: #benign, try again
                     log.debug("EOF on login. benign")
@@ -148,6 +149,30 @@ class SerialConnection(object):
         return True
         
     def send(self, cmd,  blind=False, timeout = TIMEOUT):
+        '''
+        Send a command over the connection. It will login if necessary
+        :param cmd: The shell command to execute
+        :param blind: If should send without waiting for result. Must be used for poweroff
+        :return The response from the device. None in case of error
+        '''
+        if not self.doLogin():
+            print "error could not login"
+            return None
+        try:
+            self.tty.sendline(cmd) #send command to remote
+            if (blind): #if don't care about the result. For example, poweroff
+                return None
+
+            self.__expect("\r\n" + COMMAND_PROMPT) #Now __expect the newline and command prompt
+            result = self.tty.before #everything up to the newline and command prompt is our result
+            result = result.rstrip("\r\n") #in most cases there will be a new line. Only if the return is blank will it be empty
+            self.tty.sendline("") #For next time, we want to have a prompt ready
+            return result
+        except Exception, e: # This will happen if the command is invalid on the remote. 
+            log.exception(e)
+            return None
+        
+    def sendOld(self, cmd,  blind=False, timeout = TIMEOUT):
         '''
         Send a command over the connection. It will login if necessary
         :param cmd: The shell command to execute
@@ -177,7 +202,7 @@ class SerialConnection(object):
         except Exception, e: # This will happen if the command is invalid on the remote. 
             log.exception(e)
             return None
-        
+
     def __expect(self,findString , expectTimeout=TIMEOUT, exact = False):
 
         index = 0
