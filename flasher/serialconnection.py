@@ -200,7 +200,7 @@ class SerialConnection(object):
             return None
         try:
 #             self.tty.expect(pexpect.EOF) #Ignore anything currently in stream; move to the end
-            cmd = cmd + " && echo " + COMMAND_DELIMETER + ""
+            cmd = cmd + " ; echo " + COMMAND_DELIMETER + ""
             self.tty.sendline(cmd) #send command to remote
             if (blind): #if don't care about the result. For example, poweroff
                 return None
@@ -277,10 +277,18 @@ class SerialConnection(object):
 # Example to test with
 def main():
     ser = SerialConnection()
-    for i in range(1,2):
-        print ser.send("hostname")
-        print "result: " + ser.send("ip link set wlan0 up")
-        print "____"
+#     zzz =  ser.send("ls -l")
+#     print zzz
+    zzz = ser.send ("ls -l")
+    print zzz
+    zzz =  ser.send("sleep 4")
+    print zzz
+    zzz = ser.send ("cat asdf")
+    print zzz
+    
+    zzz = ser.send ("ls -l")
+    print zzz
+    print "done"
 #         print ser.send("ps -x")
 #         print ser.send("sleep 12; echo hi; ",timeout=1) 
 #         ser.send("poweroff",blind=True)
