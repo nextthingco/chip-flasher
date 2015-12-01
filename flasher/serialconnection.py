@@ -10,7 +10,12 @@ import re
 from pexpect import fdpexpect
 import pexpect
 
+COMMAND_PROMPT = r'.*chip.*[$#] '
 COMMAND_PROMPT_REGEX = re.compile(r'.*chip.*[$#] ')
+COMMAND_DELIMETER = "END_COMMAND" # careful not to put any special REGEX chars in this string
+DELIMETER_NEW_LINE_REGEX = re.compile(COMMAND_DELIMETER +  r"\r\n")
+DELIMITER_NEW_LINE_COMMAND_PROMPT_REGEX = re.compile(COMMAND_DELIMETER + r"\r\n" + COMMAND_PROMPT)
+
 LOGIN_REGEX = re.compile(r".*login: ")
 PASSWORD_REGEX = re.compile(r".*assword.*")
 UBOOT_REGEX = re.compile(r"=>")
@@ -24,7 +29,7 @@ SERIAL_DEVICE_NAME="/dev/chip_usb"
 TIMEOUT = 30
 
 log = logging.getLogger("serial")
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 class SerialConnection(object):
     '''
@@ -111,7 +116,8 @@ class SerialConnection(object):
             while True:
                 if self.tty is None: #if first time or the session closed on us
                     self.connect()
-                    self.tty.sendline("\n\n\n")  # send blank lines to wakeup the device
+                    self.tty.sendline("\n")  # send blank lines to wakeup the device
+#                     self.tty.sendline("\n\n\n")  # send blank lines to wakeup the device
                     time.sleep(.3) #wait for device to process these empty lines
                 try:
                     index = self.tty.expect_list([LOGIN_REGEX, PASSWORD_REGEX, UBOOT_REGEX, COMMAND_PROMPT_REGEX, pexpect.EOF, pexpect.TIMEOUT], timeout=self.timeout)
@@ -138,7 +144,7 @@ class SerialConnection(object):
                     self.tty = None
                 elif index == 3:
                     log.debug("Have prompt, logged in")
-                    self.tty.sendline("stty -echo") #turn echo off
+#                     self.tty.sendline("stty -echo") #turn echo off
                     break  # we have a command prompt, either through login or already there
                 elif index == 4: #benign, try again
                     log.debug("EOF on login. benign")
@@ -151,10 +157,40 @@ class SerialConnection(object):
             return False
         return True
         
+#     def sendNew(self, cmd,  blind=False, timeout = TIMEOUT):
+#         '''
+#         Send a command over the connection. It will login if necessary
+#         The login turns echo off. This makes it much easier to parse results. Close will turn echo back on again
+#         :param cmd: The shell command to execute
+#         :param blind: If should send without waiting for result. Must be used for poweroff
+#         :return The response from the device. None in case of error
+#         '''
+#         if not self.doLogin():
+#             print "error could not login"
+#             return None
+#         try:
+#             self.tty.flush()
+#             print "before expect eof"
+#             self.tty.expect(pexpect.EOF) #Ignore anything currently in stream; move to the end
+#             print("after expect eof sending:" + cmd)
+#             self.tty.sendline(cmd) #send command to remote
+#             time.sleep(4)
+#             if (blind): #if don't care about the result. For example, poweroff
+#                 return None
+#             self.__expect(COMMAND_PROMPT_REGEX) #Now __expect the a command prompt after execution
+#             result = self.tty.before #everything up to the command prompt is our result
+#             result = result.rstrip("\r\n") #in most cases there will be a new line. Only if the return is blank will it be empty
+#             return result
+#         except Exception, e: # This will happen if the command is invalid on the remote. 
+#             log.exception(e)
+#             return None
+#         finally:
+#             self.tty.sendline("") # for next time's login check, send a blank to get a command prompt
+            
+        
     def send(self, cmd,  blind=False, timeout = TIMEOUT):
         '''
         Send a command over the connection. It will login if necessary
-        The login turns echo off. This makes it much easier to parse results. Close will turn echo back on again
         :param cmd: The shell command to execute
         :param blind: If should send without waiting for result. Must be used for poweroff
         :return The response from the device. None in case of error
@@ -163,22 +199,22 @@ class SerialConnection(object):
             print "error could not login"
             return None
         try:
-            self.__expect(pexpect.EOF) #Ignore anything currently in stream; move to the end
+            self.tty.expect(pexpect.EOF) #Ignore anything currently in stream; move to the end
+            cmd = cmd + " && echo " + COMMAND_DELIMETER + ""
             self.tty.sendline(cmd) #send command to remote
             if (blind): #if don't care about the result. For example, poweroff
                 return None
-            
-            self.__expect(COMMAND_PROMPT_REGEX) #Now __expect the a command prompt after execution
-            result = self.tty.before #everything up to the command prompt is our result
+ 
+            self.__expect(DELIMETER_NEW_LINE_REGEX, expectTimeout=timeout) #First, expect that the command is echoed back to us. We're not interested in it
+            self.__expect(DELIMITER_NEW_LINE_COMMAND_PROMPT_REGEX, exact=False) #Now __expect the newline and command prompt
+            result = self.tty.before #everything up to the newline and command prompt is our result
             result = result.rstrip("\r\n") #in most cases there will be a new line. Only if the return is blank will it be empty
+            self.tty.sendline("") #For next time, we want to have a prompt ready
             return result
         except Exception, e: # This will happen if the command is invalid on the remote. 
             log.exception(e)
             return None
-        finally:
-            self.tty.sendline("") # for next time's login check, send a blank to get a command prompt
-            
-        
+
 #     def sendOld(self, cmd,  blind=False, timeout = TIMEOUT):
 #         '''
 #         Send a command over the connection. It will login if necessary
@@ -232,7 +268,7 @@ class SerialConnection(object):
         Close the connection. Call when you are done. Also gets called if EOF found
         '''
         if self.tty:
-            self.tty.sendline("stty -echo") #turn echo back on
+#             self.tty.sendline("stty -echo") #turn echo back on
             self.tty.close()
         self.tty = None
 

@@ -10,18 +10,18 @@ import time
 class FactoryHardwareTest(TestCase):
     def setUp(self):
         try:
-            if False:
-                if( not os.path.exists("/etc/udev/rules.d/uart.rules") ):
-                    # Create udev rule for our UART serial cable if it doesn't already exist.
-                    # This code will probably need to change once we're testing more than one CHIP at once.
-                    file = open("/etc/udev/rules.d/uart.rules", "w")
-                    file.write("ACTION==\"add\", ATTRS{idVendor}==\"067b\", ATTRS{idProduct}==\"2303\", SYMLINK+=\"uart\"")
-                    file.close()
-                    os.system("sudo udevadm trigger")
-                    print( "UART udev rule created! You may need to unplug and replug the USB device and restart.")
-                    print( "Please try again.")
-    
-                self.ser = SerialConnection("root","chip","/dev/uart")
+#             if False:
+#                 if( not os.path.exists("/etc/udev/rules.d/uart.rules") ):
+#                     # Create udev rule for our UART serial cable if it doesn't already exist.
+#                     # This code will probably need to change once we're testing more than one CHIP at once.
+#                     file = open("/etc/udev/rules.d/uart.rules", "w")
+#                     file.write("ACTION==\"add\", ATTRS{idVendor}==\"067b\", ATTRS{idProduct}==\"2303\", SYMLINK+=\"uart\"")
+#                     file.close()
+#                     os.system("sudo udevadm trigger")
+#                     print( "UART udev rule created! You may need to unplug and replug the USB device and restart.")
+#                     print( "Please try again.")
+#     
+#                 self.ser = SerialConnection("root","chip","/dev/uart")
             self.ser = SerialConnection("root","chip","/dev/chip_usb")
 
         except Exception, e:
@@ -48,7 +48,7 @@ class FactoryHardwareTest(TestCase):
         for x in range(3):
             print( "Activating WLAN" + str(x) + "...")
             code = self.ser.send("sudo ip link set wlan0 up && echo $?")
-            if( code == "0" ):
+            if code == "0":
                 print( "PASSED" )
             else:
                 raise Exception( "WLAN " + str(x) + " failed." )
