@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 from serialconnection import SerialConnection
+from unittest import TestCase
+from observable_test import *
+from commandRunner import CommandRunner
 import os
 import re
 import time
 
-class FactoryHardwareTest:
-    def __init__(self):
+class FactoryHardwareTest(TestCase):
+    def setUp(self):
         try:
             if( not os.path.exists("/etc/udev/rules.d/uart.rules") ):
                 # Create udev rule for our UART serial cable if it doesn't already exist.
@@ -17,43 +20,83 @@ class FactoryHardwareTest:
                 print( "UART udev rule created! You may need to unplug and replug the USB device and restart.")
                 print( "Please try again.")
 
-            self.error = 0
             self.ser = SerialConnection("root","chip","/dev/uart")
-            self.initalTest()
-
-            self.wlanTest(0)
-            self.wlanTest(1)
-            self.wlanTest(2)
-            self.wlanEnumTest()
-
-            self.i2cTest(0)
-            self.i2cTest(1)
-            self.i2cTest(2)
-            self.hardwareListTest()
-
-            self.AXPtest()
-
-            self.gpioExpanderTest()
-
-            self.xioTest()
-
-            self.stressTest()
 
         except Exception, e:
-            self.error+=1
-            print( "FAILED TO CONNECT TO CHIP!")
+            raise Exception( "Failed to connect to CHIP" )
 
-    def initalTest(self):
-        print( "Waiting for CHIP to boot...")
+    @label("Waiting for boot...\n chinese")
+    @progress(30)
+    @timeout(90)
+    @promptBefore("Click to begin\n in Chinese")
+
+    def test_001_initial(self):
+        #print( "Waiting for CHIP to boot...")
         hostname = self.ser.send("hostname",timeout=90)
-        print hostname
         if re.search(r'.*chip.*',hostname):
             print( "CHIP FOUND! Running tests...")
         else:
-            self.error+=1
-            print( "FAILED! Hostname not found." )
+            raise Exception( "Hostname not found." )
 
-    def hardwareListTest(self):
+    @label("Activate WLAN...\n chinese")
+    @progress(60)
+    @timeout(5)
+
+    def test_002_wlan(self):
+        for x in range(3):
+            print( "Activating WLAN" + str(x) + "..."),
+            wlan = self.ser.send("sudo ip link set wlan0 up")
+            code = self.ser.send("echo $?")
+            if( code == "0" ):
+                print( "PASSED" )
+            else:
+                raise Exception( "WLAN " + str(x) + " failed." )
+
+    @label("WLAN enum...\n chinese")
+    @progress(60)
+    @timeout(5)
+
+    def test_003_wlanEnum(self):
+        print( "Testing WLAN enum..."),
+        wlan = self.ser.send("iw dev|grep -v addr |grep -v ssid")
+        wlanCompare = self.ser.send("cat /usr/lib/hwtest/wifi_ref0.txt")
+        wlan = ''.join(wlan.split())
+        wlanCompare = ''.join(wlanCompare.split())
+        if re.search(r'.*' + wlanCompare + '.*',wlan):
+            print( "PASSED")
+        else:
+            raise Exception( "WLAN enum failed." )
+
+    @label("I2C...\n chinese")
+    @progress(60)
+    @timeout(5)
+
+    def test_004_i2c(self):
+        for x in range(2):
+            print( "Testing I2C" + str(x) + "..."),
+            i2c = self.ser.send("i2cdetect -y " + str(x))
+            bPassed = False
+
+            if x == 0 and re.search(r'.*UU.*',i2c):
+                print( "pass1")
+                bPassed = True
+            elif x == 1 and re.search(r'.* 50 .*',i2c):
+                bPassed = True
+                print( "pass2")
+            elif x == 2 and re.search(r'.*UU.*',i2c) and re.search(r'.* 50 .*',i2c):
+                bPassed = True 
+                print( "pass3")
+
+            if bPassed:
+                print( "PASSED" )
+            else:
+                raise Exception( "I2C failed." )
+
+    @label("Hardware list...\n chinese")
+    @progress(60)
+    @timeout(2)
+
+    def test_005_hardwareListTest(self):
         print( "Testing hardware list...")
         hardwareList = self.ser.send("lshw -disable usb -disable scsi |grep -v size|grep -v self.serial| grep -v physical |grep -v configuration")
         compareList = self.ser.send("cat /usr/lib/hwtest/lshw_ref.txt")
@@ -65,69 +108,38 @@ class FactoryHardwareTest:
         if( compareList == hardwareList ):
             print( "PASSED")
         else:
-            print( "FAILED!!!")
-            self.error+=1
+            raise Exception( "Hardware list failed." )
 
-    def wlanTest(self, x):
-        print( "Testing WLAN" + str(x) + "..."),
-        wlan = self.ser.send("sudo ip link set wlan0 up")
-        code = self.ser.send("echo $?")
-        if( code == "0" ):
-            print( "PASSED" )
-        else:
-            self.error+=1
-            print( "FAILED!!!" )
+    @label("AXP209...\n chinese")
+    @progress(60)
+    @timeout(5)
 
-    def i2cTest(self,x):
-        print( "Testing I2C" + str(x) + "..."),
-        i2c = self.ser.send("i2cdetect -y " + str(x))
-        bPassed = False
-
-        if x == 0 and re.search(r'.*UU.*',i2c):
-            bPassed = True
-        elif x == 1 and re.search(r'.* 50 .*',i2c):
-            bPassed = True
-        elif x == 2 and re.search(r'.*UU.*',i2c) and re.search(r'.* 50 .*',i2c):
-            bPassed = True 
-
-        if bPassed:
-            print( "PASSED" )
-        else:
-            self.error+=1
-            print( "FAILED!!!" )
-
-    def wlanEnumTest(self):
-        print( "Testing WLAN enum..."),
-        wlan = self.ser.send("iw dev|grep -v addr |grep -v ssid")
-        wlanCompare = self.ser.send("cat /usr/lib/hwtest/wifi_ref0.txt")
-        wlan = ''.join(wlan.split())
-        wlanCompare = ''.join(wlanCompare.split())
-        if re.search(r'.*' + wlanCompare + '.*',wlan):
-            print( "PASSED")
-        else:
-            self.error+=1
-            print( "FAILED!!!")
-
-    def AXPtest(self):
+    def test_006_axp(self):
         print( "Testing AXP209..."),
         axp = self.ser.send("dmesg |grep axp |sed -e 's/\[.*\]//'")
         axpCompare = self.ser.send("cat /usr/lib/hwtest/axp_ref.txt")
         if re.search(r'.*' + axpCompare + '.*',axp):
             print( "PASSED")
         else:
-            self.error+=1
-            print( "FAILED!!!")
+            raise Exception( "AXP209 failed." )
 
-    def gpioExpanderTest(self):
+    @label("GPIO Expander...\n chinese")
+    @progress(60)
+    @timeout(5)
+
+    def test_007_gpioExpander(self):
         print( "Testing GPIO expander..."),
         gpio = self.ser.send("cat /sys/bus/i2c/devices/i2c-2/2-0038/name")
         if re.search(r'.*pcf8574a.*',gpio):
             print( "PASSED" )
         else:
-            self.error+=1
-            print( "FAILED!!!" )
+            raise Exception( "GPIO expander failed." )
 
-    def xioTest(self):
+    @label("XIO...\n chinese")
+    @progress(60)
+    @timeout(15)
+
+    def test_008_xio(self):
         GPIO = 408
         while GPIO < 415:
             print( "Testing XIO pin " + str(GPIO) + "..." ),
@@ -142,23 +154,24 @@ class FactoryHardwareTest:
             if result == "1":
                 print( "PASSED" )
             else:
-                self.error+=1
-                print( "FAILED!!!" )
+                raise Exception( "XIO failed." )
 
             self.ser.send( "echo " + str(GPIO) + " > /sys/class/gpio/unexport" )
             self.ser.send( "echo " + str(GPIO+1) + " > /sys/class/gpio/unexport" )
             GPIO+=2
 
+    @label("Stress testing...\n chinese")
+    @progress(60)
+    @timeout(15)
 
-    def stressTest(self):
+    def test_009_stress(self):
         print( "Starting stress test..." )
         time.sleep(0.5)
         stress = self.ser.send("stress --cpu 8 --io 4 --vm 2 --vm-bytes 128M --timeout 10s")
         if re.search(r'.*successful run completed.*',stress):
             print( "STRESS TEST PASSED\n")
         else:
-            self.error+=1
-            print( "STRESS TEST FAILED!!!\n")
+            raise Exception( "Stress test failed." )
 
 def main():
     test = FactoryHardwareTest()
