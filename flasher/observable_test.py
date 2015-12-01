@@ -132,7 +132,10 @@ def _decoratedAttribute(test, name):
     :param test:
     :param name:
     '''
-    attributes = test.__class__.__dict__[test._testMethodName]._attributes  # get the decorated attributes for this test
+    funcAttributes =  test.__class__.__dict__[test._testMethodName]
+    if not hasattr(funcAttributes,'_attributes'):
+        funcAttributes._attributes = {}
+    attributes =funcAttributes._attributes  # get the decorated attributes for this test
     if name in attributes:
         return attributes[name]
     return None
@@ -181,26 +184,4 @@ def methodForTest(test):
     '''
     #TODO this should return a unique value- the pointer ideally
     return test._testMethodName
-
-class Progress(object):
-    '''
-    Small class to keep track of progress and update progress observers on change
-    '''
-    def __init__(self, progressObservers = [], start = 0.0, finish=1.0):
-        self.progressObservers = progressObservers
-        self.start = start
-        self.finish = finish
-        self.current = start
-    
-    def addProgress(self,change):
-        self.setProgress(self.current + change)
-
-    def setProgress(self, value):
-        self.current = value
-        progress = self.getProgress()
-        [observer(progress) for observer in self.progressObservers]
-
-        
-    def getProgress(self):
-        return self.current / self.finish
 

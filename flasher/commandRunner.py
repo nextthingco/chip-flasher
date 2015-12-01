@@ -8,7 +8,7 @@ from kivy.clock import Clock
 from functools import partial
 from threading import Timer
 import cmd
-from observable_test import Progress
+from progress import Progress
 # from observed import observable_method
 
 	

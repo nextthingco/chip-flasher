@@ -16,6 +16,7 @@ from persistentdata import PersistentData
 from logmanager import LogManager
 from os import path
 from observable_test import *
+from progress import Progress
 import os
 
 import sys
@@ -24,6 +25,7 @@ import unittest
 from flashTest import Upload
 from hardwareUnitTest import HardwareTest
 from kivy.uix.label import Label
+from kivy.uix.screenmanager import Screen
 
 OSX_FONT="/Library/Fonts/Arial Unicode.ttf"
 UBUNTU_FONT="/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
@@ -163,62 +165,19 @@ class FlasherApp( App ):
 		self.hostname = hostname
 		self.title = "Host: " + self.hostname + " | Flasher Revision: " + self.rev[0:10] + " | Firmware Build: " + self.build_string
 
-	def testsPassed(self):
-		self.screen.button.color = self.screen.successColor
-		self.screen.button.text = "PASS\n通过"
-
-	def testsFailed(self):
-		self.screen.button.color = self.screen.failColor
-		self.screen.button.text = "FAIL\n失败"
 
 	
 	def onRunTestSuite(self, button):
 		if button in self.testThreads and self.testThreads[button].isAlive(): #check to see we are not currently testing for this button
 			print "already testing"
 			return
-		testThread = threading.Thread( target=self._runTestSuite.__get__(self,FlasherApp) ) # The test must run in another thread so as not to block kivy
+		suite = self._loadSuite()
+		testThread = TestingThread(suite,self,button)
+# 		testThread = threading.Thread( target=self._runTestSuite.__get__(self,FlasherApp), args=(button,)) # The test must run in another thread so as not to block kivy
 		self.testThreads[button] = testThread
 		testThread.start() #start the thread, which will call runTestSuite
 		
-	def onStateChange(self,stateInfo):
-		method = stateInfo['method']
-		testCase = stateInfo['testCase']
-		# update the color of the label assocated with this test
-# 		if testCase.stateNames and method in testCase.stateNames:
-		label = self.labelMap.get(method,None)
-		if label:
-			if stateInfo['when']== "before":
-				promptBefore = promptBeforeForTest(testCase)
-				if promptBefore:
-					#TODO suspend the thread and awaken it on button click
-					print "Prompt " + promptBefore
-				label.color = self.screen.activeColor
-	# Not working yet				
-	# 				progressSeconds =  progressForTest(testCase)
-	# 				if progressSeconds:
-	# 					progress = Progress(progressObservers = [self.onProgressChange.__get__(self,FlasherApp)])
-	# 					Clock.schedule_interval(progress.addProgress.__get__(progress, Progress), 1.0/progressSeconds ) # callback for bound method
-			else:
-				label.color = self.screen.passiveColor
-			self.screen.onStateChange(stateInfo)
-	
-	def onProgressChange(self,progress):
-		value = progress * 100
-		self.screen.set_progress(value)
 		
-	def _runTestSuite(self):
-		suite = self._loadSuite()
-		stateInfoCallback = self.onStateChange.__get__(self, FlasherApp) #Register the screen for state changes
-		progressCallback = self.onProgressChange.__get__(self,FlasherApp)
-		for testCase in suite:
-			decorateTest(testCase,stateInfoObservers = [stateInfoCallback], progressObservers = [progressCallback] ) #Decorate the test cases to add the callback observer and logging above
-		
-		result = unittest.TextTestRunner(verbosity=2, failfast=True).run(suite) # This runs the whole suite of tests. For now, using TextTestRunner
-		ok = len(result.errors) == 0 # Any errors?
-		if ok:
-			self.testsPassed()
-		else:
-			self.testsFailed()
 		
 	def build( self ):
 		self.rev = 0
@@ -243,6 +202,81 @@ class FlasherApp( App ):
 		pass
 
 		
+class TestingThread(threading.Thread):
+	def __init__(self, suite, flasherApp, promptButton):
+	 	threading.Thread.__init__(self)
+	 	self.suite = suite
+	 	self.flasherApp = flasherApp
+		self.screen = flasherApp.screen
+		self.promptButton = promptButton
+		
+	def run(self):
+		self._runTestSuite()
+	def _runTestSuite(self):
+		stateInfoCallback = self.onStateChange.__get__(self, TestingThread) #Register the screen for state changes
+ 		progressCallback = self.onProgressChange.__get__(self,TestingThread) #this progress is not used
+		for testCase in self.suite:
+			decorateTest(testCase, stateInfoObservers = [stateInfoCallback], progressObservers = [progressCallback] ) #Decorate the test cases to add the callback observer and logging above
+		
+		result = unittest.TextTestRunner(verbosity=2, failfast=True).run(self.suite) # This runs the whole suite of tests. For now, using TextTestRunner
+		ok = len(result.errors) == 0 # Any errors?
+		if ok:
+			self.testsPassed()
+		else:
+			self.testsFailed()
+		
+	def onStateChange(self,stateInfo):
+		method = stateInfo['method']
+		testCase = stateInfo['testCase']
+		# update the color of the label assocated with this test
+# 		if testCase.stateNames and method in testCase.stateNames:
+		label = self.flasherApp.labelMap.get(method,None)
+		if label:
+			prompt = None
+			self.currentLabel = label
+			if stateInfo['when']== "before":
+				self.progress = None
+				self.screen.set_progress(0, 100)
+				prompt = promptBeforeForTest(testCase)
+			else:
+				prompt = promptAfterForTest(testCase)
+			if prompt:
+				self.screen.button.bind( on_press=self.onWakeup.__get__(self, TestingThread)) #listen to button 
+				self.event = threading.Event()
+				self.screen.button.text = prompt
+				self.event.wait()
+					
+			progressSeconds =  progressForTest(testCase)
+			timeout =  timeoutForTest(testCase)
+			if stateInfo['when']== "before":
+				label.color = self.screen.activeColor
+				if progressSeconds:
+					self.progress = Progress(progressObservers = [self.onProgressChange.__get__(self,TestingThread)], finish=progressSeconds, timeout = timeout )
+			else: #after
+				if progressSeconds:
+					progressCallback = self.progress.addProgress.__get__(progress, Progress)
+					Clock.unschedule(progressCallback)
+
+				label.color = self.screen.passiveColor
+			self.screen.onStateChange(stateInfo)
+
+	def onWakeup(self,button):
+		self.event.set()
+		self.screen.button.unbind( on_press=self.onWakeup.__get__(self, TestingThread))
+		pass
+	
+	def testsPassed(self):
+		self.screen.button.color = self.screen.successColor
+		self.screen.button.text = "PASS\n通过"
+
+	def testsFailed(self):
+		self.screen.button.color = self.screen.failColor
+		self.currentLabel.color = self.screen.failColor #last test failed
+		self.screen.button.text = "FAIL\n失败"
+	
+	def onProgressChange(self,progress):
+# 		value = progress * 100
+		self.screen.set_progress(progress * 100)
 
 if __name__ == '__main__':
 	app = FlasherApp("Upload")
