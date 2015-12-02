@@ -212,7 +212,7 @@ class SerialConnection(object):
 
         try:
 #             self.tty.read() # read everything currently in buffer
-            self.tty.expect(pexpect.EOF)
+            self.tty.expect(pexpect.EOF,timeout=1)
             self.tty.sendline(cmd) #send command to remote
             if (blind): #if don't care about the result. For example, poweroff
                 return None

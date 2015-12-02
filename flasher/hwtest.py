@@ -8,25 +8,41 @@ import re
 import time
 
 class FactoryHardwareTest(TestCase):
-    def setUp(self):
-        try:
-#             if False:
-#                 if( not os.path.exists("/etc/udev/rules.d/uart.rules") ):
-#                     # Create udev rule for our UART serial cable if it doesn't already exist.
-#                     # This code will probably need to change once we're testing more than one CHIP at once.
-#                     file = open("/etc/udev/rules.d/uart.rules", "w")
-#                     file.write("ACTION==\"add\", ATTRS{idVendor}==\"067b\", ATTRS{idProduct}==\"2303\", SYMLINK+=\"uart\"")
-#                     file.close()
-#                     os.system("sudo udevadm trigger")
-#                     print( "UART udev rule created! You may need to unplug and replug the USB device and restart.")
-#                     print( "Please try again.")
-#     
-#                 self.ser = SerialConnection("root","chip","/dev/uart")
-            self.ser = SerialConnection("root","chip","/dev/chip_usb")
+    ser = None
 
-        except Exception, e:
-            raise Exception( "Failed to connect to CHIP" )
+    @classmethod
+    def setUpClass(cls):
+        cls.ser = SerialConnection("root","chip","/dev/chip_usb")
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.ser.close()
+        cls.ser = None
+        
+#     def setUp(self):
+#         try:
+#             print "setup------------------------"
+# #             if False:
+# #                 if( not os.path.exists("/etc/udev/rules.d/uart.rules") ):
+# #                     # Create udev rule for our UART serial cable if it doesn't already exist.
+# #                     # This code will probably need to change once we're testing more than one CHIP at once.
+# #                     file = open("/etc/udev/rules.d/uart.rules", "w")
+# #                     file.write("ACTION==\"add\", ATTRS{idVendor}==\"067b\", ATTRS{idProduct}==\"2303\", SYMLINK+=\"uart\"")
+# #                     file.close()
+# #                     os.system("sudo udevadm trigger")
+# #                     print( "UART udev rule created! You may need to unplug and replug the USB device and restart.")
+# #                     print( "Please try again.")
+# #     
+# #                 self.ser = SerialConnection("root","chip","/dev/uart")
+#             self.ser = SerialConnection("root","chip","/dev/chip_usb")
+# 
+#         except Exception, e:
+#             raise Exception( "Failed to connect to CHIP" )
+# 
+#     def tearDown(self):
+#         TestCase.tearDown(self)
+#         self.ser.close()
+        
     @label("Waiting for boot...\n chinese")
     @progress(30)
     @timeout(90)
