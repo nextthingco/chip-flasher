@@ -125,13 +125,13 @@ class SerialConnection(object):
                 try:
                     index = self.tty.expect_list([LOGIN_REGEX, PASSWORD_REGEX, UBOOT_REGEX, COMMAND_PROMPT_REGEX, pexpect.EOF, pexpect.TIMEOUT,LOGIN_INCORRECT], timeout=self.timeout)
                 except Exception, e:
-                    if e.errno == 11: #in use error
-                        serialLog.error("FATAL")
-                        serialLog.exception(e)
-                        return False;
+#                     if e.errno == 11: #in use error
+                    serialLog.debug("couldn't read, maybe timeout")
+                    serialLog.exception(e)
+                    return False;
                     #this can be benign. There could have been a timeout that caused this
-                    self.close()
-                    continue # try again. A new connection will be made
+#                     self.close()
+#                     continue # try again. A new connection will be made
                 # Go through the various possibilities. The index corresponds to the array passed into expect() above
                 serialLog.debug(self.tty.before)
                 if index == 0:
