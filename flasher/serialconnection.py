@@ -99,6 +99,8 @@ class SerialConnection(object):
         while self.tty == None:
             try:
                 self.__connectUsingSerial()
+                if self.doLogin():
+                    break
             except Exception,e:
                 if e.errno != 2: # device not found
                     serialLog.error("Could not connect")
