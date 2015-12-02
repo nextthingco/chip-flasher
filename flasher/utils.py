@@ -9,7 +9,7 @@ from functools import partial
 from threading import Timer
 
 # calls a shell command
-def call_and_return(instance, cmd, log, timeout=1):
+def call_and_return(instance, cmd, serialLog, timeout=1):
 	def update_progress_bar( dt ):
 		progress = instance.get_progress()
 		progress["value"] = progress["value"] + dt
@@ -19,7 +19,7 @@ def call_and_return(instance, cmd, log, timeout=1):
 		instance.set_progress( progress["value"], progress["max"] )
 
 
-	log.info('ENTER: call_and_return()')
+	serialLog.info('ENTER: call_and_return()')
 	working_dir=path.dirname( path.dirname( path.realpath( __file__ ) ) )
 	my_env = os.environ.copy()
 	my_env["BUILDROOT_OUTPUT_DIR"] = working_dir+"/tools/.firmware/"
@@ -38,11 +38,11 @@ def call_and_return(instance, cmd, log, timeout=1):
 		timer.cancel()
 		Clock.unschedule( update_progress_bar )
 		instance.set_progress( 1, 1 )
-		log.info('error code='+str(proc.returncode))
-		log.info('LEAVE: call_and_return()')
+		serialLog.info('error code='+str(proc.returncode))
+		serialLog.info('LEAVE: call_and_return()')
 		if proc.returncode < 0:
-			log.info('Timeout occurred!')
+			serialLog.info('Timeout occurred!')
 		
 		if proc.poll():
-			log.error("Process " + str(proc.pid) + " is still running!")
+			serialLog.error("Process " + str(proc.pid) + " is still running!")
 		return returncode

@@ -38,6 +38,7 @@ class FactoryHardwareTest(TestCase):
         if re.search(r'.*chip.*',hostname):
             print( "CHIP FOUND! Running tests...")
         else:
+            print hostname
             raise Exception( "Hostname not found." )
 
     @label("Activate WLAN...\n chinese")
@@ -47,10 +48,13 @@ class FactoryHardwareTest(TestCase):
     def test_002_wlan(self):
         for x in range(3):
             print( "Activating WLAN" + str(x) + "...")
-            code = self.ser.send("sudo ip link set wlan0 up && echo $?")
+            self.ser.send("sudo ip link set wlan0 up")
+            code = self.ser.send("echo $?")
+            print "code is :" + str(code)
             if code == "0":
                 print( "PASSED" )
             else:
+                print "code is: " + str(code)
                 raise Exception( "WLAN " + str(x) + " failed." )
 
     @label("WLAN enum...\n chinese")
@@ -77,7 +81,6 @@ class FactoryHardwareTest(TestCase):
             print( "Testing I2C" + str(x) + "..."),
             i2c = self.ser.send("i2cdetect -y " + str(x))
             bPassed = False
-
             if x == 0 and re.search(r'.*UU.*',i2c):
                 print( "pass1")
                 bPassed = True
@@ -118,7 +121,12 @@ class FactoryHardwareTest(TestCase):
     def test_006_axp(self):
         print( "Testing AXP209..."),
         axp = self.ser.send("dmesg |grep axp |sed -e 's/\[.*\]//'")
+        print "axp"
+        print axp
         axpCompare = self.ser.send("cat /usr/lib/hwtest/axp_ref.txt")
+        print "axpcompare"
+        print axpCompare
+#hk         time.sleep(0.5)
         if re.search(r'.*' + axpCompare + '.*',axp):
             print( "PASSED")
         else:
@@ -167,11 +175,12 @@ class FactoryHardwareTest(TestCase):
 
     def test_009_stress(self):
         print( "Starting stress test..." )
-        time.sleep(0.5)
+#         time.sleep(0.5)
         stress = self.ser.send("stress --cpu 8 --io 4 --vm 2 --vm-bytes 128M --timeout 10s")
         if re.search(r'.*successful run completed.*',stress):
             print( "STRESS TEST PASSED\n")
         else:
+            print "result was " + stress
             raise Exception( "Stress test failed." )
 
 def main():

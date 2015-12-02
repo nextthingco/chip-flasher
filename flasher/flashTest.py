@@ -10,7 +10,7 @@ from observable_test import *
 # from observed import observable_method
 from commandRunner import CommandRunner
 
-log = logging.getLogger("serial")
+serialLog = logging.getLogger("serial")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
@@ -31,7 +31,7 @@ class Upload(TestCase):
     
     def setUp(self):
 #        print("Waiting for USB")
-#         if not wait_for_usb( instance=None, type="fel", log=log, timeout=30 ):
+#         if not wait_for_usb( instance=None, type="fel", serialLog=serialLog, timeout=30 ):
 #             raise Exception( "Flashing failed: ", "Could not find FEL device" )
         pass  
     
@@ -47,7 +47,7 @@ class Upload(TestCase):
     def test_001_Idle(self):    
         print "test 001 idle"
         time.sleep(15)
-#         if not wait_for_usb( instance=None, type="fel", log=log, timeout=30 ):
+#         if not wait_for_usb( instance=None, type="fel", serialLog=serialLog, timeout=30 ):
 #             raise Exception( "Flashing failed: ", "Could not find FEL device" )
     
 
@@ -57,7 +57,7 @@ class Upload(TestCase):
     def test_01_FEL(self):    
         print "zzzzzzzzzzzclick to begin"
         time.sleep(5)
-        if not wait_for_usb( instance=None, type="fel", log=log, timeout=30 ):
+        if not wait_for_usb( instance=None, type="fel", serialLog=serialLog, timeout=30 ):
             raise Exception( "Flashing failed: ", "Could not find FEL device" )
 #
     @label("Uploading...\n正在加载固件")
@@ -65,7 +65,7 @@ class Upload(TestCase):
     @promptBefore("Click to start Flash")
     def test_02_flash(self):
         print("Running chip-fel-flash")
-        commandRunner = CommandRunner(log,progressObservers = self.progressObservers)
+        commandRunner = CommandRunner(serialLog,progressObservers = self.progressObservers)
         errcode = commandRunner.call_and_return(cmd=["./chip-fel-flash.sh", "-f"], timeout=400)
         print("Error code: " + str(errcode) )
         if errcode != 0:
@@ -81,12 +81,12 @@ class Upload(TestCase):
 #     def setUp(self):
 #         print("Waiting for USB")
 #         
-#         if not wait_for_usb( instance=Null, type="fel", log=log, timeout=30 ):
+#         if not wait_for_usb( instance=Null, type="fel", serialLog=serialLog, timeout=30 ):
 #             raise Exception( "Flashing failed: ", "Could not find FEL device" )
 #         
 #     def run(self):
 #         print("Running chip-fel-flash")
-#         commandRunner = CommandRunner(log)
+#         commandRunner = CommandRunner(serialLog)
 #         errcode = commandRunner.call_and_return(cmd=["./chip-fel-flash.sh", "-f"], timeout=400 )
 #         errcode = 0
 #         print("Error code: " + str(errcode) )

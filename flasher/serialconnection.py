@@ -26,10 +26,10 @@ LOGIN = "root"
 PASSWORD = "chip"
 BAUD=115200
 SERIAL_DEVICE_NAME="/dev/chip_usb" 
-TIMEOUT = 30
+TIMEOUT = 10 #this really doesn't do much
 
-log = logging.getLogger("serial")
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+serialLog = logging.getLogger("serial")
 
 class SerialConnection(object):
     '''
@@ -54,7 +54,7 @@ class SerialConnection(object):
         # self.serialDeviceName = "/dev/tty.usbmodem1421"
         self.serialDeviceName = serialDeviceName
         self.timeout = TIMEOUT #how long commands should wait for until timing out.
-        
+        self.loggedIn = False
         self.tty = None
         self.ser = None
     def __del__(self):
@@ -63,7 +63,7 @@ class SerialConnection(object):
 #     def __connectUsingDevice(self):
 #         try:
 #             fileDescriptor = os.open(self.serialDeviceName, os.O_RDWR | os.O_NONBLOCK | os.O_NOCTTY)
-#             log.debug("File descriptor: " + str( fileDescriptor))
+#             serialLog.debug("File descriptor: " + str( fileDescriptor))
 #             self.tty = fdpexpect.fdspawn(fileDescriptor)
 #             assert (self.tty.isalive())
 #             
@@ -74,9 +74,9 @@ class SerialConnection(object):
 # #             termios.tcsetattr(fileDescriptor, termios.TCSADRAIN, termiosSettings)  # This is not working on baud rates above 4098
 #         except Exception, e:
 #             if e.errno == 2:
-#                 log.debug("Could not open serial device: " + self.serialDeviceName)
+#                 serialLog.debug("Could not open serial device: " + self.serialDeviceName)
 #             else:
-#                 log.exception(e)
+#                 serialLog.exception(e)
 #             return None
 
     def __connectUsingSerial(self):
@@ -84,24 +84,24 @@ class SerialConnection(object):
             self.ser = serial.Serial(port=self.serialDeviceName, baudrate=BAUD, timeout=self.timeout)  # open the serial port. Must make a class member so it won't get cleaned up
         except Exception, e:
             if e.errno == 2:
-                log.debug("Could not open serial device: " + self.serialDeviceName)
+                serialLog.debug("Could not open serial device: " + self.serialDeviceName)
             else:
-                log.exception(e)
+                serialLog.exception(e)
 
         try:
             self.tty = fdpexpect.fdspawn(self.ser)  # , 'wb', timeout=50)
             assert (self.tty.isalive())
         except Exception, e:
-            log.debug("Could not open serial device [2]: " + self.serialDeviceName)
+            serialLog.debug("Could not open serial device [2]: " + self.serialDeviceName)
             
     def connect(self):
-        log.debug("connecting")
+        serialLog.debug("connecting")
         while self.tty == None:
             try:
                 self.__connectUsingSerial()
             except Exception,e:
                 if e.errno != 2: # device not found
-                    log.error("Could not connect")
+                    serialLog.error("Could not connect")
                     return None
             time.sleep(1)
                 
@@ -113,47 +113,57 @@ class SerialConnection(object):
         In reality, only the first call will trigger a login
         '''
         try:
+            sawLogin = False # if already saw login prompt, don't send a second one. This is because login message contains the word login:
             while True:
                 if self.tty is None: #if first time or the session closed on us
                     self.connect()
-                    self.tty.sendline("\n")  # send blank lines to wakeup the device
+#                     self.tty.sendline("\n")  # send blank lines to wakeup the device
 #                     self.tty.sendline("\n\n\n")  # send blank lines to wakeup the device
-                    time.sleep(.3) #wait for device to process these empty lines
+#                     time.sleep(.3) #wait for device to process these empty lines
                 try:
                     index = self.tty.expect_list([LOGIN_REGEX, PASSWORD_REGEX, UBOOT_REGEX, COMMAND_PROMPT_REGEX, pexpect.EOF, pexpect.TIMEOUT], timeout=self.timeout)
                 except Exception, e:
                     if e.errno == 11: #in use error
-                        log.error("FATAL")
-                        log.exception(e)
+                        serialLog.error("FATAL")
+                        serialLog.exception(e)
                         return False;
                     #this can be benign. There could have been a timeout that caused this
                     self.close()
                     continue # try again. A new connection will be made
                 # Go through the various possibilities. The index corresponds to the array passed into expect() above
                 if index == 0:
-                    log.debug("Sending login")
+                    if sawLogin: # ignore if already saw
+                        continue
+                    serialLog.debug("Sending login")
+                    sawLogin = True
                     self.tty.sendline(self.login)
                 elif index == 1:
-                    log.debug("Sending password")
+                    serialLog.debug("Sending password")
                     self.tty.sendline(self.password)
                     time.sleep(2)
                 elif index == 2:
-                    log.debug("Uboot prompt detected")
+                    serialLog.debug("Uboot prompt detected")
+                    sawLogin = False
                     self.tty.sendline("reset") # Reset CHIP so that we're no longer in the uboot environment.
                     time.sleep(5) # Wait to make sure we're passed the "press any key to stop autoboot" prompt
                     self.tty = None
                 elif index == 3:
-                    log.debug("Have prompt, logged in")
-#                     self.tty.sendline("stty -echo") #turn echo off
+                    serialLog.debug("Have prompt, logged in")
+                    self.loggedIn = True
+                    self.tty.sendline("stty columns 180") #without this, long commands will hang!
+                    time.sleep(1) #give this command time to take effect. 
                     break  # we have a command prompt, either through login or already there
                 elif index == 4: #benign, try again
-                    log.debug("EOF on login. benign")
-                    time.sleep(.1) #wait and try again
+                    serialLog.debug("EOF on login. benign")
+                    time.sleep(.2) #wait and try again
+                    if not sawLogin:
+                        self.tty.sendline("")
                 elif index == 5: # The session was closed by the remote.
                     self.close()
         except Exception, e:
-            log.exception(e)
-            log.error("unable to log in")
+            print e
+            serialLog.exception(e)
+            serialLog.error("unable to serialLog in")
             return False
         return True
         
@@ -177,12 +187,12 @@ class SerialConnection(object):
 #             time.sleep(4)
 #             if (blind): #if don't care about the result. For example, poweroff
 #                 return None
-#             self.__expect(COMMAND_PROMPT_REGEX) #Now __expect the a command prompt after execution
+#             self._expect(COMMAND_PROMPT_REGEX) #Now _expect the a command prompt after execution
 #             result = self.tty.before #everything up to the command prompt is our result
 #             result = result.rstrip("\r\n") #in most cases there will be a new line. Only if the return is blank will it be empty
 #             return result
 #         except Exception, e: # This will happen if the command is invalid on the remote. 
-#             log.exception(e)
+#             serialLog.exception(e)
 #             return None
 #         finally:
 #             self.tty.sendline("") # for next time's login check, send a blank to get a command prompt
@@ -195,25 +205,90 @@ class SerialConnection(object):
         :param blind: If should send without waiting for result. Must be used for poweroff
         :return The response from the device. None in case of error
         '''
-        if not self.doLogin():
-            print "error could not login"
-            return None
+        if not self.loggedIn:
+            if not self.doLogin():
+                print "error could not login"
+                return None
+
         try:
-#             self.tty.expect(pexpect.EOF) #Ignore anything currently in stream; move to the end
-            cmd = cmd + " ; echo " + COMMAND_DELIMETER + ""
+#             self.tty.read() # read everything currently in buffer
+            self.tty.expect(pexpect.EOF)
             self.tty.sendline(cmd) #send command to remote
             if (blind): #if don't care about the result. For example, poweroff
                 return None
- 
-            self.__expect(DELIMETER_NEW_LINE_REGEX, expectTimeout=timeout) #First, expect that the command is echoed back to us. We're not interested in it
-            self.__expect(DELIMITER_NEW_LINE_COMMAND_PROMPT_REGEX, exact=False) #Now __expect the newline and command prompt
-            result = self.tty.before #everything up to the newline and command prompt is our result
+            commandRegex = re.compile(re.escape(cmd +"\r\n")) #regex to strip off the command just issued
+            bf1 = self._expect(commandRegex) # if this is ever hanging, check to see the line length isn't too long!
+            result = self._expect(COMMAND_PROMPT_REGEX, timeout=TIMEOUT) #Now _expect the newline and command prompt
             result = result.rstrip("\r\n") #in most cases there will be a new line. Only if the return is blank will it be empty
-            self.tty.sendline("") #For next time, we want to have a prompt ready
             return result
         except Exception, e: # This will happen if the command is invalid on the remote. 
-            log.exception(e)
+            serialLog.exception(e)
             return None
+
+#     def sendwed(self, cmd,  blind=False, timeout = TIMEOUT):
+#         '''
+#         Send a command over the connection. It will login if necessary
+#         :param cmd: The shell command to execute
+#         :param blind: If should send without waiting for result. Must be used for poweroff
+#         :return The response from the device. None in case of error
+#         '''
+# #         if not self.loggedIn:
+#         time.sleep(.6)
+#         if not self.doLogin():
+#             print "error could not login"
+#             return None
+# 
+#         try:
+# #             self.tty.read() # read everything currently in buffer
+#             
+#             self.tty.sendline(cmd) #send command to remote
+#             if (blind): #if don't care about the result. For example, poweroff
+#                 return None
+#             commandRegex = re.compile(re.escape(cmd +"\r\n")) #regex to strip off the command just issued
+#             print self.tty.before
+#             self.__expect(commandRegex) # if this is ever hanging, check to see the line length isn't too long!
+#             time.sleep(.5)
+#             print self.tty.before
+#             self.__expect(COMMAND_PROMPT_REGEX) #Now __expect the newline and command prompt
+#             print self.tty.before
+# 
+#             result = self.tty.before #everything up to the newline and command prompt is our result
+#             result = result.rstrip("\r\n") #in most cases there will be a new line. Only if the return is blank will it be empty
+#             time.sleep(.6)
+#             self.tty.sendline("") #For next time, we want to have a prompt ready
+#             return result
+#         except Exception, e: # This will happen if the command is invalid on the remote. 
+#             serialLog.exception(e)
+#             return None
+
+#     def send(self, cmd,  blind=False, timeout = TIMEOUT):
+#         '''
+#         Send a command over the connection. It will login if necessary
+#         :param cmd: The shell command to execute
+#         :param blind: If should send without waiting for result. Must be used for poweroff
+#         :return The response from the device. None in case of error
+#         '''
+#         if not self.doLogin():
+#             print "error could not login"
+#             return None
+#         try:
+# #             self.tty.expect(pexpect.EOF) #Ignore anything currently in stream; move to the end
+#             cmd = cmd + " ; echo " + COMMAND_DELIMETER + ""
+#             self.tty.sendline(cmd) #send command to remote
+#             if (blind): #if don't care about the result. For example, poweroff
+#                 return None
+#  
+#             self.__expect(DELIMETER_NEW_LINE_REGEX, expectTimeout=timeout) #First, expect that the command is echoed back to us. We're not interested in it
+#             time.sleep(1)
+#             self.__expect(DELIMITER_NEW_LINE_COMMAND_PROMPT_REGEX, exact=False) #Now __expect the newline and command prompt
+# #             self.__expect(DELIMETER_NEW_LINE_REGEX, exact=False) #Now __expect the newline and command prompt
+#             result = self.tty.before #everything up to the newline and command prompt is our result
+#             result = result.rstrip("\r\n") #in most cases there will be a new line. Only if the return is blank will it be empty
+#             self.tty.sendline("") #For next time, we want to have a prompt ready
+#             return result
+#         except Exception, e: # This will happen if the command is invalid on the remote. 
+#             log.exception(e)
+#             return None
 
 #     def sendOld(self, cmd,  blind=False, timeout = TIMEOUT):
 #         '''
@@ -246,27 +321,30 @@ class SerialConnection(object):
 #             log.exception(e)
 #             return None
 
-    def __expect(self,findString , expectTimeout=TIMEOUT, exact = False):
+
+    def _expect(self,findString , timeout=TIMEOUT, exact = False):
 
         index = 0
         start = time.clock()
-        end = start + expectTimeout
+        end = start + timeout
         step = .1
         
         while index == 0:
-            if time.clock() > end: #this timeout behavior isn't really coret since the __expect below has its own timeout
+            if time.clock() > end: #this timeout behavior isn't really coret since the _expect below has its own timeout
                 return None
             time.sleep(step)
             if exact:
-                index = self.tty.expect_exact([pexpect.EOF, findString]) 
+                index = self.tty.expect_exact([pexpect.EOF, findString],timeout=timeout) 
             else:
-                index = self.tty.expect_list([pexpect.EOF, findString]) 
+                index = self.tty.expect_list([pexpect.EOF, findString],timeout=timeout) 
+        return self.tty.before
             
            
     def close(self):
         '''
         Close the connection. Call when you are done. Also gets called if EOF found
         '''
+        self.loggedIn = False
         if self.tty:
 #             self.tty.sendline("stty -echo") #turn echo back on
             self.tty.close()
