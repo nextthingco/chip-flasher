@@ -102,10 +102,10 @@ class SerialConnection(object):
                 if self.doLogin():
                     break
             except Exception,e:
-                if e.errno != 2 and e.errno != 5: # device not found
-                    serialLog.error("Could not connect")
-                    return None
-            time.sleep(1)
+#                 if e.errno != 2 and e.errno != 5: # device not found
+                serialLog.debug("Could not connect")
+                time.sleep(1) # wait and try again
+                return None
                 
         
         
