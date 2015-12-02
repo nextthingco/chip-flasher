@@ -87,27 +87,32 @@ class SerialConnection(object):
                 serialLog.debug("Could not open serial device: " + self.serialDeviceName)
             else:
                 serialLog.exception(e)
+            self.ser = None
+            return False
 
         try:
             self.tty = fdpexpect.fdspawn(self.ser)  # , 'wb', timeout=50)
             assert (self.tty.isalive())
         except Exception, e:
+            self.ser = None
             serialLog.debug("Could not open serial device [2]: " + self.serialDeviceName)
+            return False
             
-    def connect(self):
+    def connect(self, tries=60):
+        elapsedTime = 0
         serialLog.debug("connecting")
-        while self.tty == None:
-            try:
-                self.__connectUsingSerial()
-                if self.doLogin():
+        while self.tty == None: #when either no conneciton or login
+            if not self.ser: #if no connection
+                self.__connectUsingSerial() # try and get one
+            if self.ser and self.tty: #if have a connection, try to use it
+                if self.doLogin(): #if can use it, success
                     break
-            except Exception,e:
-#                 if e.errno != 2 and e.errno != 5: # device not found
-                serialLog.debug("Could not connect")
-                time.sleep(1) # wait and try again
-                return None
-                
-        
+
+            elapsedTime = elapsedTime +1
+            if elapsedTime > tries:
+                raise "TIMEOUT"
+            time.sleep(1) # wait and try again
+
         
     def doLogin(self):
         '''
@@ -117,8 +122,8 @@ class SerialConnection(object):
         try:
             sawLogin = False # if already saw login prompt, don't send a second one. This is because login message contains the word login:
             while True:
-                if self.tty is None: #if first time or the session closed on us
-                    self.connect()
+#                 if self.tty is None: #if first time or the session closed on us
+#                     self.connect()
 #                     self.tty.sendline("\n")  # send blank lines to wakeup the device
 #                     self.tty.sendline("\n\n\n")  # send blank lines to wakeup the device
 #                     time.sleep(.3) #wait for device to process these empty lines
@@ -172,6 +177,7 @@ class SerialConnection(object):
                  #TODO not working right if faced with the password field at startupf    
         except Exception, e:
             print e
+            self.tty = None
             serialLog.exception(e)
             serialLog.error("unable to serialLog in")
             return False
@@ -365,6 +371,7 @@ class SerialConnection(object):
 # Example to test with
 def main():
     ser = SerialConnection()
+    ser.connect()
 #     zzz =  ser.send("ls -l")
 #     print zzz
     zzz = ser.send ("ls -l")
