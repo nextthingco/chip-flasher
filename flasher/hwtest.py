@@ -12,10 +12,12 @@ class FactoryHardwareTest(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        print "making serial connection"
         cls.ser = SerialConnection("root","chip","/dev/chip_usb")
 
     @classmethod
     def tearDownClass(cls):
+        print "killing serial connection"
         cls.ser.close()
         cls.ser = None
         

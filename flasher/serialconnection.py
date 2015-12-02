@@ -19,7 +19,7 @@ DELIMITER_NEW_LINE_COMMAND_PROMPT_REGEX = re.compile(COMMAND_DELIMETER + r"\r\n"
 LOGIN_REGEX = re.compile(r".*login: ")
 PASSWORD_REGEX = re.compile(r".*assword.*")
 UBOOT_REGEX = re.compile(r"=>")
-
+LOGIN_INCORRECT = re.compile(r"Login incorrect")
 # COMMAND_PROMPT_REGEX = 'root@chip:~#'
 # COMMAND_PROMPT_REGEX = '# '
 LOGIN = "root"
@@ -28,7 +28,7 @@ BAUD=115200
 SERIAL_DEVICE_NAME="/dev/chip_usb" 
 TIMEOUT = 10 #this really doesn't do much
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 serialLog = logging.getLogger("serial")
 
 class SerialConnection(object):
@@ -121,7 +121,7 @@ class SerialConnection(object):
 #                     self.tty.sendline("\n\n\n")  # send blank lines to wakeup the device
 #                     time.sleep(.3) #wait for device to process these empty lines
                 try:
-                    index = self.tty.expect_list([LOGIN_REGEX, PASSWORD_REGEX, UBOOT_REGEX, COMMAND_PROMPT_REGEX, pexpect.EOF, pexpect.TIMEOUT], timeout=self.timeout)
+                    index = self.tty.expect_list([LOGIN_REGEX, PASSWORD_REGEX, UBOOT_REGEX, COMMAND_PROMPT_REGEX, pexpect.EOF, pexpect.TIMEOUT,LOGIN_INCORRECT], timeout=self.timeout)
                 except Exception, e:
                     if e.errno == 11: #in use error
                         serialLog.error("FATAL")
@@ -131,12 +131,14 @@ class SerialConnection(object):
                     self.close()
                     continue # try again. A new connection will be made
                 # Go through the various possibilities. The index corresponds to the array passed into expect() above
+                serialLog.debug(self.tty.before)
                 if index == 0:
                     if sawLogin: # ignore if already saw
                         continue
                     serialLog.debug("Sending login")
                     sawLogin = True
                     self.tty.sendline(self.login)
+                    time.sleep(.5)
                 elif index == 1:
                     serialLog.debug("Sending password")
                     self.tty.sendline(self.password)
@@ -157,9 +159,15 @@ class SerialConnection(object):
                     serialLog.debug("EOF on login. benign")
                     time.sleep(.2) #wait and try again
                     if not sawLogin:
+                        serialLog.debug("Sending blank line")
                         self.tty.sendline("")
                 elif index == 5: # The session was closed by the remote.
                     self.close()
+                elif index == 6:
+                    serialLog.debug("Login failed")
+                    self.sawLogin = False
+                    time.sleep(2)
+                 #TODO not working right if faced with the password field at startupf    
         except Exception, e:
             print e
             serialLog.exception(e)
