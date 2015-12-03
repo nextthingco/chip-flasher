@@ -208,10 +208,6 @@ def main():
     result = TextTestRunner(verbosity=2, failfast=True).run(suite) # This runs the whole suite of tests. For now, using TextTestRunner
     print result
 
-#     if( test.error > 0 ):
-#         print ( "!!!! TEST FAILED - TOTAL ERRORS: " + str( test.error ) + " !!!!")
-#     else:
-#         print( "Test completed! ALL PASSED")
 #------------------------------------------------------------------
 if __name__ == "__main__":
 #------------------------------------------------------------------

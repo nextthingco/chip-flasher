@@ -23,7 +23,6 @@ import sys
 import subprocess
 import unittest
 from flashTest import Upload
-from hardwareUnitTest import HardwareTest
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from hwtest import FactoryHardwareTest
@@ -118,6 +117,7 @@ class FlasherApp( App ):
 		PersistentData.read()
 		self.testThreads = {}
 		self.labelMap = {}
+		self.devices=["/dev/chip_usb"]
 	
 	def _loadSuite(self):
 		tl = unittest.TestLoader()
@@ -143,7 +143,7 @@ class FlasherApp( App ):
 
 
 		
-	def update_title( self, dt ):
+	def displayTitle( self ):
 		cwd = path.dirname( path.dirname( path.realpath( __file__ ) ) )
 		hostname = subprocess.Popen( ["hostname"],cwd=cwd, stdout=subprocess.PIPE ).communicate()[0].strip("\n")
 		if hostname != self.hostname:
@@ -169,7 +169,7 @@ class FlasherApp( App ):
 	
 	def onRunTestSuite(self, button):
 		if button in self.testThreads and self.testThreads[button].isAlive(): #check to see we are not currently testing for this button
-			print "already testing"
+# 			print "already testing"
 			return
 		suite = self._loadSuite()
 		testThread = TestingThread(suite,self,button)
@@ -183,17 +183,13 @@ class FlasherApp( App ):
 		self.rev = 0
 		self.hostname = ""
 		self.build_string = ""
-
-		Clock.schedule_interval( self.update_title, 0.5 )
-# 		if self.fsm_implementation in FSM.fsm:
-# 			FSM.set_implementation( self.fsm_implementation )
+		self.displayTitle()
 		self.screen = FlasherScreen()
-# 		self.loadSuite()
 		
 		self.displayTests()
+		button = self.screen.button
 		self.screen.button.bind( on_press=self.onRunTestSuite.__get__(self, FlasherApp))
 
-# 		self.runSuite()
 		return self.screen
 
 	def on_stop( self ):
@@ -279,7 +275,7 @@ class TestingThread(threading.Thread):
 		self.screen.set_progress(progress * 100)
 
 if __name__ == '__main__':
-	app = FlasherApp("FactoryHardwareTest")
+	app = FlasherApp("Upload")
 	try:
 		app.run()
 	except (KeyboardInterrupt, SystemExit):
