@@ -30,7 +30,8 @@ def observeTest(func):
         unboundFunc = instance.__class__.__dict__[methodName]  # get the unbound function with this name to copy its decoratored values
         if not hasattr(instance, "_attributes"):  # if no existing attributes map
             instance._attributes = {}  # make a new one
-        instance._attributes.update(unboundFunc._attributes)  # this will copy attributes from the unbound func into the bound method's attributes
+        if hasattr(unboundFunc,"_attributes"):     #if the func has attributes
+            instance._attributes.update(unboundFunc._attributes)  # this will copy attributes from the unbound func into the bound method's attributes
         if 'label' in instance._attributes:
             label = instance._attributes['label']  # use the label that was set in the @label
         else:
@@ -121,7 +122,7 @@ def timeout(seconds):
         return _addAttribute(method, "timeout", seconds)
     return method_call
 
-def decorateTest(test, stateInfoObservers=None, progressObservers=None):  
+def decorateTest(test, stateInfoObservers=None, progressObservers=None, attributes = None):  
     '''
     Decorate a test to use the observeTest decorator above, passing along observers
     :param test:
@@ -133,6 +134,7 @@ def decorateTest(test, stateInfoObservers=None, progressObservers=None):
     test.stateInfoObservers.extend(stateInfoObservers)
     test.progressObservers = []
     test.progressObservers.extend(progressObservers)
+    test.attributes = attributes
     
     
 def _decoratedAttribute(test, name):

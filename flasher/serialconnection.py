@@ -28,7 +28,7 @@ BAUD=115200
 SERIAL_DEVICE_NAME="/dev/chip_usb" 
 TIMEOUT = 10 #this really doesn't do much
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 serialLog = logging.getLogger("serial")
 
 class SerialConnection(object):
