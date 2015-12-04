@@ -165,7 +165,11 @@ class DeviceDescriptor:
 			widget.color = color
 	
 	
-	
+
+META_STATE_IDLE = 0
+META_STATE_ACTIVE = 1
+META_STATE_DONE = 2	
+
 class FlasherApp( App ):
 	def __init__( self, testSuiteName ):
 		super( FlasherApp, self ).__init__()
@@ -173,6 +177,7 @@ class FlasherApp( App ):
 		self.testSuiteName = testSuiteName
 		PersistentData.read()
 		self.testThreads = {}
+		self.metaStates = {}
 		self.labelMap = {}
 		self.deviceDescriptors = readRules(UDEV_RULES_FILE)
 		self.mutexes = {}
@@ -213,10 +218,29 @@ class FlasherApp( App ):
 		#currently the button remains bound. we could also unbind it while running to ignore these messages
 		if button in self.testThreads and self.testThreads[button].isAlive(): #check to see we are not currently testing for this button
 # 			print "already testing"
-			
 			return
-		suite = self._loadSuite()
+		
+		if not button  in self.metaStates:
+			self.metaStates[button] = META_STATE_IDLE
+ 		
+		metaState = self.metaStates[button]
+ 		
+		if metaState == META_STATE_ACTIVE: #ignore if currently running
+			return
+		
 		deviceDescriptor = self.deviceDescriptors[button.id]
+
+		if metaState == META_STATE_DONE:
+			deviceDescriptor.setWidgetColor(self.screen.passiveColor)
+			deviceDescriptor.widgetInfo['status'].text=WAITING_TEXT
+			deviceDescriptor.widgetInfo['label'].text=''
+
+			self.metaStates[button] = META_STATE_IDLE
+			return
+		elif metaState == META_STATE_IDLE:
+			self.metaStates[button] = META_STATE_ACTIVE
+			
+		suite = self._loadSuite()
 		testThread = TestingThread(suite,self,button,deviceDescriptor) #, sel)
 # 		testThread = threading.Thread( target=self._runTestSuite.__get__(self,FlasherApp), args=(button,)) # The test must run in another thread so as not to block kivy
 		self.testThreads[button] = testThread
@@ -282,7 +306,7 @@ class TestingThread(threading.Thread):
 			self.testsPassed()
 		else:
 			self.testsFailed()
-			
+		self.flasherApp.metaStates[self.button] = META_STATE_DONE	
 	def _setColor(self,color):	
 		self.deviceDescriptor.setWidgetColor(color)
 		
@@ -315,15 +339,11 @@ class TestingThread(threading.Thread):
 			if stateInfo['when']== "before":
 				if mutex: #if this test needs a mutex
 					if not mutex in self.flasherApp.mutexes:
-						print "making lock " + mutex
 						self.flasherApp.mutexes[mutex] = threading.Lock() #make a new one
 					lock = self.flasherApp.mutexes[mutex] #get the lock
 					self._setColor(self.screen.passiveColor)
 					self.status.text = PAUSED_TEXT
-					print "trying to aquire lock " + mutex
 					lock.acquire()
-					print "acquired lock " + mutex
-					 
 
 				self._setColor(self.screen.activeColor)
 				if progressSeconds:
@@ -331,7 +351,6 @@ class TestingThread(threading.Thread):
 			else: #after
 				if mutex:
 					self.flasherApp.mutexes[mutex].release()
-					print "----------------release lock "
 				if progressSeconds:
 					progressCallback = self.progress.addProgress.__get__(progress, Progress)
 					Clock.unschedule(progressCallback)

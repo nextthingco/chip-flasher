@@ -47,7 +47,7 @@ class Upload(TestCase):
         
         
         
-    def _doFlashStage(self,stage, chipPath=None,timeout=400):
+    def _doFlashStage(self,stage,timeout=400):
 # Uncomment for mocking        
 #         if True:
 #             time.sleep(1)
@@ -57,8 +57,10 @@ class Upload(TestCase):
         
         commandRunner = CommandRunner(self.log,progressObservers = self.progressObservers)
         args = ["./chip-flash","-u", ".firmware", "--stage",str(stage)]
-        if chipPath:
-            args.extend(["--chip-path", chipPath])
+        if self.felPort:
+            args.extend(["--chip-path", self.felPort])
+        print self.felPort
+        print args
         errcode = commandRunner.call_and_return(cmd=args, timeout=timeout)
         print("Error code: " + str(errcode) )
         if errcode != 0:
