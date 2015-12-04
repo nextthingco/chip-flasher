@@ -113,6 +113,17 @@ def promptAfter(text):
         return _addAttribute(method, "promptAfter", text)
     return method_call
 
+
+def mutex(name):
+    '''
+    @mutex decorator
+    :param name: A mutex to prevent others from running
+    '''
+    def method_call(method):
+        return _addAttribute(method, "mutex", name)
+    return method_call
+
+
 def timeout(seconds):
     '''
     @timeout decorator
@@ -121,7 +132,7 @@ def timeout(seconds):
     def method_call(method):
         return _addAttribute(method, "timeout", seconds)
     return method_call
-
+    
 def decorateTest(test, stateInfoObservers=None, progressObservers=None, attributes = None):  
     '''
     Decorate a test to use the observeTest decorator above, passing along observers
@@ -195,6 +206,13 @@ def progressForTest(test):
     :param test:
     '''
     return _decoratedAttribute(test, 'progress')
+
+def mutexForTest(test):
+    '''
+    Get the @progress
+    :param test:
+    '''
+    return _decoratedAttribute(test, 'mutex')
 
 def methodForTest(test):
     '''

@@ -29,7 +29,9 @@ from flashTest import Upload
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from hwtest import FactoryHardwareTest
-# from __main__ import port
+
+UDEV_RULES_FILE = '/etc/udev/rules.d/flasher.rules'
+
 OSX_FONT="/Library/Fonts/Arial Unicode.ttf"
 UBUNTU_FONT="/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
 if os.path.isfile( OSX_FONT ):
@@ -38,6 +40,8 @@ else:
 	FONT_NAME = UBUNTU_FONT
 	
 WAITING_TEXT="Waiting\n等候"
+PAUSED_TEXT="Paused\n暂停"
+
 TESTING_TEXT="Testing\n测试"
 FINSHED_TEXT="Finished\n完"
 	
@@ -118,7 +122,7 @@ get_class = lambda x: globals()[x]
 
 def readRules(rulesFilePath):
 	'''
-	Parse a udev file and construct a map of descriptors
+	Parse a udev file and construct a map of descriptors which map fel, fastboot, and serial-gadget to a physical port
 	There are other, maybe better approaches to this, for example, running udevadm info -e
 	and parsing that result for the appropriate devices
 	:param rulesFilePath:
@@ -137,12 +141,13 @@ def readRules(rulesFilePath):
 				else:
 					descriptor = DeviceDescriptor(port,vendor,product)
 					descriptorMap[port] = descriptor
+				device = '/dev/' + symlink	
 				if vendor == '1f3a' and product == 'efe8':
-					descriptor.fel = symlink
+					descriptor.fel = device
 				elif vendor == '18d1' and product == '1010':
-					descriptor.fastboot = symlink
+					descriptor.fastboot = device
 				elif vendor == "0525" and product == 'a4a7':
-					descriptor.serialGadget = symlink
+					descriptor.serialGadget = device
 					
 	return descriptorMap
 
@@ -169,8 +174,8 @@ class FlasherApp( App ):
 		PersistentData.read()
 		self.testThreads = {}
 		self.labelMap = {}
-		self.deviceDescriptors = readRules('./multi_udev.rules')
-		self.felLock = threading.RLock()
+		self.deviceDescriptors = readRules(UDEV_RULES_FILE)
+		self.mutexes = {}
 
 		
 	def _loadSuite(self):
@@ -212,7 +217,7 @@ class FlasherApp( App ):
 			return
 		suite = self._loadSuite()
 		deviceDescriptor = self.deviceDescriptors[button.id]
-		testThread = TestingThread(suite,self,button,deviceDescriptor, self.felLock)
+		testThread = TestingThread(suite,self,button,deviceDescriptor) #, sel)
 # 		testThread = threading.Thread( target=self._runTestSuite.__get__(self,FlasherApp), args=(button,)) # The test must run in another thread so as not to block kivy
 		self.testThreads[button] = testThread
 		testThread.start() #start the thread, which will call runTestSuite
@@ -244,7 +249,7 @@ class FlasherApp( App ):
 
 		
 class TestingThread(threading.Thread):
-	def __init__(self, suite, flasherApp, promptButton, deviceDescriptor, felLock):
+	def __init__(self, suite, flasherApp, promptButton, deviceDescriptor):
 	 	threading.Thread.__init__(self)
 	 	self.suite = suite
 	 	self.flasherApp = flasherApp
@@ -257,10 +262,10 @@ class TestingThread(threading.Thread):
 		self.totalProgressBar = deviceDescriptor.widgetInfo['totalProgressBar']
 		self.status = deviceDescriptor.widgetInfo['status']
 
-		self.testCaseAttributes = {'deviceDescriptor': deviceDescriptor, 'felLock': felLock} #such as for the flasher to get the port
+		self.testCaseAttributes = {'deviceDescriptor': deviceDescriptor} #such as for the flasher to get the port
 		
 		self.totalProgressSeconds = sum( progressForTest(testCase) for testCase in suite)
-		print self.totalProgressSeconds	
+# 		print self.totalProgressSeconds	
 		
 	def run(self):
 		self._runTestSuite()
@@ -305,11 +310,28 @@ class TestingThread(threading.Thread):
 					
 			progressSeconds =  progressForTest(testCase)
 			timeout =  timeoutForTest(testCase)
+			lock = None
+			mutex = mutexForTest(testCase)
 			if stateInfo['when']== "before":
+				if mutex: #if this test needs a mutex
+					if not mutex in self.flasherApp.mutexes:
+						print "making lock " + mutex
+						self.flasherApp.mutexes[mutex] = threading.Lock() #make a new one
+					lock = self.flasherApp.mutexes[mutex] #get the lock
+					self._setColor(self.screen.passiveColor)
+					self.status.text = PAUSED_TEXT
+					print "trying to aquire lock " + mutex
+					lock.acquire()
+					print "acquired lock " + mutex
+					 
+
 				self._setColor(self.screen.activeColor)
 				if progressSeconds:
 					self.progress = Progress(progressObservers = [self.onProgressChange.__get__(self,TestingThread)], finish=progressSeconds, timeout = timeout )
 			else: #after
+				if mutex:
+					self.flasherApp.mutexes[mutex].release()
+					print "----------------release lock "
 				if progressSeconds:
 					progressCallback = self.progress.addProgress.__get__(progress, Progress)
 					Clock.unschedule(progressCallback)

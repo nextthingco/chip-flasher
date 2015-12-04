@@ -6,21 +6,21 @@ import sys
 from observable_test import *
 import threading
 import os.path
+from kivy import Logger
 # from pytest_timeout import *
 # from observable_test import label
 # from observed import observable_method
 from commandRunner import CommandRunner
 
 import random
-serialLog = logging.getLogger("serial")
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 FEL = 'fel'
 class Upload(TestCase):
     @classmethod
     def setUpClass(cls):
-        print ("upload set up")
-#         cls.felLock = threading.Lock()
+        cls.log = Logger
+        cls.log.info("upload class set up")
         
     err_codes = {
         -1: "Unknown Failure",
@@ -39,29 +39,23 @@ class Upload(TestCase):
         self.progressObservers = []
         try:
             self.felPort = self.attributes['deviceDescriptor'].fel
-            self.felLock = self.attributes['felLock']
         except: # run from regular unit test
-            from threading import Lock
             self.felPort = "/dev/chip_usb"
-            self.felLock = threading.Lock()
-#        print("Waiting for USB")
-#         if not wait_for_fel( instance=None, type="fel", serialLog=serialLog, timeout=30 ):
-#             raise Exception( "Flashing failed: ", "Could not find FEL device" )
-        pass  
     
     def findFelDevice(self):
-        return os.path.isfile(self.felPort)
+        return os.path.exists(self.felPort)
         
         
         
     def _doFlashStage(self,stage, chipPath=None,timeout=400):
-        if True:
-            time.sleep(1)
-            if random.random() < 0.1:
-                raise Exception("mock failure on " + self.felPort)
-            return
+# Uncomment for mocking        
+#         if True:
+#             time.sleep(1)
+#             if random.random() < 0.1:
+#                 raise Exception("mock failure on " + self.felPort)
+#             return
         
-        commandRunner = CommandRunner(serialLog,progressObservers = self.progressObservers)
+        commandRunner = CommandRunner(self.log,progressObservers = self.progressObservers)
         args = ["./chip-flash","-u", ".firmware", "--stage",str(stage)]
         if chipPath:
             args.extend(["--chip-path", chipPath])
@@ -80,40 +74,39 @@ class Upload(TestCase):
             if self.findFelDevice():
                 return
             time.sleep(1)
-        raise Exception("No FEL device found")
+        raise Exception("No FEL device found: " + self.felPort)
             
         
         
     @label("Launch SPL\n chinese")
     @progress(5)
     def test_Stage0(self):
-        with self.felLock:
-            self._doFlashStage(0)
+        self._doFlashStage(0)
 
     @label("Upload SPL\n chinese")
     @progress(5)
+    @mutex("fel")
     def test_Stage1(self):
-        with self.felLock:
-            self._doFlashStage(1)
+        self._doFlashStage(1)
         
     @label("Upload U-Boot\n chinese")
     @progress(5)
+    @mutex("fel")
 #     @promptAfter("after upload UbootL")
     def test_Stage2(self):
-        with self.felLock:
-            self._doFlashStage(2)
+        self._doFlashStage(2)
         
     @label("Upload U-Boot Script\n chinese")
     @progress(5)
+    @mutex("fel")
     def test_Stage3(self):
-        with self.felLock:
-            self._doFlashStage(3)
+        self._doFlashStage(3)
     
     @label("Execute U-Boot\n chinese")
     @progress(60)
+    @mutex("fel")
     def test_Stage4(self):
-        with self.felLock:
-            self._doFlashStage(4)
+        self._doFlashStage(4)
 
     @label("Upload UBI\n chinese")
     @progress(210)
