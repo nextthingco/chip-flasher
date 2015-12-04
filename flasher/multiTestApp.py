@@ -75,7 +75,7 @@ class FlasherScreen( GridLayout ):
 			deviceDescriptor = self.deviceDescriptors[key]
 			
 			self.addDeviceWidget(deviceDescriptor,key,'button',
-						Button(text=deviceDescriptor.port, color = self.passiveColor, font_size=76, font_name=FONT_NAME, halign="center", size_hint_x=None, width=200))
+						Button(text=deviceDescriptor.portNumber(), color = self.passiveColor, font_size=76, font_name=FONT_NAME, halign="center", size_hint_x=None, width=200))
 
 			self.addDeviceWidget(deviceDescriptor,key,'status',
 						Label( text = WAITING_TEXT, color = self.passiveColor, font_size=30, font_name=FONT_NAME, halign="center" ))
@@ -164,6 +164,8 @@ class DeviceDescriptor:
 		for widget in self.widgetInfo.itervalues():
 			widget.color = color
 	
+	def portNumber(self):
+		return self.port.split('.')[-1] #last value after .
 	
 
 META_STATE_IDLE = 0
