@@ -148,12 +148,12 @@ function install_linux {
 	if [[ -z "$( ${PIP} show pyserial)" ]]; then
 		${PIP} install pyserial || error "could not install pyserial!"
 	fi
-	if [[ -z "$(which tmate)" ]]; then
-		install_package software-properties-common && \
-		install_package_repo ppa:nviennot/tmate && \
-		install_package tmate || \
-			error "Could not install tmate!"
-	fi
+	# if [[ -z "$(which tmate)" ]]; then
+	# 	install_package software-properties-common && \
+	# 	install_package_repo ppa:nviennot/tmate && \
+	# 	install_package tmate || \
+	# 		error "Could not install tmate!"
+	# fi
 }
 function install_flasher {
 	if [[ ! -d "flasher" ]]; then
@@ -171,13 +171,13 @@ function install_flasher {
 		popd
 	fi
 
-	if [[ ! -d "flasher/testjig" ]]; then
-		git clone https://github.com/NextThingCo/ChipTestJig flasher/testjig
-	else
-		pushd flasher/testjig
-		git pull
-		popd
-	fi
+	# if [[ ! -d "flasher/testjig" ]]; then
+	# 	git clone https://github.com/NextThingCo/ChipTestJig flasher/testjig
+	# else
+	# 	pushd flasher/testjig
+	# 	git pull
+	# 	popd
+	# fi
 	if [[ ! -f "flasher/sunxi-tools/fel" ]]; then
 		if [[ ! -d "flasher/sunxi-tools" ]]; then
 			git clone https://github.com/nextthingco/sunxi-tools flasher/sunxi-tools
