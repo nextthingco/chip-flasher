@@ -31,6 +31,7 @@ TIMEOUT = 10 #this really doesn't do much
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 serialLog = logging.getLogger("serial")
+
 class SerialConnection(object):
     '''
     Class which manages a serial connection. Once connected, it can be used to send and receive commands
@@ -66,7 +67,7 @@ class SerialConnection(object):
             self.ser = serial.Serial(port=self.serialDeviceName, baudrate=BAUD, timeout=self.timeout)  # open the serial port. Must make a class member so it won't get cleaned up
         except Exception, e:
             if e.errno == 2:
-                serialLog.debug("Could not open serial device: " + self.serialDeviceName)
+                print ("Could not open serial device: " + self.serialDeviceName)
             else:
                 serialLog.exception(e)
             self.ser = None
@@ -79,7 +80,7 @@ class SerialConnection(object):
         except Exception, e:
             self.ser = None
             self.tty = None
-            serialLog.debug("Could not open serial device [2]: " + self.serialDeviceName)
+            print ("Could not open serial device [2]: " + self.serialDeviceName)
             return False
             
     def connect(self, tries=120):
@@ -88,7 +89,7 @@ class SerialConnection(object):
         :param tries:
         '''
         elapsedTime = 0
-        serialLog.debug("connecting")
+        print ("connecting")
         while not self.loggedIn: #when either no conneciton or login
             if not self.ser: #if no connection
                 self.__connectUsingSerial() # try and get one
@@ -112,44 +113,45 @@ class SerialConnection(object):
                 try:
                     index = self.tty.expect_list([LOGIN_REGEX, PASSWORD_REGEX, UBOOT_REGEX, COMMAND_PROMPT_REGEX, pexpect.EOF, pexpect.TIMEOUT,LOGIN_INCORRECT], timeout=self.timeout)
                 except Exception, e:
-                    serialLog.debug("couldn't read, maybe timeout")
+                    print ("couldn't read, maybe timeout")
                     serialLog.exception(e)
                     return False;
                 # Go through the various possibilities. The index corresponds to the array passed into expect() above
-                serialLog.debug(self.tty.before)
+                print (self.tty.before)
                 if index == 0:
                     if sawLogin: # ignore if already saw - this is for the post login message
                         continue
-                    serialLog.debug("Sending login")
+                    print ("Sending login")
                     sawLogin = True
                     self.tty.sendline(self.login)
                     time.sleep(.5)
                 elif index == 1:
-                    serialLog.debug("Sending password")
+                    print ("Sending password")
                     self.tty.sendline(self.password)
                     time.sleep(2)
                 elif index == 2:
-                    serialLog.debug("Uboot prompt detected")
+                    print ("Uboot prompt detected")
                     sawLogin = False
                     self.tty.sendline("reset") # Reset CHIP so that we're no longer in the uboot environment.
                     time.sleep(5) # Wait to make sure we're passed the "press any key to stop autoboot" prompt
                     self.tty = None
                 elif index == 3:
-                    serialLog.debug("Have prompt, logged in")
+                    print ("Have prompt, logged in")
                     self.loggedIn = True
                     self.tty.sendline("stty columns 180") #without this, long commands will hang!
                     time.sleep(1) #give this command time to take effect. 
                     break  # we have a command prompt, either through login or already there
                 elif index == 4: #benign, try again
                     if not sawLogin:
+                        print ("sending blank line")
                         self.tty.sendline("")
                         return False
-                    serialLog.debug("EOF on login. benign")
+                    print ("EOF on login. benign")
                     time.sleep(1) #wait and try again
                 elif index == 5: # The session was closed by the remote.
                     self.close()
                 elif index == 6:
-                    serialLog.debug("Login failed")
+                    print ("Login failed")
                     self.sawLogin = False
                     time.sleep(2)
         except Exception, e:
