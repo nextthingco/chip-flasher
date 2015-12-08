@@ -69,10 +69,10 @@ class Flasher(TestCase):
         if not hasattr(self,"output"):
             self.output = ""
         self.output += out
-        print("Error code: " + str(errcode) )
         if errcode != 0:
             if not errcode in self.err_codes:
                 errcode = -1
+            self.output += "\nFlashing failed: " + self.err_codes[ errcode ] + "\n"
             raise Exception( "Flashing failed: ", self.err_codes[ errcode ] )
         
 #     def _doFlashStageNew(self,stage,timeout=400):
