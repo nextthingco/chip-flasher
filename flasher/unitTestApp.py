@@ -22,7 +22,7 @@ import os
 import sys
 import subprocess
 import unittest
-from flashTest import Upload
+from flasher import Flasher
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from hwtest import FactoryHardwareTest
@@ -36,10 +36,10 @@ else:
 log = LogManager.get_global_log()
 
 class FlasherScreen( GridLayout ):
-	successColor = [ 1, 0, 0, 1] # in China RED is positive
-	failColor = [ 1, 1, 1, 1] # in China, WHITE is negative
-	activeColor = [ 0, 1, 0, 1] # we will use GREEN for active
-	passiveColor = [ 1, 1, 0, 1] # we will use YELLOW for passive
+	SUCCESS_COLOR = [ 1, 0, 0, 1] # in China RED is positive
+	FAIL_COLOR = [ 1, 1, 1, 1] # in China, WHITE is negative
+	ACTIVE_COLOR = [ 0, 1, 0, 1] # we will use GREEN for active
+	PASSIVE_COLOR = [ 1, 1, 0, 1] # we will use YELLOW for passive
 
 	def __init__( self, **kwargs ):
 		super(FlasherScreen, self).__init__(**kwargs)
@@ -91,7 +91,7 @@ class FlasherScreen( GridLayout ):
 	def onStateChange(self,stateInfo):
 		if stateInfo['label']:
 			self.button.text = stateInfo['label']
-			self.button.color = self.activeColor
+			self.button.color = self.ACTIVE_COLOR
 
 	def set_progress(self, value, max=100 ):
 		self.progressbar.value = value*100.0
@@ -109,9 +109,9 @@ def loggerTest(stateInfo):
 
 get_class = lambda x: globals()[x]
 
-class FlasherApp( App ):
+class TestSuiteGUIApp( App ):
 	def __init__( self, testSuiteName ):
-		super( FlasherApp, self ).__init__()
+		super( TestSuiteGUIApp, self ).__init__()
 		cwd = path.dirname( path.dirname( path.realpath( __file__ ) ) )
 		self.testSuiteName = testSuiteName
 		PersistentData.read()
@@ -132,7 +132,7 @@ class FlasherApp( App ):
 		for test in suite:
 			text = labelForTest(test)
 			if text:
-				label = Label( text = labelForTest(test), color = self.screen.passiveColor, font_name=FONT_NAME, halign="center" )
+				label = Label( text = labelForTest(test), color = self.screen.PASSIVE_COLOR, font_name=FONT_NAME, halign="center" )
 				labels.append(label)
 				self.labelMap[methodForTest(test)] = label
 		
@@ -173,7 +173,7 @@ class FlasherApp( App ):
 			return
 		suite = self._loadSuite()
 		testThread = TestingThread(suite,self,button)
-# 		testThread = threading.Thread( target=self._runTestSuite.__get__(self,FlasherApp), args=(button,)) # The test must run in another thread so as not to block kivy
+# 		testThread = threading.Thread( target=self._runTestSuite.__get__(self,TestSuiteGUIApp), args=(button,)) # The test must run in another thread so as not to block kivy
 		self.testThreads[button] = testThread
 		testThread.start() #start the thread, which will call runTestSuite
 		
@@ -188,7 +188,7 @@ class FlasherApp( App ):
 		
 		self.displayTests()
 		button = self.screen.button
-		self.screen.button.bind( on_press=self.onRunTestSuite.__get__(self, FlasherApp))
+		self.screen.button.bind( on_press=self.onRunTestSuite.__get__(self, TestSuiteGUIApp))
 
 		return self.screen
 
@@ -245,7 +245,7 @@ class TestingThread(threading.Thread):
 			progressSeconds =  progressForTest(testCase)
 			timeout =  timeoutForTest(testCase)
 			if stateInfo['when']== "before":
-				label.color = self.screen.activeColor
+				label.color = self.screen.ACTIVE_COLOR
 				if progressSeconds:
 					self.progress = Progress(progressObservers = [self.onProgressChange.__get__(self,TestingThread)], finish=progressSeconds, timeout = timeout )
 			else: #after
@@ -253,7 +253,7 @@ class TestingThread(threading.Thread):
 					progressCallback = self.progress.addProgress.__get__(progress, Progress)
 					Clock.unschedule(progressCallback)
 
-				label.color = self.screen.passiveColor
+				label.color = self.screen.PASSIVE_COLOR
 			self.screen.onStateChange(stateInfo)
 
 	def onWakeup(self,button):
@@ -262,12 +262,12 @@ class TestingThread(threading.Thread):
 		pass
 	
 	def testsPassed(self):
-		self.screen.button.color = self.screen.successColor
+		self.screen.button.color = self.screen.SUCCESS_COLOR
 		self.screen.button.text = "PASS\n通过"
 
 	def testsFailed(self):
-		self.screen.button.color = self.screen.failColor
-		self.currentLabel.color = self.screen.failColor #last test failed
+		self.screen.button.color = self.screen.FAIL_COLOR
+		self.currentLabel.color = self.screen.FAIL_COLOR #last test failed
 		self.screen.button.text = "FAIL\n失败"
 	
 	def onProgressChange(self,progress):
@@ -275,7 +275,7 @@ class TestingThread(threading.Thread):
 		self.screen.set_progress(progress * 100)
 
 if __name__ == '__main__':
-	app = FlasherApp("Upload")
+	app = TestSuiteGUIApp("Flasher")
 	try:
 		app.run()
 	except (KeyboardInterrupt, SystemExit):

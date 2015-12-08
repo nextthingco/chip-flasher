@@ -24,9 +24,9 @@ class PersistentData( object ):
 			log.error( "Failed to read from " + PersistentData.stats_filename )
 			PersistentData.data = {}
 
-		if not PersistentData.exists( "flash-count" ):
-			print( "Can't find flash-count" )
-			PersistentData.set( "flash-count", 0 )
+		if not PersistentData.exists( "py-count" ):
+			print( "Can't find py-count" )
+			PersistentData.set( "py-count", 0 )
 
 	@staticmethod
 	def write():

@@ -1,63 +1,35 @@
 # -*- coding: utf-8 -*-
-import time
 import subprocess
 import os
 import signal
 from os import path
 from kivy.clock import Clock
-from functools import partial
 from threading import Timer
-import cmd
 from progress import Progress
-# from observed import observable_method
-
 	
 class CommandRunner:
+	'''
+	This class executes a shell command and returns a return code
+	It also will update any progress observers
+	'''
 	def __init__(self,log, progressObservers = None, expectedTime = None):
+		'''
+		:param log: Logger to use. If running in Kivy, it will use a Kivy logger
+		:param progressObservers: Any observers to be notitifed of progress
+		:param expectedTime: How long the subprocess should take. Used for updating progress 
+		'''
 		self.log = log
 		self.progress=Progress(progressObservers)
 		self.expectedTime = expectedTime
 
-
-# 	def call_and_return(self, func, timeout=1):
-# 		self.progress.finish =self.expectedTime
-# 		if self.expectedTime:
-# 			Clock.schedule_interval(self.progress.addProgress.__get__(self.progress, Progress), 1.0/self.expectedTime ) # callback for bound method
-# 		
-# 		try:
-# 			func
-# 		
-# 		log = self.log
-# 		log.info('ENTER: call_and_return()')
-# 		working_dir=path.dirname( path.dirname( path.realpath( __file__ ) ) )
-# 		my_env = os.environ.copy()
-# 		my_env["BUILDROOT_OUTPUT_DIR"] = working_dir+"/tools/.firmware/"
-# 		proc = subprocess.Popen( cmd, cwd=working_dir+"/tools", shell=False, preexec_fn=os.setsid, env=my_env )
-# 		timer = Timer( timeout, os.killpg, [ proc.pid, signal.SIGTERM ] )
-# 		returncode = None
-# 		try:
-# 			timer.start()
-# 			Clock.schedule_interval(self.progress.addProgress.__get__(self.progress, Progress), 1.0/expectedTime ) # callback for bound method
-# 			proc.communicate()
-# 			proc.wait()
-# 			returncode = proc.returncode
-# 		finally:
-# 			timer.cancel()
-# 			Clock.unschedule(self.progress.addProgress)
-# # 			instance.set_progress( 1, 1 )
-# 			log.info('error code='+str(proc.returncode))
-# 			log.info('LEAVE: call_and_return()')
-# 			if proc.returncode < 0:
-# 				log.info('Timeout occurred!')
-# 			
-# 			if proc.poll():
-# 				log.error("Process " + str(proc.pid) + " is still running!")
-# 			return returncode
-		
-		 
-
-	# calls a shell command
 	def call_and_return(self, cmd, timeout=1, expectedTime=60):
+		'''
+		Spawn a subprocess and return the return code
+		This maybe could be simplified by using pexpect.run()
+		:param cmd: Command to run. Can be array
+		:param timeout: timeout of the process. Is this working?
+		:param expectedTime: How long we think it should take
+		'''
 		self.expectedTime = expectedTime
 		self.progress.finish =expectedTime
 		
@@ -67,19 +39,21 @@ class CommandRunner:
 		my_env = os.environ.copy()
 		my_env["BUILDROOT_OUTPUT_DIR"] = working_dir+"/flasher/tools/.firmware/"
 		print working_dir + "/flasher/tools"
-		proc = subprocess.Popen( cmd, cwd=working_dir+"/flasher/tools", shell=False, preexec_fn=os.setsid, env=my_env )
-		timer = Timer( timeout, os.killpg, [ proc.pid, signal.SIGTERM ] )
+		
+
+		proc = subprocess.Popen( cmd, cwd=working_dir+"/flasher/tools", shell=False, preexec_fn=os.setsid, env=my_env, stdout=subprocess.PIPE )
+		timer = Timer( timeout, os.killpg, [ proc.pid, signal.SIGTERM ] ) #timeout will signal process to kill
 		returncode = None
+				
 		try:
 			timer.start()
 			Clock.schedule_interval(self.progress.addProgress.__get__(self.progress, Progress), 1.0/expectedTime ) # callback for bound method
-			proc.communicate()
+			out ,err = proc.communicate()
 			proc.wait()
 			returncode = proc.returncode
 		finally:
 			timer.cancel()
 			Clock.unschedule(self.progress.addProgress)
-# 			instance.set_progress( 1, 1 )
 			log.info('error code='+str(proc.returncode))
 			log.info('LEAVE: call_and_return()')
 			if proc.returncode < 0:
@@ -87,4 +61,4 @@ class CommandRunner:
 			
 			if proc.poll():
 				log.error("Process " + str(proc.pid) + " is still running!")
-			return returncode
+			return out, returncode
