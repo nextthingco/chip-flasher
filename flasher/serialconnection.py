@@ -69,7 +69,7 @@ class SerialConnection(object):
             if e.errno == 2:
                 print ("Could not open serial device: " + self.serialDeviceName)
             else:
-                serialLog.exception(e)
+                print (e)
             self.ser = None
             return False
 
@@ -83,12 +83,13 @@ class SerialConnection(object):
             print ("Could not open serial device [2]: " + self.serialDeviceName)
             return False
             
-    def connect(self, tries=120):
+    def connect(self, timeout=60):
         '''
         Connect AND login
         :param tries:
         '''
         elapsedTime = 0
+        startTime = time.time() 
         print ("connecting")
         while not self.loggedIn: #when either no conneciton or login
             if not self.ser: #if no connection
@@ -98,7 +99,7 @@ class SerialConnection(object):
                     break
 
             elapsedTime = elapsedTime +1
-            if elapsedTime > tries:
+            if time.time() - startTime > timeout:
                 raise Exception("TIMEOUT")
             time.sleep(1) # wait and try again
 

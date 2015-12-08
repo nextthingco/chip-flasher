@@ -14,6 +14,8 @@ PASSWORD = 'chip'
 ALL_TESTS_PASSED_REGEX = re.compile(r'.*### ALL TESTS PASSED ###.*')
 
 dummy = DeviceDescriptor.makeDummy()
+CONNECT_TIME = 60
+FINE_SERIAL_TIME = 45
 class ChipHardwareTest(TestCase):
     '''
     This will wait for CHIP to boot up, log in, and then run 'hwtest' on it
@@ -40,22 +42,22 @@ class ChipHardwareTest(TestCase):
         return self.deviceDescriptor.serialConnection
         
     @label(UI_WAITING_FOR_DEVICE)
-    @progress(20)
+    @progress(FINE_SERIAL_TIME)
     def test_000_serial(self):
-        for attempt in range(1,45):
+        for attempt in range(1,FINE_SERIAL_TIME):
             if self.findSerialDevice():
                 return
             time.sleep(1)
-        raise Exception("No Serial device found: " + self.serialPort)
+        raise Exception("No Serial device found: " + self.deviceDescriptor.serial)
             
     @label(UI_LOGIN)
-    @progress(30)
+    @progress(CONNECT_TIME)
     def test_010_login(self):
         self.getSerialConnection()
-        self.getSerialConnection().connect()
+        self.getSerialConnection().connect(timeout=CONNECT_TIME)
         
     @label(UI_HARDWARE_TEST)
-    @progress(25)
+    @progress(17)
     def test_020_hwtest(self):
         try:
             ser = self.getSerialConnection()
