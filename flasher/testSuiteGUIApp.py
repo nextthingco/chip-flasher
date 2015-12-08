@@ -88,11 +88,15 @@ class TestSuiteGUIApp( App ):
 		self.title = "Host: " + self.hostname + " | Flasher Revision: " + self.rev[0:10] + " | Firmware Build: " + self.build_string
 
 
-	
+	def onShowOutput(self,button):
+		if button.id in self.testThreads:
+			thread = self.testThreads[button.id]
+			thread.onShowOutput(button)
+
 	def onRunTestSuite(self, button):
 		
 		#currently the button remains bound. we could also unbind it while running to ignore these messages
-		if button in self.testThreads and self.testThreads[button].isAlive(): #check to see we are not currently testing for this button
+		if button in self.testThreads and self.testThreads[button.id].isAlive(): #check to see we are not currently testing for this button
 			return
 		
 		if not button  in self.metaStates:
@@ -120,7 +124,7 @@ class TestSuiteGUIApp( App ):
 		suite = self._loadSuite()
 		testThread = TestingThread(suite,self,button,deviceDescriptor,self.count) #, sel)
 # 		testThread = threading.Thread( target=self._runTestSuite.__get__(self,TestSuiteGUIApp), args=(button,)) # The test must run in another thread so as not to block kivy
-		self.testThreads[button] = testThread
+		self.testThreads[button.id] = testThread
 		testThread.start() #start the thread, which will call runTestSuite
 		
 	def setOutput(self,text, deviceDescriptor):
@@ -140,6 +144,8 @@ class TestSuiteGUIApp( App ):
 		for key in self.deviceDescriptors:
 			deviceDescriptor = self.deviceDescriptors[key]
 			deviceDescriptor.widgetInfo['button'].bind( on_press=self.onRunTestSuite.__get__(self, TestSuiteGUIApp))
+			deviceDescriptor.widgetInfo['label'].bind( on_press=self.onShowOutput.__get__(self, TestSuiteGUIApp))
+
 
 		return self.view
 
@@ -161,9 +167,6 @@ class TestingThread(threading.Thread):
 		self.label = deviceDescriptor.widgetInfo['label']
 		self.count = count
 		
-		#bind to the label button for showing output
-		self.label.bind(on_press=self.onShowOutput.__get__(self, TestingThread)) #listen to label 
-
 		self.button =  deviceDescriptor.widgetInfo['button']
 		self.uid = self.button.id
 		self.totalProgressBar = deviceDescriptor.widgetInfo['totalProgressBar']
@@ -173,7 +176,7 @@ class TestingThread(threading.Thread):
 		
 		self.totalProgressSeconds = sum( progressForTest(testCase) for testCase in suite)
 		self.output = ""
-
+			
 	def onShowOutput(self,label):
 		self.view.showOutputOfPort(self.deviceDescriptor)
 		self.setOutput(self.output)

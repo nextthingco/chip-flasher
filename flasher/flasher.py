@@ -51,14 +51,14 @@ class Flasher(TestCase):
         
         
 # Uncomment for mocking        
-    def _doFlashStage(self,stage,timeout=400):
-        if True:
-            time.sleep(1)
-            if random.random() < 0.1:
-                raise Exception("mock failure on " + self.felPort)
-            return
+#     def _doFlashStage(self,stage,timeout=400):
+#         if True:
+#             time.sleep(1)
+#             if random.random() < 0.1:
+#                 raise Exception("mock failure on " + self.felPort)
+#             return
          
-    def x_doFlashStage(self,stage,timeout=400):
+    def _doFlashStage(self,stage,timeout=400):
         commandRunner = CommandRunner(self.log,progressObservers = self.progressObservers)
         args = ["./chip-flash","-u", ".firmware", "--stage",str(stage)]
         if self.felPort:
