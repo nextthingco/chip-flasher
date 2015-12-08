@@ -73,7 +73,7 @@ class TestSuiteGUIView( BoxLayout ):
 		
 		rows = len(self.deviceDescriptors)
 		
-		rowSizeFactor = 2 # 14.0 / rows #adjust font size according to number of rows
+		rowSizeFactor = 1 # 14.0 / rows #adjust font size according to number of rows
 # 		rowSizeFactor = min(rowSizeFactor,15)
 		if HUBS_IN_COLUMNS:
 			hubColumns = len(self.hubs)
