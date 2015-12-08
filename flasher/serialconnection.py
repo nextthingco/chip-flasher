@@ -28,9 +28,9 @@ PASSWORD = "chip"
 BAUD=115200
 SERIAL_DEVICE_NAME="/dev/chip-2-1-serial" 
 TIMEOUT = 10 #this really doesn't do much
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-serialLog = logging.getLogger("serial")
+# 
+# logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+# serialLog = logging.getLogger("serial")
 
 class SerialConnection(object):
     '''
@@ -114,7 +114,7 @@ class SerialConnection(object):
                     index = self.tty.expect_list([LOGIN_REGEX, PASSWORD_REGEX, UBOOT_REGEX, COMMAND_PROMPT_REGEX, pexpect.EOF, pexpect.TIMEOUT,LOGIN_INCORRECT], timeout=self.timeout)
                 except Exception, e:
                     print ("couldn't read, maybe timeout")
-                    serialLog.exception(e)
+#                     serialLog.exception(e)
                     return False;
                 # Go through the various possibilities. The index corresponds to the array passed into expect() above
                 print (self.tty.before)
@@ -157,8 +157,8 @@ class SerialConnection(object):
         except Exception, e:
             print e
             self.tty = None
-            serialLog.exception(e)
-            serialLog.error("unable to serialLog in")
+#             serialLog.exception(e)
+            print ("unable to log in")
             return False
         return True
         
@@ -186,7 +186,8 @@ class SerialConnection(object):
             result = result.rstrip("\r\n") #in most cases there will be a new line. Only if the return is blank will it be empty
             return result
         except Exception, e: # This will happen if the command is invalid on the remote. 
-            serialLog.exception(e)
+            print e
+#             serialLog.exception(e)
             return None
 
 
