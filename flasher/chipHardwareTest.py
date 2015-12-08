@@ -40,7 +40,7 @@ class ChipHardwareTest(TestCase):
         return self.deviceDescriptor.serialConnection
         
     @label(UI_WAITING_FOR_DEVICE)
-    @progress(45)
+    @progress(20)
     def test_000_serial(self):
         for attempt in range(1,45):
             if self.findSerialDevice():

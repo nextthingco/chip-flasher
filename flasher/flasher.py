@@ -109,34 +109,34 @@ class Flasher(TestCase):
         
         
     @label(UI_LAUNCH_SPL)
-    @progress(5)
+    @progress(8)
     @mutex("fel")
     def test_Stage0(self):
         self._doFlashStage(0)
 
     @label(UI_UPLOAD_SPL)
-    @progress(5)
+    @progress(7)
     @mutex("fel")
     def test_Stage1(self):
         self._doFlashStage(1)
         
     @label(UI_UPLOAD_UBOOT)
-    @progress(5)
+    @progress(2)
     def test_Stage2(self):
         self._doFlashStage(2)
         
     @label(UI_UPLOAD_UBOOT_SCRIPT)
-    @progress(5)
+    @progress(1)
     def test_Stage3(self):
         self._doFlashStage(3)
     
     @label(UI_EXECUTE_UBOOT_SCRIPT)
-    @progress(60)
+    @progress(1)
     def test_Stage4(self):
         self._doFlashStage(4)
 
     @label(UI_UPLOAD_UBI)
-    @progress(210)
+    @progress(270)
     def test_Stage5(self):
         self._doFlashStage(5)
         
