@@ -241,7 +241,7 @@ class TestingThread(threading.Thread):
 					if not mutex in self.flasherApp.mutexes:
 						self.flasherApp.mutexes[mutex] = threading.Lock() #make a new one
 					lock = self.flasherApp.mutexes[mutex] #get the lock
-					self._setColor(PASSIVE_COLOR)
+					self._setColor(PAUSED_COLOR)
 					self.status.text = PAUSED_TEXT
 					lock.acquire()
 
@@ -260,7 +260,7 @@ class TestingThread(threading.Thread):
 				self.setOutput(self.output)
 				self._setColor(PASSIVE_COLOR)
 
- 			self.status.text = TESTING_TEXT
+ 			self.status.text = RUNNING_TEXT
 
 	def onWakeup(self,widget):
 		self.event.set()
@@ -281,7 +281,7 @@ class TestingThread(threading.Thread):
 		self.totalProgressBar.value = progress
 
 if __name__ == '__main__':
-	app = TestSuiteGUIApp("Flasher")
+	app = TestSuiteGUIApp("ChipHardwareTest")
 	try:
 		app.run()
 	except (KeyboardInterrupt, SystemExit):

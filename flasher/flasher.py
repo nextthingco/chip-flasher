@@ -19,6 +19,8 @@ import random
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 FEL = 'fel'
+
+MOCK = False #For testing GUI without real things plugged in
 class Flasher(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -46,19 +48,22 @@ class Flasher(TestCase):
             self.felPort = "/dev/ttyACM0"
     
     def findFelDevice(self):
-        print self.felPort
+        if MOCK:
+            return True
         return os.path.exists(self.felPort)
         
         
 # Uncomment for mocking        
-#     def _doFlashStage(self,stage,timeout=400):
-#         if True:
-#             time.sleep(1)
-#             if random.random() < 0.1:
-#                 raise Exception("mock failure on " + self.felPort)
-#             return
+    def _doFlashStageMock(self,stage,timeout=400):
+        if True:
+            time.sleep(1)
+            if random.random() < 0.1:
+                raise Exception("mock failure on " + self.felPort)
+            return
          
     def _doFlashStage(self,stage,timeout=400):
+        if MOCK:
+            return self._doFlashStageMock(stage,timeout)
         commandRunner = CommandRunner(self.log,progressObservers = self.progressObservers)
         args = ["./chip-flash","-u", ".firmware", "--stage",str(stage)]
         if self.felPort:
@@ -105,6 +110,7 @@ class Flasher(TestCase):
         
     @label(UI_LAUNCH_SPL)
     @progress(5)
+    @mutex("fel")
     def test_Stage0(self):
         self._doFlashStage(0)
 

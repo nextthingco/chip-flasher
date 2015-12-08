@@ -5,6 +5,7 @@ from kivy.uix.progressbar import ProgressBar
 from kivy.uix.boxlayout import BoxLayout
 from kivy.core.window import Window
 from kivy.uix.behaviors import ButtonBehavior
+from kivy.graphics import Color
 from logmanager import LogManager
 
 import os
@@ -29,6 +30,8 @@ log = LogManager.get_global_log()
 
 HUBS_IN_COLUMNS = True # if True, there will be one visual column per hub as defined by the UDEV entry: chip-id-hub-mode
 SHOW_STATUS = True # if True, shows an Idle.., Testing,  Pass/Fail column
+
+
 SUCCESS_COLOR = [ 0, 1, 0, 1] # GREEN
 FAIL_COLOR = [ 1, 0, 0, 1] # RED
 ACTIVE_COLOR = [ 1, 1, 1, 1] # we will use WHITE for active
@@ -36,6 +39,7 @@ PASSIVE_COLOR = [ 1, 1, 0, 1] # we will use YELLOW for passive
 PROMPT_COLOR = [ 1, .4, .3, 1] # we will use ORANGE for prompts
 WHITE_COLOR = [ 1, 1, 1, 1] # in China, WHITE is negative
 YELLOW_COLOR = [ 1, 1, 0, 1] # in China, WHITE is negative
+PAUSED_COLOR = [ 1, .5, 0, 1] # in China, WHITE is negative
 
 class LabelButton(ButtonBehavior, Label):
 	'''
@@ -69,7 +73,8 @@ class TestSuiteGUIView( BoxLayout ):
 		
 		rows = len(self.deviceDescriptors)
 		
-		rowSizeFactor = 14.0 / rows #adjust font size according to number of rows
+		rowSizeFactor = 2 # 14.0 / rows #adjust font size according to number of rows
+# 		rowSizeFactor = min(rowSizeFactor,15)
 		if HUBS_IN_COLUMNS:
 			hubColumns = len(self.hubs)
 		else:

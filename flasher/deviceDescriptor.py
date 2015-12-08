@@ -1,7 +1,7 @@
 import re
 from collections import OrderedDict
 
-UDEV_REGEX = re.compile(ur'.*KERNELS.*\"(.*)\".*ATTR\{idVendor}.*\"(.*)\".*ATTRS\{idProduct\}.*\"(.*)\".*SYMLINK.*\"(.*)\"')
+UDEV_REGEX = re.compile(ur'.*KERNELS.*\"(.*)\".*ATTRS\{idVendor}.*\"(.*)\".*ATTRS\{idProduct\}.*\"(.*)\".*SYMLINK.*\"(.*)\"')
 SYMLINK_REGEX = re.compile(r".*chip-(.*)-(.*)-(.*)")
                            
 NAME_FROM_UDEV_REGEX = re.compile(r".*chip-(.*)-usb")
@@ -27,6 +27,7 @@ class DeviceDescriptor:
     def setWidgetColor(self,color):
         for widget in self.widgetInfo.itervalues():
             widget.color = color
+            #TODO Figure out why on occasion this doesn't work and color gets stuck
     
     
     def textForLog(self):

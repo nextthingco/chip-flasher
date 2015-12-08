@@ -16,6 +16,8 @@ UI_UPLOAD_UBI = "Upload UBI\n上传UBI固件"
 WAITING_TEXT="Waiting\n等候"
 PAUSED_TEXT="Paused\n暂停"
 
+RUNNING_TEXT="Running\n运行中"
+FLASHING_TEXT="Flashing\n正在烧录固件"
 TESTING_TEXT="Testing\n测试中"
 
 PASS_TEXT="PASS\n通过"

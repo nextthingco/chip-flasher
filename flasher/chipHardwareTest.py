@@ -26,11 +26,11 @@ class ChipHardwareTest(TestCase):
         except: # run from regular unit test
             global dummy
             self.deviceDescriptor = dummy # a dummy object
-            self.deviceDescriptor.serial = "/dev/chip_usb"
+            self.deviceDescriptor.serial = "/dev/chip-2-1-serial"
     
     def findSerialDevice(self):
-        print "find serial device"
-        print self.deviceDescriptor.serial
+#         print "find serial device"
+#         print self.deviceDescriptor.serial
         return os.path.exists(self.deviceDescriptor.serial)
 
 

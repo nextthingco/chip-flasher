@@ -5,6 +5,7 @@ import serial
 import sys
 import time
 import re
+
 # from usb import USB #it would be nice if we could get the device this way, but I don't see how -HK
 # import termios
 from pexpect import fdpexpect
@@ -25,12 +26,11 @@ LOGIN_INCORRECT = re.compile(r"Login incorrect")
 LOGIN = "root"
 PASSWORD = "chip"
 BAUD=115200
-SERIAL_DEVICE_NAME="/dev/chip_usb" 
+SERIAL_DEVICE_NAME="/dev/chip-2-1-serial" 
 TIMEOUT = 10 #this really doesn't do much
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 serialLog = logging.getLogger("serial")
-
 class SerialConnection(object):
     '''
     Class which manages a serial connection. Once connected, it can be used to send and receive commands
@@ -62,6 +62,7 @@ class SerialConnection(object):
     
     def __connectUsingSerial(self):
         try:
+            print "connecting to " + self.serialDeviceName
             self.ser = serial.Serial(port=self.serialDeviceName, baudrate=BAUD, timeout=self.timeout)  # open the serial port. Must make a class member so it won't get cleaned up
         except Exception, e:
             if e.errno == 2:

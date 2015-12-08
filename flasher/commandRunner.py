@@ -49,6 +49,10 @@ class CommandRunner:
 			timer.start()
 			Clock.schedule_interval(self.progress.addProgress.__get__(self.progress, Progress), 1.0/expectedTime ) # callback for bound method
 			out ,err = proc.communicate()
+			#currently, the output is only updated at the end of the process. An alternative would be to
+			# do like here: http://stackoverflow.com/questions/2804543/read-subprocess-stdout-line-by-line
+			# There should be an observer passed in (like progress observer) which should be notified after
+			# every line and update the GUI
 			proc.wait()
 			returncode = proc.returncode
 		finally:
