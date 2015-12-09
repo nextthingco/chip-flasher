@@ -10,7 +10,7 @@ from kivy.lang import Builder
 from logmanager import LogManager
 from kivy.properties import StringProperty
 import os
-
+ 
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.splitter import Splitter
