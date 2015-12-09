@@ -25,8 +25,8 @@ LOGIN_INCORRECT = re.compile(r"Login incorrect")
 # COMMAND_PROMPT_REGEX = '# '
 LOGIN = "root"
 PASSWORD = "chip"
-BAUD=115200
-# BAUD=9600
+# BAUD=115200
+BAUD=9600
 
 SERIAL_DEVICE_NAME="/dev/chip-2-1-serial" 
 TIMEOUT = 10 #this really doesn't do much
