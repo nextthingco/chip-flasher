@@ -26,6 +26,8 @@ LOGIN_INCORRECT = re.compile(r"Login incorrect")
 LOGIN = "root"
 PASSWORD = "chip"
 BAUD=115200
+# BAUD=9600
+
 SERIAL_DEVICE_NAME="/dev/chip-2-1-serial" 
 TIMEOUT = 10 #this really doesn't do much
 # 
@@ -120,6 +122,7 @@ class SerialConnection(object):
                     return False;
                 # Go through the various possibilities. The index corresponds to the array passed into expect() above
                 print (self.tty.before)
+                print index
                 if index == 0:
                     if sawLogin: # ignore if already saw - this is for the post login message
                         continue
