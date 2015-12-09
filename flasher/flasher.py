@@ -136,7 +136,7 @@ class Flasher(TestCase):
         self._doFlashStage(4)
 
     @label(UI_UPLOAD_UBI)
-    @progress(270)
+    @progress(345)
     def test_Stage5(self):
         self._doFlashStage(5)
         

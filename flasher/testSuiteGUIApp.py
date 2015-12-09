@@ -22,6 +22,8 @@ from chipHardwareTest import ChipHardwareTest
 from observable_test import *
 from ui_strings import *
 UDEV_RULES_FILE = '/etc/udev/rules.d/flasher.rules'
+SORT_DEVICES = True
+SORT_HUBS = True
 
 OSX_FONT="/Library/Fonts/Arial Unicode.ttf"
 UBUNTU_FONT="/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
@@ -52,7 +54,8 @@ class TestSuiteGUIApp( App ):
 		self.testThreads = {}
 		self.metaStates = {}
 		self.labelMap = {}
-		self.deviceDescriptors, self.hubs = DeviceDescriptor.readRules(UDEV_RULES_FILE)
+		self.deviceDescriptors, self.hubs = DeviceDescriptor.readRules(UDEV_RULES_FILE, SORT_DEVICES, SORT_HUBS)
+
 		self.mutexes = {}
 		self.count = 0
 		

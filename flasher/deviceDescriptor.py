@@ -34,11 +34,17 @@ class DeviceDescriptor:
         return "Port: " + self.uid + "\n"
     
     @staticmethod
-    def readRules(rulesFilePath):
+    def readRules(rulesFilePath, sortDevices = True, sortHubs = True):
         '''
         Parse a udev file and construct a map of descriptors which map fel, fastboot, and serial to a physical port
+        The symlink should have format: chip_[id]_[hub]_[fel | fastboot | serial]
+        See the REGEXs at the top of this file for the expected format.
         There are other, maybe better approaches to this, for example, running udevadm info -e
         and parsing that result for the appropriate devices
+        
+        It will construct an ordered dictionary of devices and hubs in the order encountered in the rules file.
+        If sortDevices is true, then the dictionary will be sorted by id, alphabetically
+        If sort hubs is true, then it will sort the hubs alphabetically
         :param rulesFilePath:
         '''
         descriptorMap = OrderedDict() #preserve order from udev file
@@ -74,7 +80,12 @@ class DeviceDescriptor:
                     
                     if not hub in hubs: #add to hub list
                         hubs.append(hub)
-                        
+        
+        if sortDevices:
+            descriptorMap = OrderedDict(sorted(descriptorMap.iteritems(), key=lambda x: x[1].uid))
+        if sortHubs:
+            hubs.sort
+                
         return descriptorMap, hubs
     
         
