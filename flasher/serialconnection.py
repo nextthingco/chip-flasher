@@ -122,7 +122,6 @@ class SerialConnection(object):
                     return False;
                 # Go through the various possibilities. The index corresponds to the array passed into expect() above
                 print (self.tty.before)
-                print index
                 if index == 0:
                     if sawLogin: # ignore if already saw - this is for the post login message
                         continue
@@ -149,7 +148,7 @@ class SerialConnection(object):
                 elif index == 4: #benign, try again
                     if not sawLogin:
                         print ("sending blank line")
-                        self.tty.sendline("\n")
+                        self.tty.sendline("")
                         return False
                     print ("EOF on login. benign")
                     time.sleep(1) #wait and try again
