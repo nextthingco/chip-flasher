@@ -149,7 +149,7 @@ class SerialConnection(object):
                 elif index == 4: #benign, try again
                     if not sawLogin:
                         print ("sending blank line")
-                        self.tty.sendline("")
+                        self.tty.sendline("\n")
                         return False
                     print ("EOF on login. benign")
                     time.sleep(1) #wait and try again
