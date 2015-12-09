@@ -82,7 +82,7 @@ class DeviceDescriptor:
                         hubs.append(hub)
         
         if sortDevices:
-            descriptorMap = OrderedDict(sorted(descriptorMap.iteritems(), key=lambda x: x[1].uid))
+            descriptorMap = OrderedDict(sorted(descriptorMap.iteritems(), key=lambda x: int(x[1].uid)))
         if sortHubs:
             hubs.sort
                 
