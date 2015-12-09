@@ -95,6 +95,7 @@ class SerialConnection(object):
             if not self.ser: #if no connection
                 self.__connectUsingSerial() # try and get one
             if self.ser and self.tty: #if have a connection, try to use it
+                print ("Trying to login ")
                 if self.doLogin(): #if can use it, success
                     break
 
@@ -112,7 +113,7 @@ class SerialConnection(object):
             sawLogin = False # if already saw login prompt, don't send a second one. This is because login message contains the word login:
             while True:
                 try:
-                    index = self.tty.expect_list([LOGIN_REGEX, PASSWORD_REGEX, UBOOT_REGEX, COMMAND_PROMPT_REGEX, pexpect.EOF, pexpect.TIMEOUT,LOGIN_INCORRECT], timeout=self.timeout)
+                    index = self.tty.expect_list([LOGIN_REGEX, PASSWORD_REGEX, UBOOT_REGEX, COMMAND_PROMPT_REGEX, pexpect.EOF, pexpect.TIMEOUT,LOGIN_INCORRECT], timeout=15)
                 except Exception, e:
                     print ("couldn't read, maybe timeout")
 #                     serialLog.exception(e)
@@ -150,7 +151,9 @@ class SerialConnection(object):
                     print ("EOF on login. benign")
                     time.sleep(1) #wait and try again
                 elif index == 5: # The session was closed by the remote.
-                    self.close()
+                    print ("timeout")
+                    return False
+#                     self.close()
                 elif index == 6:
                     print ("Login failed")
                     self.sawLogin = False
