@@ -6,8 +6,9 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.core.window import Window
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.graphics import Color
+from kivy.lang import Builder
 from logmanager import LogManager
-
+from kivy.properties import StringProperty
 import os
 
 from kivy.uix.label import Label
@@ -46,6 +47,19 @@ class LabelButton(ButtonBehavior, Label):
 	This is a mixin which will add the ability to receive push events from a label. No code needed
 	'''
 	pass
+
+Builder.load_string('''
+<ScrollableLabel>:
+    Label:
+        size_hint_y: None
+        height: self.texture_size[1]
+        text_size: self.width, None
+        text: root.text
+''')
+
+class ScrollableLabel(ScrollView):
+    text = StringProperty('')
+
    
 class TestSuiteGUIView( BoxLayout ):
 
@@ -60,18 +74,12 @@ class TestSuiteGUIView( BoxLayout ):
 		outputView = BoxLayout(orientation='vertical') #the right half of the splitter
 		self.outputTitle = Label(text="", font_size=20, color=YELLOW_COLOR,  size_hint=(1, .1))
 		outputView.add_widget(self.outputTitle) #add in a title
-						
-		outputBodyView = ScrollView(scroll_y = 1) #the body will scroll
-		self.output = Label(text="", valign = "top", font_size=16, size_hint=(1, None))
-		zzz= GridLayout(cols = 1, size_hint_y = None)
-		zzz.add_widget(self.output)
-		outputBodyView.add_widget(zzz)
-		
-		outputView.add_widget(outputBodyView)
+			
+		self.output = ScrollableLabel()				
+		outputView.add_widget(self.output)
 		
 		splitter = 	Splitter(sizable_from = 'left', min_size = 10, max_size = 600,size_hint=(.05, 1))
 		
-		rows = len(self.deviceDescriptors)
 		
 		rowSizeFactor = 1 # 14.0 / rows #adjust font size according to number of rows
 # 		rowSizeFactor = min(rowSizeFactor,15)
