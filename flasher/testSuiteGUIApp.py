@@ -88,7 +88,7 @@ class TestSuiteGUIApp( App ):
 		self.build_string = build_string
 		self.rev = rev
 		self.hostname = hostname
-		self.title = "Host: " + self.hostname + " | Flasher Revision: " + self.rev[0:10] + " | Firmware Build: " + self.build_string
+		self.title = self.testSuiteName + ": Host: " + self.hostname + " | Flasher Revision: " + self.rev[0:10] + " | Firmware Build: " + self.build_string
 
 
 	def onShowOutput(self,button):
