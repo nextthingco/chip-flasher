@@ -127,7 +127,7 @@ class ChipHardwareTest(TestCase):
 #         print self.deviceDescriptor.serial
         return os.path.exists(self.deviceDescriptor.serial)
 
-
+ 
         
     @label(UI_WAITING_FOR_DEVICE)
     @progress(FINE_SERIAL_TIME)
