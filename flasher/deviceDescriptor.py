@@ -43,7 +43,7 @@ class DeviceDescriptor:
         and parsing that result for the appropriate devices
         
         It will construct an ordered dictionary of devices and hubs in the order encountered in the rules file.
-        If sortDevices is true, then the dictionary will be sorted by id, alphabetically
+        If sortDevices is true, then the dictionary will be sorted by id, numerically. If it is not numeric, it will not work
         If sort hubs is true, then it will sort the hubs alphabetically
         :param rulesFilePath:
         '''
