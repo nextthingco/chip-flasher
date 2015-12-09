@@ -21,7 +21,7 @@ FINE_SERIAL_TIME = 45
 
 
 
-
+# This is Alex's code. 
 #------------------------------------------------------------------
 def answer_prompt(sio,prompt_to_wait_for,answer_to_write,send_cr=True):
 #------------------------------------------------------------------
@@ -106,6 +106,8 @@ def test(serial_port):
   print "---> TESTS FAILED"
   return 1
 
+
+#end of Alex's code
 class ChipHardwareTest(TestCase):
     '''
     This will wait for CHIP to boot up, log in, and then run 'hwtest' on it
@@ -126,10 +128,6 @@ class ChipHardwareTest(TestCase):
         return os.path.exists(self.deviceDescriptor.serial)
 
 
-    def getSerialConnection(self):
-        if not self.deviceDescriptor.serialConnection:
-            self.deviceDescriptor.serialConnection =  SerialConnection(LOGIN,PASSWORD,self.deviceDescriptor.serial)
-        return self.deviceDescriptor.serialConnection
         
     @label(UI_WAITING_FOR_DEVICE)
     @progress(FINE_SERIAL_TIME)
@@ -141,11 +139,16 @@ class ChipHardwareTest(TestCase):
         raise Exception("No Serial device found: " + self.deviceDescriptor.serial)
     
     @label(UI_HARDWARE_TEST)
-    @progress(17)
+    @progress(45)
     def test_020_hwtest(self):
         result = test(self.deviceDescriptor.serial)
         self.assertEqual(0,result)
           
+#this stuff is commented out because it doesn't work consistently          
+#     def getSerialConnection(self):
+#         if not self.deviceDescriptor.serialConnection:
+#             self.deviceDescriptor.serialConnection =  SerialConnection(LOGIN,PASSWORD,self.deviceDescriptor.serial)
+#         return self.deviceDescriptor.serialConnection
 #     @label(UI_LOGIN)
 #     @progress(CONNECT_TIME)
 #     def test_010_login(self):
