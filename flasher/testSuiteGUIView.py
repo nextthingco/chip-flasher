@@ -17,6 +17,8 @@ from kivy.uix.splitter import Splitter
 
 from deviceDescriptor import DeviceDescriptor
 from ui_strings import *
+from guiContants import *
+
 
 OSX_FONT="/Library/Fonts/Arial Unicode.ttf"
 UBUNTU_FONT="/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
@@ -28,10 +30,9 @@ else:
 
 log = LogManager.get_global_log()
 
-
+#Constants to change appearance
 HUBS_IN_COLUMNS = True # if True, there will be one visual column per hub as defined by the UDEV entry: chip-id-hub-mode
-SHOW_STATUS = True # if True, shows an Idle.., Testing,  Pass/Fail column
-
+SHOW_STATE = True # if True, shows an Idle.., Testing,  Pass/Fail column. With a 49 port hub, you probably want this to be false
 
 SUCCESS_COLOR = [ 0, 1, 0, 1] # GREEN
 FAIL_COLOR = [ 1, 0, 0, 1] # RED
@@ -41,6 +42,103 @@ PROMPT_COLOR = [ 1, .4, .3, 1] # we will use ORANGE for prompts
 WHITE_COLOR = [ 1, 1, 1, 1] # in China, WHITE is negative
 YELLOW_COLOR = [ 1, 1, 0, 1] # in China, WHITE is negative
 PAUSED_COLOR = [ 1, .5, 0, 1] # in China, WHITE is negative
+
+class TestSuiteGUIView( BoxLayout ):
+
+	def __init__( self, **kwargs ):
+		'''
+		The view part of the MVC. note that some values are passed in the kwargs dict. See below
+		Basically, this method will create and layout the gui's widgets
+		'''
+		super(TestSuiteGUIView, self).__init__(**kwargs)
+		self.deviceDescriptors = kwargs['deviceDescriptors']
+		self.deviceUIInfo = kwargs['deviceUIInfo']
+		self.hubs = kwargs['hubs']
+
+		#LAYOUT
+		outputView = BoxLayout(orientation='vertical') #the right half of the splitter
+		self.outputTitle = Label(text=" ", font_size=20, color=YELLOW_COLOR,  size_hint=(1, .1))
+		outputView.add_widget(self.outputTitle) #add in a title
+			
+		self.output = ScrollableLabel()				
+		outputView.add_widget(self.output)
+		
+		splitter = 	Splitter(sizable_from = 'left', min_size = 10, max_size = 600, keep_within_parent = True, size_hint=(.05, 1))
+		
+		#size the columns appropriately
+		rowSizeFactor = 4.0 # 14.0 / rows #adjust font size according to number of rows
+		if not SHOW_STATE:
+			rowSizeFactor += 1.5
+		if HUBS_IN_COLUMNS:
+			hubColumns = len(self.hubs)
+		else:
+			hubColumns = 1
+
+		if HUBS_IN_COLUMNS:
+			rowSizeFactor  = rowSizeFactor / hubColumns
+		print rowSizeFactor
+		mainButtonWidth = 50 * rowSizeFactor
+		hubPanels= GridLayout(cols=hubColumns)
+
+		# Layout the grid for the hubs
+		cols = 3
+		if not SHOW_STATE:
+			cols = cols-1
+		for i,hub in enumerate(self.hubs): #go through the hubs
+			testingView = GridLayout(cols=cols ,size_hint=(.95, 1)) #the spliter is way off to the right
+			hubPanels.add_widget(testingView)
+			addTo = testingView #add these to the py grid view. If we want to have many columns, this would add to a sub grid
+			for key, deviceDescriptor in self.deviceDescriptors.iteritems(): #now go through devices
+				if deviceDescriptor.hub != hub:
+					continue #not on this hub, ignore
+				
+				self.deviceUIInfo[key] = DeviceUIInfo(key) #make a new object to store the widgets
+
+				self._addDeviceWidget(addTo, key,'button',
+							Button(text=deviceDescriptor.uid, color = PASSIVE_COLOR, font_size=30 * rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=mainButtonWidth))
+
+				if SHOW_STATE: # global option whether to display the state 
+					stateAddTo = addTo
+				else:
+					stateAddTo = None # the widget is created as an orphan. It needs to exists because other code will try to update it
+				self._addDeviceWidget(stateAddTo, key,'stateLabel',
+								Label( text = WAITING_TEXT, color = PASSIVE_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=60 * rowSizeFactor ))
+				
+				#The label column consists of both text and a progress bar positioned inside a box layout
+				stateBox = BoxLayout(orientation='vertical')
+				self._addDeviceWidget(stateBox, key,'label',
+							LabelButton( text = '', color = PASSIVE_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center" ))
+			
+				self._addDeviceWidget(stateBox, key,'progress',
+							ProgressBar(value=0, max=100, halign="center",size_hint=(.9, 1.0/15) ))
+				
+				addTo.add_widget(stateBox)
+# 				self._addDeviceWidget(None,key,'output',
+# 							LabelButton( text = '', color = WHITE_COLOR, font_size = 10, font_name=FONT_NAME, halign="left" ))
+				
+
+		splitter.add_widget(outputView)	
+		self.add_widget(hubPanels)
+		self.add_widget(splitter)
+		
+	
+	def setOutputDetailTitle(self,title):
+		'''
+		Call to set the title of the output window
+		:param title:
+		'''
+		self.outputTitle.text=title
+		
+######################################################################################################################################
+# Privates
+######################################################################################################################################
+	def _addDeviceWidget(self,addTo, key,name,widget):
+		widget.id = key
+		self.deviceUIInfo[key].widgetInfo[name] = widget
+		if addTo:
+			addTo.add_widget(widget)
+		return widget
+		
 
 class LabelButton(ButtonBehavior, Label):
 	'''
@@ -58,117 +156,26 @@ Builder.load_string('''
 ''')
 
 class ScrollableLabel(ScrollView):
-    text = StringProperty('')
+	text = StringProperty('')
 
-   
-class TestSuiteGUIView( BoxLayout ):
-
-	def __init__( self, **kwargs ):
-		super(TestSuiteGUIView, self).__init__(**kwargs)
-		self.deviceDescriptors = kwargs['deviceDescriptors']
-		self.hubs = kwargs['hubs']
-# 		self.keyboard = Window.request_keyboard( self.keyboard_closed, self )
-# 		self.keyboard.bind( on_key_down=self.on_keyboard_down )
-# 		self.keyboard.bind( on_key_up=self.on_keyboard_up )
-
-		outputView = BoxLayout(orientation='vertical') #the right half of the splitter
-		self.outputTitle = Label(text="", font_size=20, color=YELLOW_COLOR,  size_hint=(1, .1))
-		outputView.add_widget(self.outputTitle) #add in a title
-			
-		self.output = ScrollableLabel()				
-		outputView.add_widget(self.output)
+class DeviceUIInfo:
+	'''
+	Helper class to keep track of the correspondance between a device and the GUI
+	'''
+	def __init__(self, uid):
+		self.uid = uid
+		self.state = PASSIVE_STATE
+		self.output = " "
+		self.widgetInfo = {}
 		
-		splitter = 	Splitter(sizable_from = 'left', min_size = 10, max_size = 600,size_hint=(.05, 1))
-		
-		
-		rowSizeFactor = 1 # 14.0 / rows #adjust font size according to number of rows
-# 		rowSizeFactor = min(rowSizeFactor,15)
-		if HUBS_IN_COLUMNS:
-			hubColumns = len(self.hubs)
-		else:
-			hubColumns = 1
-
-		if HUBS_IN_COLUMNS:
-			rowSizeFactor *= hubColumns
-		
-		hubPanels= GridLayout(cols=hubColumns)
-
-		cols = 3
-		if not SHOW_STATUS:
-			cols = cols-1
-		self.deviceDescriptors
-		for i,hub in enumerate(self.hubs):
-			testingView = GridLayout(cols=cols ,size_hint=(.95, 1))
-			hubPanels.add_widget(testingView)
-			addTo = testingView #add these to the py grid view. If we want to have many columns, this would add to a sub grid
-			for key, deviceDescriptor in self.deviceDescriptors.iteritems():
-				if deviceDescriptor.hub != hub:
-					continue
-				self.addDeviceWidget(addTo, deviceDescriptor,key,'button',
-							Button(text=deviceDescriptor.uid, color = PASSIVE_COLOR, font_size=30 * rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=100))
-
-				if SHOW_STATUS: # global option whether to display the status 
-					statusAddTo = addTo
-				else:
-					statusAddTo = None # the widget is created as an orphan. It needs to exists because other code will try to update it
-				self.addDeviceWidget(statusAddTo, deviceDescriptor,key,'status',
-								Label( text = WAITING_TEXT, color = PASSIVE_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=90 ))
-				
-				#The label column consists of both text and a progress bar positioned inside a box layout
-				stateBox = BoxLayout(orientation='vertical')
-				self.addDeviceWidget(stateBox, deviceDescriptor,key,'label',
-							LabelButton( text = '', color = PASSIVE_COLOR, font_size=12 * rowSizeFactor, font_name=FONT_NAME, halign="center" ))
-			
-				self.addDeviceWidget(stateBox, deviceDescriptor,key,'totalProgressBar',
-							ProgressBar(value=0, max=100, halign="center",size_hint=(.9, 1.0/15) ))
-				
-				addTo.add_widget(stateBox)
-				self.addDeviceWidget(None, deviceDescriptor,key,'output',
-							LabelButton( text = '', color = WHITE_COLOR, font_size = 10, font_name=FONT_NAME, halign="left" ))
-				
-
-		splitter.add_widget(outputView)	
-		self.add_widget(hubPanels)
-		self.add_widget(splitter)
-		
-		self.showingOutputOfPort = None
+	def isActive(self):
+		return self.state == ACTIVE_STATE
 	
+	def isIdle(self):
+		return self.state in [PASSIVE_STATE, PAUSED_STATE, PROMPT_STATE, IDLE_STATE]
 	
-	def setOutputContent(self,text, deviceDescriptor):
-		if deviceDescriptor == self.showingOutputOfPort:
-# 			self.outputTitle.text=deviceDescriptor.port
-			self.output.text = text
-	
-	def showOutputOfPort(self,deviceDescriptor):
-		self.showingOutputOfPort = deviceDescriptor
-		self.outputTitle.text=deviceDescriptor.textForLog()
+	def isDone(self):
+		return self.state in [PASS_STATE, FAIL_STATE]
 		
-	def addDeviceWidget(self,addTo, deviceDescriptor,key,name,widget):
-		widget.id = key
-		deviceDescriptor.widgetInfo[name] = widget
-		if addTo:
-			addTo.add_widget(widget)
-		return widget
-		
-# 	def keyboard_closed( self ):
-# 		self.keyboard.unbind( on_key_down=self._on_keyboard_down )
-# 		self.keyboard.unbind( on_key_up=self.on_keyboard_up )
-# 		self.keyboard = None
-# 
-# 	def on_keyboard_down( self, keyboard, keycode, text, modifiers ):
-# 		root = BoxLayout()
-# 		if keycode[1] == '1':
-# 			self.children[0].background_color=[1,0,0,1]
-# 		return True
-# 
-# 	def on_keyboard_up( self, keyboard, keycode ):
-# 		root = BoxLayout()
-# 		if keycode[1] == '1':
-# 			self.children[0].background_color=[ 0, 1, 0, 1 ]
-# 		return True
-	
-
-	def get_widget(self):
-		return self.widget
 
     

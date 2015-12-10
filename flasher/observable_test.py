@@ -44,8 +44,8 @@ def observeTest(func):
         [observer(stateInfo) for observer in instance.stateInfoObservers]  # tell observers test is about to run
         try:
             r = func(*args, **kwargs)  # execute the test
-        except Exception, e:
-            raise(e) # the finally block below will close out timer and notify observers
+        except:
+            raise # the finally block below will close out timer and notify observers
         finally:
             end = time.time() 
             stateInfo['executionTime'] = end - start  # is stateInfo the right place for this?

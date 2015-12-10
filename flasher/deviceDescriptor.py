@@ -24,14 +24,6 @@ class DeviceDescriptor:
     def makeDummy():
         return DeviceDescriptor('0','0','0','0','0','0-0-0')
     
-    def setWidgetColor(self,color):
-        for widget in self.widgetInfo.itervalues():
-            widget.color = color
-            #TODO Figure out why on occasion this doesn't work and color gets stuck
-    
-    
-    def textForLog(self):
-        return "Port: " + self.uid + "\n"
     
     @staticmethod
     def readRules(rulesFilePath, sortDevices = True, sortHubs = True):

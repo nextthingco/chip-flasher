@@ -13,8 +13,11 @@ class Progress(object):
         self.timedOut = False
         Clock.schedule_interval(self.addProgress.__get__(self,Progress), 1 )
     
-    def __del__(self):
+    def stopListening(self):
         Clock.unschedule(self.addProgress.__get__(self,Progress))
+
+#     def __del__(self):
+#         Clock.unschedule(self.addProgress.__get__(self,Progress))
         
     def addProgress(self,change):
         self.setProgress(self.current + change)

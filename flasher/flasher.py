@@ -2,30 +2,20 @@
 from unittest import TestCase, TextTestRunner, TestLoader
 import logging
 import sys
-from observable_test import *
-import threading
 import os.path
 from kivy import Logger
-import pexpect    
-from os import path
-from os import environ
+import random #for mocking
 from ui_strings import *
-# from pytest_timeout import *
-# from observable_test import label
-# from observed import observable_method
+from observable_test import *
 from commandRunner import CommandRunner
 
-import random
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
-FEL = 'fel'
 
 MOCK = False #For testing GUI without real things plugged in
 class Flasher(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.log = Logger
-        cls.log.info("upload class set up")
         
     err_codes = {
         -1: "Unknown Failure",
@@ -52,13 +42,12 @@ class Flasher(TestCase):
             return True
         return os.path.exists(self.felPort)
         
-        
 # Uncomment for mocking        
     def _doFlashStageMock(self,stage,timeout=400):
         if True:
-            time.sleep(1)
+            time.sleep(stage)
             if random.random() < 0.1:
-                raise Exception("mock failure on " + self.felPort)
+                self.fail("Mock Failure")
             return
          
     def _doFlashStage(self,stage,timeout=400):
@@ -80,22 +69,6 @@ class Flasher(TestCase):
             self.output += "\nFlashing failed: " + self.err_codes[ errcode ] + "\n"
             raise Exception( "Flashing failed: ", self.err_codes[ errcode ] )
         
-#     def _doFlashStageNew(self,stage,timeout=400):
-#         args = ["-u", ".firmware", "--stage",str(stage)]
-#         
-#         if self.felPort:
-#             args.extend(["--chip-path", self.felPort])
-#         cmd = "bash ./chip-py " + " ".join(args)
-#         working_dir=path.dirname( path.dirname( path.realpath( __file__ ) ) )
-#         cwd = working_dir + "/flasher/tools"
-#         my_env = os.environ.copy()
-#         my_env["BUILDROOT_OUTPUT_DIR"] = cwd+"/.firmware/"
-#         output, errcode = pexpect.run(cmd, cwd = cwd, withexitstatus = True, timeout = timeout, env = my_env)
-#         self.output += output
-#         if errcode != 0:
-#             if not errcode in self.err_codes:
-#                 errcode = -1
-#             raise Exception( "Flashing failed: ", self.err_codes[ errcode ] )
     
     @label(UI_WAITING_FOR_DEVICE)
     @progress(10)

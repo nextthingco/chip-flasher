@@ -143,7 +143,7 @@ class TestSuiteGUIApp( App ):
 
 
 		
-	def displayTitle( self ):
+	def _displayTitle( self ):
 		cwd = path.dirname( path.dirname( path.realpath( __file__ ) ) )
 		hostname = subprocess.Popen( ["hostname"],cwd=cwd, stdout=subprocess.PIPE ).communicate()[0].strip("\n")
 		if hostname != self.hostname:
@@ -183,7 +183,7 @@ class TestSuiteGUIApp( App ):
 		self.rev = 0
 		self.hostname = ""
 		self.build_string = ""
-		self.displayTitle()
+		self._displayTitle()
 		self.screen = FlasherScreen()
 		
 		self.displayTests()
