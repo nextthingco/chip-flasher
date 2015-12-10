@@ -164,7 +164,6 @@ class TestSuiteGUIApp( App ):
 
 		if deviceUIInfo.isDone(): #if currently in a PASS or FAIL state
 			self._updateStateInfo({'uid': uid, 'state': PASSIVE_STATE, 'stateLabel': WAITING_TEXT, 'labelText': ' '}) #labelText cannot be "". It needs to be a space
-			#TODO make yellow
 			self.output = ""
 			if not SKIP_IDLE_STATE:
 				self._updateStateInfo({'uid': uid, 'state': IDLE_STATE, 'stateLabel': WAITING_TEXT, 'labelText': ' ', 'output': ' '}) #labelText cannot be "". It needs to be a space 

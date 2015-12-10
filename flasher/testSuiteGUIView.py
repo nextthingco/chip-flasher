@@ -76,7 +76,7 @@ class TestSuiteGUIView( BoxLayout ):
 
 		if HUBS_IN_COLUMNS:
 			rowSizeFactor  = rowSizeFactor / hubColumns
-		print rowSizeFactor
+
 		mainButtonWidth = 50 * rowSizeFactor
 		hubPanels= GridLayout(cols=hubColumns)
 
@@ -110,7 +110,7 @@ class TestSuiteGUIView( BoxLayout ):
 							LabelButton( text = '', color = PASSIVE_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center" ))
 			
 				self._addDeviceWidget(stateBox, key,'progress',
-							ProgressBar(value=0, max=100, halign="center",size_hint=(.9, 1.0/15) ))
+							ProgressBar(value=0, max=1, halign="center",size_hint=(.9, 1.0/15) ))
 				
 				addTo.add_widget(stateBox)
 # 				self._addDeviceWidget(None,key,'output',

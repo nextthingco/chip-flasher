@@ -16,6 +16,7 @@ PASSWORD = 'chip'
 ALL_TESTS_PASSED_REGEX = re.compile(r'.*### ALL TESTS PASSED ###.*')
 
 dummy = DeviceDescriptor.makeDummy()
+
 CONNECT_TIME = 60
 FINE_SERIAL_TIME = 45
 
@@ -99,12 +100,12 @@ def test(serial_port):
   if re.search(r'.*### ALL TESTS PASSED ###.*',d):
     print "---> TESTS PASSED"
     ser.close();
-    return 0 
+    return 0, d
     
   ser.close();
   
   print "---> TESTS FAILED"
-  return 1
+  return 1 , d
 
 
 #end of Alex's code
@@ -141,47 +142,12 @@ class ChipHardwareTest(TestCase):
     @label(UI_HARDWARE_TEST)
     @progress(45)
     def test_020_hwtest(self):
-        result = test(self.deviceDescriptor.serial)
+        result, details = test(self.deviceDescriptor.serial)
+        if not hasattr(self,"output"):
+            self.output = ""
+        self.output += details
+    
         self.assertEqual(0,result)
-          
-#this stuff is commented out because it doesn't work consistently          
-#     def getSerialConnection(self):
-#         if not self.deviceDescriptor.serialConnection:
-#             self.deviceDescriptor.serialConnection =  SerialConnection(LOGIN,PASSWORD,self.deviceDescriptor.serial)
-#         return self.deviceDescriptor.serialConnection
-#     @label(UI_LOGIN)
-#     @progress(CONNECT_TIME)
-#     def test_010_login(self):
-#         self.getSerialConnection()
-#         self.getSerialConnection().connect(timeout=CONNECT_TIME)
-#         
-#     @label(UI_HARDWARE_TEST)
-#     @progress(17)
-#     def test_020_hwtest(self):
-#         try:
-#             ser = self.getSerialConnection()
-#             result = ser.send("hwtest")
-#             match = ALL_TESTS_PASSED_REGEX.search(result)
-#             self.assertIsNotNone(match)
-#         except Exception,e:
-#             print e
-#             if ser:
-#                 ser.send("poweroff")
-#                 ser.close()
-#             raise e
-#         
-#     @label(UI_POWERING_OFF)
-#     @progress(4)
-#     def test_030_poweroff(self):
-#         try:
-#             self.getSerialConnection().send("poweroff",blind=True)
-#             time.sleep(4) #let it power down
-#         finally:
-#             ser = self.deviceDescriptor.serialConnection
-#             if ser:
-#                 ser.close()
-#             self.deviceDescriptor.serialConnection = None
-        
 
 def main():
     tl = TestLoader()
