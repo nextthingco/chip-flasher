@@ -17,7 +17,7 @@ from kivy.uix.splitter import Splitter
 
 from deviceDescriptor import DeviceDescriptor
 from ui_strings import *
-from guiContants import *
+from guiConstants import *
 
 
 OSX_FONT="/Library/Fonts/Arial Unicode.ttf"
@@ -39,10 +39,10 @@ FAIL_COLOR = [ 1, 0, 0, 1] # RED
 ACTIVE_COLOR = [ 1, 1, 1, 1] # we will use WHITE for active
 PASSIVE_COLOR = [ 1, 1, 0, 1] # we will use YELLOW for passive
 PROMPT_COLOR = [ 1, .4, .3, 1] # we will use ORANGE for prompts
-WHITE_COLOR = [ 1, 1, 1, 1] # in China, WHITE is negative
-YELLOW_COLOR = [ 1, 1, 0, 1] # in China, WHITE is negative
-PAUSED_COLOR = [ 1, .5, 0, 1] # in China, WHITE is negative
-
+DISCONNECTED_COLOR = [.3, .3, .3, 1] #when device is disconnected
+WHITE_COLOR = [ 1, 1, 1, 1] 
+YELLOW_COLOR = [ 1, 1, 0, 1]
+PAUSED_COLOR = [ 1, .5, 0, 1]
 class TestSuiteGUIView( BoxLayout ):
 
 	def __init__( self, **kwargs ):
@@ -92,22 +92,20 @@ class TestSuiteGUIView( BoxLayout ):
 				if deviceDescriptor.hub != hub:
 					continue #not on this hub, ignore
 				
-				self.deviceUIInfo[key] = DeviceUIInfo(key) #make a new object to store the widgets
-
 				self._addDeviceWidget(addTo, key,'button',
-							Button(text=deviceDescriptor.uid, color = PASSIVE_COLOR, font_size=30 * rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=mainButtonWidth))
+							Button(text=deviceDescriptor.uid, color = DISCONNECTED_COLOR, font_size=30 * rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=mainButtonWidth))
 
 				if SHOW_STATE: # global option whether to display the state 
 					stateAddTo = addTo
 				else:
 					stateAddTo = None # the widget is created as an orphan. It needs to exists because other code will try to update it
 				self._addDeviceWidget(stateAddTo, key,'stateLabel',
-								Label( text = WAITING_TEXT, color = PASSIVE_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=60 * rowSizeFactor ))
+								Label( text = WAITING_TEXT, color = DISCONNECTED_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=60 * rowSizeFactor ))
 				
 				#The label column consists of both text and a progress bar positioned inside a box layout
 				stateBox = BoxLayout(orientation='vertical')
 				self._addDeviceWidget(stateBox, key,'label',
-							LabelButton( text = '', color = PASSIVE_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center" ))
+							LabelButton( text = '', color = DISCONNECTED_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center" ))
 			
 				self._addDeviceWidget(stateBox, key,'progress',
 							ProgressBar(value=0, max=1, halign="center",size_hint=(.9, 1.0/15) ))
@@ -122,12 +120,14 @@ class TestSuiteGUIView( BoxLayout ):
 		self.add_widget(splitter)
 		
 	
-	def setOutputDetailTitle(self,title):
+	def setOutputDetailTitle(self,title, color = None):
 		'''
 		Call to set the title of the output window
-		:param title:
+		:param title: Title of the 
 		'''
 		self.outputTitle.text=title
+		if color:
+			self.outputTitle.color = color
 		
 ######################################################################################################################################
 # Privates

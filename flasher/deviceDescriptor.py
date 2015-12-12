@@ -1,10 +1,15 @@
 import re
 from collections import OrderedDict
-
+import os.path
 UDEV_REGEX = re.compile(ur'.*KERNELS.*\"(.*)\".*ATTRS\{idVendor}.*\"(.*)\".*ATTRS\{idProduct\}.*\"(.*)\".*SYMLINK.*\"(.*)\"')
 SYMLINK_REGEX = re.compile(r".*chip-(.*)-(.*)-(.*)")
                            
 NAME_FROM_UDEV_REGEX = re.compile(r".*chip-(.*)-usb")
+
+DEVICE_DISCONNECTED = 0
+DEVICE_FEL = 1
+DEVICE_FASTBOOT = 2
+DEVICE_SERIAL = 3
 
 class DeviceDescriptor:
     def __init__(self, uid, hub, kernel, vendor, product, type): #store off all values for convenience
@@ -19,7 +24,26 @@ class DeviceDescriptor:
         self.serial = None
         self.serialConnection = None #used when accessing device as a serial gadget
         self.widgetInfo = {} #widgets in GUI
-       
+    
+    def getDeviceState(self):
+        if self.isFel():
+            return DEVICE_FEL
+        elif self.isSerial():
+            return DEVICE_SERIAL
+        elif self.isFastBoot():
+            return DEVICE_FASTBOOT
+        else:
+            return DEVICE_DISCONNECTED
+    
+    def isFel(self):
+        return self.fel and os.path.exists(self.fel)
+   
+    def isFastBoot(self):
+        return self.fastboot and os.path.exists(self.fastboot)
+
+    def isSerial(self):
+        return self.serial and os.path.exists(self.serial)
+    
     @staticmethod
     def makeDummy():
         return DeviceDescriptor('0','0','0','0','0','0-0-0')

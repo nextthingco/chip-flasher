@@ -4,23 +4,23 @@ from progress import Progress
 import unittest
 from observable_test import *
 from ui_strings import *
-from guiContants import *
+from guiConstants import *
 
 
 class TestResult:
     def __init__(self):
         pass
-    
+    aborted = False
     success = None
     resultText = None
     
 class TestingThread(threading.Thread):
-    def __init__(self,  suite, deviceDescriptor,count, mutexes, updateQueue, testResult):
+    def __init__(self,  suite, deviceDescriptor,runId, mutexes, updateQueue, testResult):
         '''
         I am intentionally not passing in the parent to prevent abuse of threads
         :param suite: The unittest suite to run
         :param deviceDescriptor: 
-        :param count: counter of current number of runs. used for logs
+        :param runId: counter of current number of runs. used for logs
         :param mutexes: Dictionary of mutexes
         :param updateQueue: queue to manage Kivy updates
         :param testResult: The result of the tests will be stored here for the main thread to use
@@ -28,7 +28,7 @@ class TestingThread(threading.Thread):
         threading.Thread.__init__(self)
         self.suite = suite
         self.deviceDescriptor = deviceDescriptor
-        self.count = count #used for traces for how many runs
+        self.runId = runId #used for traces for how many runs
         self.mutexes =  mutexes
         self.updateQueue = updateQueue
         self.testResult = testResult
@@ -38,6 +38,7 @@ class TestingThread(threading.Thread):
         self.output = "" 
         self.currentStateName = ""
         self.event = None # event gets set when a prompt goes up
+        self.aborted = False
             
     def run(self):
         '''
@@ -63,6 +64,10 @@ class TestingThread(threading.Thread):
             self.testResult.resultText = self.currentStateName + "Failed"
             state = FAIL_STATE
             stateLabel = FAIL_TEXT
+
+        if self.aborted:
+            self.testResult.resultText += "\nABORTED"
+            
         self.output += self.testResult.resultText
         
         #update the UI
@@ -99,7 +104,7 @@ class TestingThread(threading.Thread):
         
         if before:
             #initialize pre-test stuff
-            self.output += (str(self.count) + ": BEFORE: " + englishName + " device: "+ self.deviceDescriptor.uid + "\n")
+            self.output += (str(self.runId) + ": BEFORE: " + englishName + " device: "+ self.deviceDescriptor.uid + "\n")
             self._updateStateInfo({'state': ACTIVE_STATE, 'labelText': label, 'output': self.output, 'progress': 0})
             testCase.output=""
             self.progress = None
@@ -127,7 +132,7 @@ class TestingThread(threading.Thread):
                 
             #update the output from the test case
             self.output += testCase.output
-            self.output += (str(self.count) + ": AFTER: " + englishName + " device: "+ str(self.uid) + " time: " + str(stateInfo['executionTime']) + "\n")
+            self.output += (str(self.runId) + ": AFTER: " + englishName + " device: "+ str(self.uid) + " time: " + str(stateInfo['executionTime']) + "\n")
             self._updateStateInfo({'state': PASSIVE_STATE, 'output': self.output})
 
 ######################################################################################################################################
@@ -146,8 +151,10 @@ class TestingThread(threading.Thread):
         :param info: dictionary of values to change. See TestSuiteGUIApp._udpateStateInfo for possible values
         '''
         info['uid'] = self.uid
+        info['runId'] = self.runId
         # maybe the state value, if present, should be updated here immediately? Currently the main thread will do it
-        self.updateQueue.put(info)
+        if not self.aborted:
+            self.updateQueue.put(info)
     
     def _onProgressChange(self,progress):
         '''

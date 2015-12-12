@@ -13,6 +13,7 @@ UI_UPLOAD_UBOOT_SCRIPT = "Upload U-Boot Script\n上传Uboot脚本"
 UI_EXECUTE_UBOOT_SCRIPT = "Execute U-Boot\n运行Uboot"
 UI_UPLOAD_UBI = "Upload UBI\n上传UBI固件"
 
+DISCONNECTED_TEXT="Disconnected\n没连接"
 WAITING_TEXT="Waiting\n等候"
 PAUSED_TEXT="Paused\n暂停"
 
