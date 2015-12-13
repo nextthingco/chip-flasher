@@ -87,7 +87,7 @@ def test(serial_port):
 
   print 'reading from %s:' % serial_port
 
-  ser = serial.Serial(serial_port,115200, timeout=1);
+  ser = serial.Serial(serial_port,115200, timeout=1, xonxoff=True);
   sio = io.TextIOWrapper(io.BufferedRWPair(ser,ser))
 
   #login
