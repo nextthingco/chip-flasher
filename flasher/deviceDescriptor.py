@@ -10,6 +10,7 @@ DEVICE_DISCONNECTED = 0
 DEVICE_FEL = 1
 DEVICE_FASTBOOT = 2
 DEVICE_SERIAL = 3
+DEVICE_WAITING_FOR_FASTBOOT = 4
 
 class DeviceDescriptor:
     def __init__(self, uid, hub, kernel, vendor, product, type): #store off all values for convenience

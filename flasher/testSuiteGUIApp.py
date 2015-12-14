@@ -118,10 +118,17 @@ class TestSuiteGUIApp( App ):
 				if currentState == DEVICE_FASTBOOT:
 					self.deviceStates[uid] = (currentState, currentTime) #just update the time. don't trigger
 				elif currentState == DEVICE_DISCONNECTED:
-					if lastKnownState == DEVICE_FEL: #if went from fel to nothing, probably transitioning to fastboot
+					if lastKnownState == DEVICE_WAITING_FOR_FASTBOOT:
 						if elapsedTime < AUTO_START_WAIT_BEFORE_DISCONNECT: # wait for possible transition. 
-							print "skipping"
-							continue # don't update state info
+							self.deviceStates[uid] = (DEVICE_WAITING_FOR_FASTBOOT, currentTime)
+							continue
+						else: # a disconnect
+							self.deviceStates[uid] = (currentState, currentTime)
+							self._onTriggerDevice(uid,currentState) #disconnect
+							
+					elif lastKnownState == DEVICE_FEL: #if went from fel to nothing, probably transitioning to fastboot
+						self.deviceStates[uid] = (DEVICE_WAITING_FOR_FASTBOOT, currentTime)
+						continue # don't update state info
 					self.deviceStates[uid] = (currentState, currentTime)
 					self._onTriggerDevice(uid,currentState) #disconnect
 				else: #for FEL and serial gadget
