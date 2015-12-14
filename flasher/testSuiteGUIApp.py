@@ -113,13 +113,14 @@ class TestSuiteGUIApp( App ):
 			currentState = deviceDescriptor.getDeviceState()
 			lastKnownState, when = self.deviceStates[uid]
 			elapsedTime = currentTime - when #see how long its been since we
-			print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
 			if lastKnownState != currentState: #if the state is different since last time
 				if (lastKnownState == DEVICE_DISCONNECTED or #if activating, do immediately
 					lastKnownState == DEVICE_FASTBOOT or # if fastboot, process the disconnect
 					(lastKnownState == DEVICE_FEL and currentState == DEVICE_DISCONNECTED and elapsedTime > AUTO_START_WAIT_BEFORE_DISCONNECT )): #handle switch from FEL to FASTBOOT without graying out
+					print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
 					self.deviceStates[uid] = (currentState, currentTime)
-					self._onTriggerDevice(uid,currentState)
+					if currentState != DEVICE_FASTBOOT: #ignore fastboot
+						self._onTriggerDevice(uid,currentState)
 			else:
 				self.deviceStates[uid] = (currentState, currentTime)
 					
