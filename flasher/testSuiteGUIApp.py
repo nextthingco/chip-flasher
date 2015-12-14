@@ -33,7 +33,7 @@ SORT_HUBS = True # Whether the hub name from the UDEV file (chip_id_hub_xxx) sho
 
 HEADLESS = False # The app can be run headless. This is for a future where we might just use a fixture with LEDs instead of a screen.
 AUTO_START_ON_DEVICE_DETECTION = True #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled
-
+AUTO_START_WAIT_BEFORE_DISCONNECT = 5 #wait 5 seconds before considering a disconnect to handle switch to FASTBOOT
 class TestSuiteGUIApp( App ):
 	'''
 	The main application for a GUI-based, parallel test suite runner
@@ -64,10 +64,11 @@ class TestSuiteGUIApp( App ):
 		self.rev = 0
 		self.hostname = ""
 		self.build_string = ""
-		
+		currentTime = time.time() 
+
 		for key, deviceDescriptor in self.deviceDescriptors.iteritems():
 			self.deviceUIInfo[key] = DeviceUIInfo(key) #make a new object to store the states and widgets
-			self.deviceStates[key] = DEVICE_DISCONNECTED
+			self.deviceStates[key] = (DEVICE_DISCONNECTED, currentTime)
 		
 		#Process the device descriptors and connect them to GUI's buttons
 		if HEADLESS:
@@ -106,11 +107,17 @@ class TestSuiteGUIApp( App ):
 		'''
 		Go through the device descriptors and see if any state changed
 		'''
+		currentTime = time.time() 
+
 		for uid, deviceDescriptor in self.deviceDescriptors.iteritems():
 			currentState = deviceDescriptor.getDeviceState()
-			if currentState != self.deviceStates[uid]:
-				self.deviceStates[uid] = currentState
-				self._onTriggerDevice(uid,currentState)
+			lastKnownState, when = self.deviceStates[uid]
+			elapsedTime = currentTime - when #see how long its been since we
+			if lastKnownState != currentState: #if the state is different since last time
+				if (lastKnownState == DEVICE_DISCONNECTED or #if activating, do immediately
+					(currentState == DEVICE_DISCONNECTED and elapsedTime > AUTO_START_WAIT_BEFORE_DISCONNECT )):
+					self.deviceStates[uid] = (currentState, currentTime)
+					self._onTriggerDevice(uid,currentState)
 
 	deviceStateToTestSuite = {DEVICE_FEL:'Flasher', DEVICE_SERIAL: 'ChipHardwareTest'}
 	
