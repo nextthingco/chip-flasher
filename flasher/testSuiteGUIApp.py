@@ -33,7 +33,7 @@ SORT_HUBS = True # Whether the hub name from the UDEV file (chip_id_hub_xxx) sho
 
 HEADLESS = False # The app can be run headless. This is for a future where we might just use a fixture with LEDs instead of a screen.
 AUTO_START_ON_DEVICE_DETECTION = True #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled
-AUTO_START_WAIT_BEFORE_DISCONNECT = 18 #wait n seconds before considering a disconnect to handle switch to FASTBOOT
+AUTO_START_WAIT_BEFORE_DISCONNECT = 27 #wait n seconds before considering a disconnect to handle switch to FASTBOOT
 class TestSuiteGUIApp( App ):
 	'''
 	The main application for a GUI-based, parallel test suite runner
