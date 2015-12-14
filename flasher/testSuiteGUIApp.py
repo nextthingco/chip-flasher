@@ -126,6 +126,9 @@ class TestSuiteGUIApp( App ):
 				else: #for FEL and serial gadget
 					self.deviceStates[uid] = (currentState, currentTime)
 					self._onTriggerDevice(uid,currentState)
+			else:
+				self.deviceStates[uid] = (currentState, currentTime)
+				
 					
 
 	deviceStateToTestSuite = {DEVICE_FEL:'Flasher', DEVICE_SERIAL: 'ChipHardwareTest'}
