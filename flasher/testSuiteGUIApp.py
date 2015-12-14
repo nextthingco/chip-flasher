@@ -120,9 +120,9 @@ class TestSuiteGUIApp( App ):
 					if lastKnownState == DEVICE_FEL: #if went from fel to nothing, probably transitioning to fastboot
 						if elapsedTime < AUTO_START_WAIT_BEFORE_DISCONNECT: # wait for possible transition. 
 							continue # don't update state info
-						print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
-						self.deviceStates[uid] = (currentState, currentTime)
-						self._onTriggerDevice(uid,currentState) #disconnect
+# 						print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
+					self.deviceStates[uid] = (currentState, currentTime)
+					self._onTriggerDevice(uid,currentState) #disconnect
 				else: #for FEL and serial gadget
 					self.deviceStates[uid] = (currentState, currentTime)
 					self._onTriggerDevice(uid,currentState)
