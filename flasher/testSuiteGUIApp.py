@@ -114,15 +114,18 @@ class TestSuiteGUIApp( App ):
 			lastKnownState, when = self.deviceStates[uid]
 			elapsedTime = currentTime - when #see how long its been since we
 			if lastKnownState != currentState: #if the state is different since last time
-				if (lastKnownState == DEVICE_DISCONNECTED or #if activating, do immediately
-					lastKnownState == DEVICE_FASTBOOT or # if fastboot, process the disconnect
-					(lastKnownState == DEVICE_FEL and currentState == DEVICE_DISCONNECTED and elapsedTime > AUTO_START_WAIT_BEFORE_DISCONNECT )): #handle switch from FEL to FASTBOOT without graying out
-					print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
+				if currentState == DEVICE_FASTBOOT:
+					self.deviceStates[uid] = (currentState, currentTime) #just update the time. don't trigger
+				elif currentState == DEVICE_DISCONNECTED:
+					if lastKnownState == DEVICE_FEL: #if went from fel to nothing, probably transitioning to fastboot
+						if elapsedTime < AUTO_START_WAIT_BEFORE_DISCONNECT: # wait for possible transition. 
+							continue # don't update state info
+						self.deviceStates[uid] = (currentState, currentTime)
+						self._onTriggerDevice(uid,currentState) #disconnect
+				else: #for FEL and serial gadget
 					self.deviceStates[uid] = (currentState, currentTime)
-					if currentState != DEVICE_FASTBOOT: #ignore fastboot
-						self._onTriggerDevice(uid,currentState)
-			else:
-				self.deviceStates[uid] = (currentState, currentTime)
+					self._onTriggerDevice(uid,currentState)
+# 					print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
 					
 
 	deviceStateToTestSuite = {DEVICE_FEL:'Flasher', DEVICE_SERIAL: 'ChipHardwareTest'}
