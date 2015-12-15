@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from serialconnection import SerialConnection
+# from serialconnection import SerialConnection
 from unittest import TestCase, TextTestRunner, TestLoader
 from observable_test import *
 from commandRunner import CommandRunner
