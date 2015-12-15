@@ -132,6 +132,7 @@ class ChipHardwareTest(TestCase):
         
     @label(UI_WAITING_FOR_DEVICE)
     @progress(FINE_SERIAL_TIME)
+    @failMessage(FAIL_301_TEXT)
     def test_000_serial(self):
         for attempt in range(1,FINE_SERIAL_TIME):
             if self.findSerialDevice():
@@ -141,6 +142,7 @@ class ChipHardwareTest(TestCase):
     
     @label(UI_HARDWARE_TEST)
     @progress(45)
+    @failMessage(FAIL_302_TEXT)
     def test_020_hwtest(self):
         result, details = test(self.deviceDescriptor.serial)
         if not hasattr(self,"output"):

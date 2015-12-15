@@ -63,7 +63,10 @@ class TestingThread(threading.Thread):
         else:
             self.testResult.resultText = self.currentStateName + "Failed"
             state = FAIL_STATE
-            stateLabel = FAIL_TEXT
+            if self.currentStateFailMessage:
+                stateLabel = self.currentStateFailMessage
+            else:
+                stateLabel = FAIL_TEXT
 
         if self.aborted:
             self.testResult.resultText += "\nABORTED"
@@ -101,6 +104,7 @@ class TestingThread(threading.Thread):
         progressSeconds =  progressForTest(testCase) # @progress
         timeout =  timeoutForTest(testCase) # @timeout - this is not hooked in yet
         mutex = mutexForTest(testCase) # @mutex
+        self.currentStateFailMessage = failMessageForTest(testCase) # a fail message to show
         
         if before:
             #initialize pre-test stuff
