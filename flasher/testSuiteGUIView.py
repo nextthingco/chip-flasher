@@ -16,6 +16,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.splitter import Splitter
 
 from deviceDescriptor import DeviceDescriptor
+from runState import *
 from ui_strings import *
 from guiConstants import *
 
@@ -43,6 +44,7 @@ DISCONNECTED_COLOR = [.3, .3, .3, 1] #when device is disconnected
 WHITE_COLOR = [ 1, 1, 1, 1] 
 YELLOW_COLOR = [ 1, 1, 0, 1]
 PAUSED_COLOR = [ 1, .5, 0, 1]
+
 class TestSuiteGUIView( BoxLayout ):
 
 	def __init__( self, **kwargs ):
@@ -52,9 +54,10 @@ class TestSuiteGUIView( BoxLayout ):
 		'''
 		super(TestSuiteGUIView, self).__init__(**kwargs)
 		self.deviceDescriptors = kwargs['deviceDescriptors']
-		self.deviceUIInfo = kwargs['deviceUIInfo']
 		self.hubs = kwargs['hubs']
-
+		self.widgetsMap = {}
+		self.outputDetailUid = None #the uid of of what's being shown in the output (detail) view to the right of the splitter
+		self.mainButtonListeners = []
 		#LAYOUT
 		outputView = BoxLayout(orientation='vertical') #the right half of the splitter
 		self.outputTitle = Label(text=" ", font_size=20, color=YELLOW_COLOR,  size_hint=(1, .1))
@@ -92,35 +95,124 @@ class TestSuiteGUIView( BoxLayout ):
 				if deviceDescriptor.hub != hub:
 					continue #not on this hub, ignore
 				
-				self._addDeviceWidget(addTo, key,'button',
-							Button(text=deviceDescriptor.uid, color = DISCONNECTED_COLOR, font_size=30 * rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=mainButtonWidth))
+				widgets = Widgets()
+				self.widgetsMap[key] = widgets
+				
+				# The main button
+				widgets.button = Button(id = key, text=deviceDescriptor.uid, color = DISCONNECTED_COLOR, font_size=30 * rowSizeFactor, 
+																 font_name=FONT_NAME, halign="center", size_hint_x=None, width=mainButtonWidth)
+				widgets.button.bind( on_press=self._onClickedMainButton.__get__(self, TestSuiteGUIView))
+				addTo.add_widget(widgets.button)
 
-				if SHOW_STATE: # global option whether to display the state 
-					stateAddTo = addTo
-				else:
-					stateAddTo = None # the widget is created as an orphan. It needs to exists because other code will try to update it
-				self._addDeviceWidget(stateAddTo, key,'stateLabel',
-								Label( text = WAITING_TEXT, color = DISCONNECTED_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=60 * rowSizeFactor ))
+				# The state column
+				widgets.stateLabel = Label(id = key, text = WAITING_TEXT, color = DISCONNECTED_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=60 * rowSizeFactor )
+				if SHOW_STATE:
+					addTo.add_widget(widgets.stateLabel)
 				
-				#The label column consists of both text and a progress bar positioned inside a box layout
+				#The label column kists of both text and a progress bar positioned inside a box layout
 				stateBox = BoxLayout(orientation='vertical')
-				self._addDeviceWidget(stateBox, key,'label',
-							LabelButton( text = '', color = DISCONNECTED_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center" ))
-			
-				self._addDeviceWidget(stateBox, key,'progress',
-							ProgressBar(value=0, max=1, halign="center",size_hint=(.9, 1.0/15) ))
-				
+				widgets.label = LabelButton(id = key, text = '', color = DISCONNECTED_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center" )
+				widgets.label.bind( on_press=self._onShowOutput.__get__(self, TestSuiteGUIView)) # show output window if label clicked
+				stateBox.add_widget(widgets.label)
+				widgets.progress = ProgressBar(id = key, value=0, max=1, halign="center",size_hint=(.9, 1.0/15) )
+				stateBox.add_widget(widgets.progress)
 				addTo.add_widget(stateBox)
-# 				self._addDeviceWidget(None,key,'output',
-# 							LabelButton( text = '', color = WHITE_COLOR, font_size = 10, font_name=FONT_NAME, halign="left" ))
 				
 
 		splitter.add_widget(outputView)	
 		self.add_widget(hubPanels)
 		self.add_widget(splitter)
 		
+	def addMainButtonListener(self, listener):
+		'''
+		Add an observer to the main button. The Main app will listen to button clicks
+		:param listener:
+		'''
+		self.mainButtonListeners.append(listener)
+		
+			
+	#static
+	_stateToColor ={PASSIVE_STATE: PASSIVE_COLOR, PASS_STATE: SUCCESS_COLOR, FAIL_STATE:FAIL_COLOR, PROMPT_STATE: PROMPT_COLOR, ACTIVE_STATE:ACTIVE_COLOR, PAUSED_STATE:PAUSED_COLOR, IDLE_STATE: PASSIVE_COLOR, DISCONNECTED_STATE: DISCONNECTED_COLOR}
 	
-	def setOutputDetailTitle(self,title, color = None):
+	def onUpdateStateInfo(self, info):
+		'''
+		Observer callback from main thread
+		:param info:
+		'''
+		'''
+		Kivy has threading issues if you try to update GUI components from a child thread.
+		The solution is to add a @mainthread attribute to a function in the chlid class.
+		This function will then run in the main thread. It, in turn, calls this method
+		info.uid: The port
+		info.state: corresponds to the states. e.g. PASSIVE_STATE
+		info.stateLabel: Text label for the state, such as RUNNING_TEXT
+		info.label: The label for the test case that is being run
+		info.progress: number value for progress bar
+		info.output: The output for the test case
+		info.prompt: Any prompt to show
+		'''
+		uid = info['uid']
+		state = info.get('state')
+		stateLabel = info.get('stateLabel')
+		label = info.get('label')
+		progress = info.get('progress')
+		output = info.get('output')
+		prompt = info.get('prompt')
+		
+		widgets = self.widgetsMap[uid]
+		if state:
+			color = self._stateToColor[state]
+			widgets.setColor(color)
+			
+		if stateLabel:
+			widgets.stateLabel.text = stateLabel
+										
+		if label:
+			widgets.label.text = label
+			
+		if progress:
+			widgets.progress.value = progress
+		
+
+		if prompt:
+			widgets.label.text = prompt
+			
+		if output:
+			widgets.output = output
+			self._onShowOutput(None,uid) #if the output detail is showing this output, it will be updated
+
+			
+######################################################################################################################################
+# Privates
+######################################################################################################################################
+	def _onClickedMainButton(self, button):
+		'''
+		When the button is clicked, notify all listeners
+		:param button:
+		'''
+		for listener in self.mainButtonListeners:
+			listener(button)
+	
+
+	def _onShowOutput(self,button,uid = None):
+		'''
+		Show the output for the currently selected port (by clicking on its label column, not port column
+		:param button: this will be the id of the port if invoked through button. Null if called explicitly
+		:param uid: Id of the port to show
+		'''
+		if uid:
+			if self.outputDetailUid != uid: #skip if trying to update output, but parent isnt showing it
+				return
+		else:
+			uid = button.id
+		self.outputDetailUid = uid # signify that we want to show this port now
+		widgets = self.widgetsMap[uid]
+		title = "Port: " + str(uid)
+		color = widgets.label.color # use same color as state
+		self._setOutputDetailTitle(title, color)
+		self.output.text=widgets.output
+
+	def _setOutputDetailTitle(self,title, color = None):
 		'''
 		Call to set the title of the output window
 		:param title: Title of the 
@@ -129,16 +221,28 @@ class TestSuiteGUIView( BoxLayout ):
 		if color:
 			self.outputTitle.color = color
 		
-######################################################################################################################################
-# Privates
-######################################################################################################################################
-	def _addDeviceWidget(self,addTo, key,name,widget):
-		widget.id = key
-		self.deviceUIInfo[key].widgetInfo[name] = widget
-		if addTo:
-			addTo.add_widget(widget)
-		return widget
+class Widgets:
+	'''
+	Helper class to handle the row widgets
+	'''
+	def __init__(self):
+		self.button = None
+		self.stateLabel = None
+		self.label= None
+		self.progress = None
+		self.output = "" #This is actually the output text for the widget
 		
+	def setColor(self,color):
+		'''
+		Set all widgets in the row to the same color
+		:param color:
+		'''
+		self.color = color
+		self.button.color = color
+		self.stateLabel.color = color
+		self.label.color = color
+		self.progress.color = color
+
 
 class LabelButton(ButtonBehavior, Label):
 	'''
@@ -158,24 +262,5 @@ Builder.load_string('''
 class ScrollableLabel(ScrollView):
 	text = StringProperty('')
 
-class DeviceUIInfo:
-	'''
-	Helper class to keep track of the correspondance between a device and the GUI
-	'''
-	def __init__(self, uid):
-		self.uid = uid
-		self.state = PASSIVE_STATE
-		self.output = " "
-		self.widgetInfo = {}
-		
-	def isActive(self):
-		return self.state == ACTIVE_STATE
-	
-	def isIdle(self):
-		return self.state in [PASSIVE_STATE, PAUSED_STATE, PROMPT_STATE, IDLE_STATE]
-	
-	def isDone(self):
-		return self.state in [PASS_STATE, FAIL_STATE]
-		
 
     

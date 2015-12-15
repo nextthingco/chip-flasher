@@ -10,6 +10,7 @@ from kivy.clock import Clock
 from persistentdata import PersistentData
 from os import path
 from deviceDescriptor import *
+from runState import RunState
 from testSuiteGUIView import *
 
 import subprocess
@@ -34,6 +35,9 @@ SORT_HUBS = True # Whether the hub name from the UDEV file (chip_id_hub_xxx) sho
 HEADLESS = False # The app can be run headless. This is for a future where we might just use a fixture with LEDs instead of a screen.
 AUTO_START_ON_DEVICE_DETECTION = True #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled
 AUTO_START_WAIT_BEFORE_DISCONNECT = 20 #wait n seconds before considering a disconnect to handle switch to FASTBOOT
+
+
+
 class TestSuiteGUIApp( App ):
 	'''
 	The main application for a GUI-based, parallel test suite runner
@@ -44,10 +48,9 @@ class TestSuiteGUIApp( App ):
 		self.testSuiteName = testSuiteName
 		PersistentData.read() #unused for now
 		self.testThreads = {}
-		self.deviceUIInfo = {}
+		self.runStates = {}
 		self.deviceDescriptors, self.hubs = DeviceDescriptor.readRules(UDEV_RULES_FILE, SORT_DEVICES, SORT_HUBS)
 		self.deviceStates = {} # keep track of the last know state of each device. Used when polling for unplug/replugs
-		self.outputDetailUid = None #the uid of of what's being shown in the output (detail) view to the right of the splitter
 		self.mutexes = {}
 		self.count = 0 #number of CHIPS passed thorugh
 		self.autoStartOnDeviceDetection = AUTO_START_ON_DEVICE_DETECTION #This should be command line argument
@@ -55,7 +58,9 @@ class TestSuiteGUIApp( App ):
 		# Note that I tried using a @mainthread decorator to make things thread safe, but the problem with that is the order of events isn't preserved
 		self.updateQueue = KivyQueue(self._triggerUpdate.__get__(self,TestSuiteGUIApp)) # A thread-safe queue for managing GUI updates in order
 		self.kivyUpdateTrigger = Clock.create_trigger(self._onUpdateTrigger.__get__(self,TestSuiteGUIApp)) #kivy Trigger that will be set when added to queue
-
+		
+		self.stateListeners = []
+		
 	def build( self ):
 		'''
 		Kivy will call this method to start the app
@@ -67,7 +72,7 @@ class TestSuiteGUIApp( App ):
 		currentTime = time.time() 
 
 		for key, deviceDescriptor in self.deviceDescriptors.iteritems():
-			self.deviceUIInfo[key] = DeviceUIInfo(key) #make a new object to store the states and widgets
+			self.runStates[key] = RunState(key) #make a new object to store the state info
 			self.deviceStates[key] = (DEVICE_DISCONNECTED, currentTime)
 		
 		#Process the device descriptors and connect them to GUI's buttons
@@ -75,12 +80,9 @@ class TestSuiteGUIApp( App ):
 			self.view = None
 		else:
 			self._displayTitle()
-			self.view = TestSuiteGUIView(deviceDescriptors=self.deviceDescriptors, hubs = self.hubs, deviceUIInfo = self.deviceUIInfo)
-		for key in self.deviceUIInfo:
-			deviceUIInfo = self.deviceUIInfo[key]
-			if not HEADLESS:
-				deviceUIInfo.widgetInfo['button'].bind( on_press=self._onClickedMainButton.__get__(self, TestSuiteGUIApp))
-				deviceUIInfo.widgetInfo['label'].bind( on_press=self._onShowOutput.__get__(self, TestSuiteGUIApp))
+			self.view = TestSuiteGUIView(deviceDescriptors=self.deviceDescriptors, hubs = self.hubs)
+			self.view.addMainButtonListener(self._onMainButton.__get__(self,TestSuiteGUIApp)) #observe button events if GUI
+			self.addStateListener(self.view.onUpdateStateInfo.__get__(self.view,TestSuiteGUIView))
 		
 		Clock.schedule_interval(self._checkAndTriggerDeviceChanges.__get__(self, TestSuiteGUIApp),1) # Poll for device changes every second
 
@@ -94,6 +96,8 @@ class TestSuiteGUIApp( App ):
 # 		LogManager.close_all_logs()
 		pass
 
+	def addStateListener(self,listener):
+		self.stateListeners.append(listener)
 				
 ######################################################################################################################################
 # Privates
@@ -114,7 +118,7 @@ class TestSuiteGUIApp( App ):
 			lastKnownState, when = self.deviceStates[uid]
 			elapsedTime = currentTime - when #see how long its been since we
 			if lastKnownState != currentState: #if the state is different since last time
- 				print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
+# 				print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
 				if currentState == DEVICE_FASTBOOT:
 					self.deviceStates[uid] = (currentState, currentTime) #just update the time. don't trigger
 				elif currentState == DEVICE_DISCONNECTED:
@@ -182,27 +186,6 @@ class TestSuiteGUIApp( App ):
 		self.title = self.testSuiteName + ": Host: " + self.hostname + " | Revision: " + self.rev[0:10] + " | Firmware Build: " + self.build_string
 
 
-	def _onShowOutput(self,button,uid = None):
-		'''
-		Show the output for the currently selected port (by clicking on its label column, not port column
-		:param button: this will be the id of the port if invoked through button. Null if called explicitly
-		:param uid: Id of the port to show
-		'''
-		if uid:
-			if self.outputDetailUid != uid: #skip if trying to update output, but parent isnt showing it
-				return
-		else:
-			uid = button.id
-		self.outputDetailUid = uid # signify that we want to show this port now
-		if uid in self.deviceUIInfo:
-			deviceUIInfo = self.deviceUIInfo[uid]
-			title = "Port: " + str(uid)
-			color = self._stateToColor[deviceUIInfo.state]
-			self.view.setOutputDetailTitle(title, color)
-			self.view.output.text=deviceUIInfo.output
-			color = self._stateToColor[deviceUIInfo.state]
-
-
 	def _getActiveThread(self,uid):
 		'''
 		Gets the active thread associated with a uid, if any. If the thread is not active, returns None
@@ -225,7 +208,7 @@ class TestSuiteGUIApp( App ):
 			testingThread.aborted = True
 		self.testThreads[uid] = None
 		
-	def _onClickedMainButton(self, button):
+	def _onMainButton(self, button):
 		'''
 		Handle button clicks on id column as triggers to do something
 		:param button:
@@ -251,20 +234,20 @@ class TestSuiteGUIApp( App ):
 		if self.autoStartOnDeviceDetection and not deviceState: #ignore button clicks if in polling mode
 			return
 		
-		deviceUIInfo = self.deviceUIInfo[uid]
+		runState = self.runStates[uid]
 		deviceDescriptor = self.deviceDescriptors[uid]
 
-		if deviceUIInfo.isDone(): #if currently in a PASS or FAIL state
-			self._updateStateInfo({'uid': uid, 'state': PASSIVE_STATE, 'stateLabel': WAITING_TEXT, 'labelText': ' '}) #labelText cannot be "". It needs to be a space
+		if runState.isDone(): #if currently in a PASS or FAIL state
+			self._updateStateInfo({'uid': uid, 'state': PASSIVE_STATE, 'stateLabel': WAITING_TEXT, 'label': ' '}) #labelcannot be "". It needs to be a space
 			self.output = ""
 			if not SKIP_IDLE_STATE:
-				self._updateStateInfo({'uid': uid, 'state': IDLE_STATE, 'stateLabel': WAITING_TEXT, 'labelText': ' ', 'output': ' '}) #labelText cannot be "". It needs to be a space 
+				self._updateStateInfo({'uid': uid, 'state': IDLE_STATE, 'stateLabel': WAITING_TEXT, 'label': ' ', 'output': ' '}) #label cannot be "". It needs to be a space 
 				return
 
 
 		self._updateStateInfo({'uid':uid, 'state': ACTIVE_STATE, 'stateLabel': RUNNING_TEXT})
 		if deviceState and not self.autoStartOnDeviceDetection: # if we just want graying out behavior
-			self._updateStateInfo({'uid': uid, 'state': IDLE_STATE, 'stateLabel': WAITING_TEXT, 'labelText': ' ', 'output': ' '}) #labelText cannot be "". It needs to be a space 
+			self._updateStateInfo({'uid': uid, 'state': IDLE_STATE, 'stateLabel': WAITING_TEXT, 'label': ' ', 'output': ' '}) #label cannot be "". It needs to be a space 
 			return
 
 		suite = self._loadSuite(deviceState)
@@ -275,61 +258,33 @@ class TestSuiteGUIApp( App ):
 		self.testThreads[uid] = testThread
 		testThread.start() #start the thread, which will call runTestSuite
 
-	#static
-	_stateToColor ={PASSIVE_STATE: PASSIVE_COLOR, PASS_STATE: SUCCESS_COLOR, FAIL_STATE:FAIL_COLOR, PROMPT_STATE: PROMPT_COLOR, ACTIVE_STATE:ACTIVE_COLOR, PAUSED_STATE:PAUSED_COLOR, IDLE_STATE: PASSIVE_COLOR, DISCONNECTED_STATE: DISCONNECTED_COLOR}
 	
 	def _updateStateInfo(self, info):
 		'''
-		Kivy has threading issues if you try to update GUI components from a child thread.
-		The solution is to add a @mainthread attribute to a function in the chlid class.
-		This function will then run in the main thread. It, in turn, calls this method
+		update the run state and notify any listeners
 		info.uid: The port
 		info.state: corresponds to the states. e.g. PASSIVE_STATE
 		info.stateLabel: Text label for the state, such as RUNNING_TEXT
-		info.labelText: The label for the test case that is being run
+		info.label: The label for the test case that is being run
 		info.progress: number value for progress bar
 		info.output: The output for the test case
 		info.prompt: Any prompt to show
 		'''
 		uid = info['uid']
 		state = info.get('state')
-		stateLabel = info.get('stateLabel')
-		labelText = info.get('labelText')
-		progress = info.get('progress')
 		output = info.get('output')
-		prompt = info.get('prompt')
 		
-		deviceUIInfo = self.deviceUIInfo[uid]
-		widgetInfo = deviceUIInfo.widgetInfo
+		runState = self.runStates[uid]
 		
 		if state:
-			deviceUIInfo.state = state
+			runState.state = state
 			
 		if output:
-			deviceUIInfo.output = output
-			
-		if not HEADLESS:	
-			if state:
-				color = self._stateToColor[state]
-				for widget in widgetInfo.itervalues():
-					widget.color = color
-				
-			if stateLabel:
-				widgetInfo['stateLabel'].text = stateLabel
-											
-			if labelText:
-				widgetInfo['label'].text = labelText
-				
-			if progress:
-				widgetInfo['progress'].value = progress
-			
-	
-			if prompt:
-				widgetInfo['label'].text = prompt
-				
-			if output:
-				self._onShowOutput(None,uid) #if the output detail is showing this output, it will be updated
-		
+			runState.output = output
+
+		#notify listeners of the change so they can update their UI
+		for listener in self.stateListeners:
+			listener(info)		
 		
 	
 	def _triggerUpdate(self):

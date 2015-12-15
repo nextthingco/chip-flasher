@@ -105,7 +105,7 @@ class TestingThread(threading.Thread):
         if before:
             #initialize pre-test stuff
             self.output += (str(self.runId) + ": BEFORE: " + englishName + " device: "+ self.deviceDescriptor.uid + "\n")
-            self._updateStateInfo({'state': ACTIVE_STATE, 'labelText': label, 'output': self.output, 'progress': 0})
+            self._updateStateInfo({'state': ACTIVE_STATE, 'label': label, 'output': self.output, 'progress': 0})
             testCase.output=""
             self.progress = None
             self._showPromptIfAny(promptBeforeForTest(testCase)) # @promptBefore
@@ -143,7 +143,7 @@ class TestingThread(threading.Thread):
             self.event = threading.Event() #create an event that will be used to wake up the thread via processButtonClick
             self._updateStateInfo({'prompt': prompt, 'state': PROMPT_STATE})
             self.event.wait() #now wait for a call to processButtonClick sent main mainthread
-            self._updateStateInfo({'state': ACTIVE_STATE, 'labelText': label}) #after resume, now active. also reset label because prompt used it
+            self._updateStateInfo({'state': ACTIVE_STATE, 'label': label}) #after resume, now active. also reset label because prompt used it
 
     def _updateStateInfo(self,info):
         '''
