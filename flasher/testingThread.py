@@ -4,8 +4,7 @@ from progress import Progress
 import unittest
 from observable_test import *
 from ui_strings import *
-from guiConstants import *
-
+from runState import *
 
 class TestResult:
     def __init__(self):
