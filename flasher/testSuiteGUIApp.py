@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
-from kivy.config import Config
 
-# Config.set('graphics', 'fullscreen', '1')
-Config.set('graphics', 'width', '1024')
-Config.set('graphics', 'height', '768')
-Config.set('graphics', 'window_state',"maximized")
+HEADLESS = True # The app can be run headless. This is for a future where we might just use a fixture with LEDs instead of a screen.
+
+if not HEADLESS:
+	from kivy.config import Config
+	# Config.set('graphics', 'fullscreen', '1')
+	Config.set('graphics', 'width', '1024')
+	Config.set('graphics', 'height', '768')
+	Config.set('graphics', 'window_state',"maximized")
+	
 from kivy.app import App
 from kivy.clock import Clock
 from persistentdata import PersistentData
@@ -32,7 +36,6 @@ UDEV_RULES_FILE = '/etc/udev/rules.d/flasher.rules'
 SORT_DEVICES = True # Whether the device id from the UDEV file (chip_id_hub_xxx) should be sorted on screen. Sort is numeric
 SORT_HUBS = True # Whether the hub name from the UDEV file (chip_id_hub_xxx) should be sorted on screen. Sort is alphabetic
 
-HEADLESS = False # The app can be run headless. This is for a future where we might just use a fixture with LEDs instead of a screen.
 AUTO_START_ON_DEVICE_DETECTION = True #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled
 AUTO_START_WAIT_BEFORE_DISCONNECT = 20 #wait n seconds before considering a disconnect to handle switch to FASTBOOT
 
