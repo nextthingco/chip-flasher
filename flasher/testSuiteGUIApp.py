@@ -25,7 +25,13 @@ from ui_strings import *
 from testingThread import *
 from Queue import Queue
 
-log = LogManager.get_global_log()
+if LogManager:
+	log = LogManager.get_global_log()
+else:
+	import logging
+	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+	log = logging.getLogger("flasher")
+	
 get_class = lambda x: globals()[x]
 
 #Constants to change behavior. Also see constants in TestSuiteGUIView
