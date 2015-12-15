@@ -8,6 +8,7 @@ if not HEADLESS:
 	Config.set('graphics', 'width', '1024')
 	Config.set('graphics', 'height', '768')
 	Config.set('graphics', 'window_state',"maximized")
+	from testSuiteGUIView import *
 	
 from kivy.app import App
 from kivy.clock import Clock
@@ -15,7 +16,6 @@ from persistentdata import PersistentData
 from os import path
 from deviceDescriptor import *
 from runState import RunState
-from testSuiteGUIView import *
 
 import subprocess
 import unittest
