@@ -25,9 +25,10 @@ from ui_strings import *
 from testingThread import *
 from Queue import Queue
 
-if LogManager:
+try:
+	LogManager #see if it exists
 	log = LogManager.get_global_log()
-else:
+except:
 	import logging
 	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 	log = logging.getLogger("flasher")
