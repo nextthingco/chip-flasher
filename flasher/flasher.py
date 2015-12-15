@@ -72,6 +72,7 @@ class Flasher(TestCase):
     
     @label(UI_WAITING_FOR_DEVICE)
     @progress(10)
+    @failMessage(FAIL_201_TEXT)
     def test_0_fel(self):
         for attempt in range(1,10):
             if self.findFelDevice():
@@ -84,32 +85,38 @@ class Flasher(TestCase):
     @label(UI_LAUNCH_SPL)
     @progress(8)
     @mutex("fel")
+    @failMessage(FAIL_202_TEXT)
     def test_Stage0(self):
         self._doFlashStage(0)
 
     @label(UI_UPLOAD_SPL)
     @progress(7)
     @mutex("fel")
+    @failMessage(FAIL_202_TEXT)
     def test_Stage1(self):
         self._doFlashStage(1)
         
     @label(UI_UPLOAD_UBOOT)
     @progress(2)
+    @failMessage(FAIL_202_TEXT)
     def test_Stage2(self):
         self._doFlashStage(2)
         
     @label(UI_UPLOAD_UBOOT_SCRIPT)
     @progress(1)
+    @failMessage(FAIL_202_TEXT)
     def test_Stage3(self):
         self._doFlashStage(3)
     
     @label(UI_EXECUTE_UBOOT_SCRIPT)
     @progress(1)
+    @failMessage(FAIL_202_TEXT)
     def test_Stage4(self):
         self._doFlashStage(4)
 
     @label(UI_UPLOAD_UBI)
     @progress(345)
+    @failMessage(FAIL_203_TEXT)
     def test_Stage5(self):
         self._doFlashStage(5)
         

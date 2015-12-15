@@ -37,6 +37,7 @@ class TestingThread(threading.Thread):
         self.totalProgressSeconds = sum( progressForTest(testCase) for testCase in suite)
         self.output = "" 
         self.currentStateName = ""
+        self.currentStateFailMessage = None
         self.event = None # event gets set when a prompt goes up
             
     def run(self):
@@ -62,7 +63,10 @@ class TestingThread(threading.Thread):
         else:
             self.testResult.resultText = self.currentStateName + "Failed"
             state = FAIL_STATE
-            stateLabel = FAIL_TEXT
+            if self.currentStateFailMessage:
+                stateLabel = self.currentStateFailMessage
+            else:
+                stateLabel = FAIL_TEXT
         self.output += self.testResult.resultText
         
         #update the UI
@@ -96,6 +100,7 @@ class TestingThread(threading.Thread):
         progressSeconds =  progressForTest(testCase) # @progress
         timeout =  timeoutForTest(testCase) # @timeout - this is not hooked in yet
         mutex = mutexForTest(testCase) # @mutex
+        self.currentStateFailMessage = failMessageForTest(testCase) # a fail message to show
         
         if before:
             #initialize pre-test stuff

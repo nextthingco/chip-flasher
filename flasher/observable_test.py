@@ -86,6 +86,16 @@ def label(text):
     return method_call
     
         
+def failMessage(text):
+    '''
+    @failMessage decorator
+    :param value: descriptive text to display as an error message
+    '''
+    def method_call(method):
+        return _addAttribute(method, "failMessage", text)
+    return method_call
+    
+
 def progress(seconds):
     '''
     @progress decorator
@@ -170,6 +180,13 @@ def labelForTest(test):
     :param test:
     '''
     return _decoratedAttribute(test, 'label')
+
+def failMessageForTest(test):
+    '''
+    Get the @progress
+    :param test:
+    '''
+    return _decoratedAttribute(test, 'failMessage')
 
 def promptBeforeForTest(test):
     '''
