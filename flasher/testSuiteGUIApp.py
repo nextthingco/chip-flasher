@@ -24,7 +24,6 @@ from chipHardwareTest import ChipHardwareTest
 from ui_strings import *
 from testingThread import *
 from Queue import Queue
-from guiConstants import *
 
 log = LogManager.get_global_log()
 get_class = lambda x: globals()[x]
