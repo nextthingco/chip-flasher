@@ -16,6 +16,8 @@ class Flasher(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.log = Logger
+        cls.timeoutMultiplier = 1.0
+
         
     err_codes = {
         -1: "Unknown Failure",
@@ -32,7 +34,6 @@ class Flasher(TestCase):
     
     def setUp(self):
         self.progressObservers = []
-        self.timeoutMultiplier = 1.0
         try:
             self.felPort = self.attributes['deviceDescriptor'].fel
         except: # run from regular unit test

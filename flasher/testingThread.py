@@ -40,8 +40,6 @@ class TestingThread(threading.Thread):
         self.currentStateName = ""
         self.event = None # event gets set when a prompt goes up
         self.aborted = False
-        
-        print "testing thread ctor timeoutMultiplier " + str(self.timeoutMultiplier)
             
     def run(self):
         '''
