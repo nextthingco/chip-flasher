@@ -41,7 +41,7 @@ class TestingThread(threading.Thread):
         self.event = None # event gets set when a prompt goes up
         self.aborted = False
         
-        print "testing thread ctor timeoutMultiplier " + self.timeoutMultiplier
+        print "testing thread ctor timeoutMultiplier " + str(self.timeoutMultiplier)
             
     def run(self):
         '''
