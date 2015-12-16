@@ -32,6 +32,7 @@ class Flasher(TestCase):
     
     def setUp(self):
         self.progressObservers = []
+        self.timeoutMultiplier = 1.0
         try:
             self.felPort = self.attributes['deviceDescriptor'].fel
         except: # run from regular unit test
@@ -118,7 +119,7 @@ class Flasher(TestCase):
     @progress(345)
     @failMessage(FAIL_203_TEXT)
     def test_Stage5(self):
-        self._doFlashStage(5)
+        self._doFlashStage(5, timeout = 400 * self.timeoutMultiplier)
         
 def main():
     tl = TestLoader()

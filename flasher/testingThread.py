@@ -112,6 +112,7 @@ class TestingThread(threading.Thread):
             self.output += (str(self.runId) + ": BEFORE: " + englishName + " device: "+ self.deviceDescriptor.uid + "\n")
             self._updateStateInfo({'state': ACTIVE_STATE, 'label': label, 'output': self.output, 'progress': 0})
             testCase.output=""
+            testCase.timeoutMultiplier = self.timeoutMultiplier #ideally this would use the timeout decorator instead and set a timeout
             self.progress = None
             self._showPromptIfAny(promptBeforeForTest(testCase)) # @promptBefore
             
