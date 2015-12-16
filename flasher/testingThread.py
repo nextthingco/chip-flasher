@@ -14,7 +14,7 @@ class TestResult:
     resultText = None
     
 class TestingThread(threading.Thread):
-    def __init__(self,  suite, deviceDescriptor,runId, mutexes, updateQueue, testResult):
+    def __init__(self,  suite, deviceDescriptor,runId, mutexes, updateQueue, testResult, timeoutMultiplier = 1.0):
         '''
         I am intentionally not passing in the parent to prevent abuse of threads
         :param suite: The unittest suite to run
@@ -23,6 +23,7 @@ class TestingThread(threading.Thread):
         :param mutexes: Dictionary of mutexes
         :param updateQueue: queue to manage Kivy updates
         :param testResult: The result of the tests will be stored here for the main thread to use
+        :param timeoutMultiplier: Increase the timeout on slow devices
         '''
         threading.Thread.__init__(self)
         self.suite = suite
@@ -31,6 +32,7 @@ class TestingThread(threading.Thread):
         self.mutexes =  mutexes
         self.updateQueue = updateQueue
         self.testResult = testResult
+        self.timeoutMultiplier = timeoutMultiplier
         self.uid = deviceDescriptor.uid
         self.testCaseAttributes = {'deviceDescriptor': deviceDescriptor} #such as for the flasher to get the port. Passed along to the unittest
         self.totalProgressSeconds = sum( progressForTest(testCase) for testCase in suite)

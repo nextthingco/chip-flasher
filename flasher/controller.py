@@ -53,6 +53,7 @@ class Controller():
 		self.updateQueue = UpdateQueue(self._triggerUpdate.__get__(self,Controller)) # A thread-safe queue for managing GUI updates in order
 		self.updateQueueListeners = [] #listeners get called when something is added to queue
 		self.stateListeners = []
+		self.timeoutMultiplier = 1.0 #increase on slow flashing machines
 		
 	def configure( self ):
 		'''
@@ -118,6 +119,8 @@ class Controller():
 			info = self.updateQueue.get()
 			self._updateStateInfo(info)
 				
+	def setTimeoutMultiplier(self, timeoutMultiplier):
+		self.timeoutMultiplier = timeoutMultiplier
 ######################################################################################################################################
 # Privates
 ######################################################################################################################################
@@ -239,7 +242,7 @@ class Controller():
 		testResult = TestResult()
 		self.count += 1 #processing another one!
 		
-		testThread = TestingThread(suite, deviceDescriptor, self.count, self.mutexes, self.updateQueue, testResult) #reesult will get written to testResult
+		testThread = TestingThread(suite, deviceDescriptor, self.count, self.mutexes, self.updateQueue, testResult, self.timeoutMultiplier) #reesult will get written to testResult
 		self.testThreads[uid] = testThread
 		testThread.start() #start the thread, which will call runTestSuite
 

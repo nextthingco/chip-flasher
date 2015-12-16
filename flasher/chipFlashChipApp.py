@@ -8,6 +8,7 @@ from scheduler import call_repeatedly
 class ChipFlashChipApp():
 	def __init__( self, testSuiteName ):
 		self.controller = Controller(testSuiteName)
+		self.controller.setTimeoutMultiplier(5.0)
 							
 	def run( self ):
 		self.controller.configure()
