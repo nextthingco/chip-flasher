@@ -54,6 +54,9 @@ class Flasher(TestCase):
     def _doFlashStage(self,stage,timeout=400):
         if MOCK:
             return self._doFlashStageMock(stage,timeout)
+        timeout = timeout * self.timeoutMultiplier
+        
+        print "_doFlashStage timeout " + timeout
         commandRunner = CommandRunner(self.log,progressObservers = self.progressObservers)
         args = ["./chip-flash","-u", ".firmware", "--stage",str(stage)]
         if self.felPort:
@@ -119,7 +122,7 @@ class Flasher(TestCase):
     @progress(345)
     @failMessage(FAIL_203_TEXT)
     def test_Stage5(self):
-        self._doFlashStage(5, timeout = 400 * self.timeoutMultiplier)
+        self._doFlashStage(5, timeout = 400)
         
 def main():
     tl = TestLoader()
