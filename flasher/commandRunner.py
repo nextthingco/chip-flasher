@@ -42,6 +42,8 @@ class CommandRunner:
 		
 
 		proc = subprocess.Popen( cmd, cwd=working_dir+"/flasher/tools", shell=False, preexec_fn=os.setsid, env=my_env, stdout=subprocess.PIPE )
+
+		print "++++++++++++++++++++++ timeout is  " + str(timeout) + "  ++++++++++++++++++++++++++++++++"		
 		timer = Timer( timeout, os.killpg, [ proc.pid, signal.SIGTERM ] ) #timeout will signal process to kill
 		returncode = None
 				
