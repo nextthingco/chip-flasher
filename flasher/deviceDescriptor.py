@@ -6,6 +6,7 @@ SYMLINK_REGEX = re.compile(r".*chip-(.*)-(.*)-(.*)")
                            
 NAME_FROM_UDEV_REGEX = re.compile(r".*chip-(.*)-usb")
 
+DEVICE_NULL = -1 #no state yet
 DEVICE_DISCONNECTED = 0
 DEVICE_FEL = 1
 DEVICE_FASTBOOT = 2

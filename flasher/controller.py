@@ -67,7 +67,7 @@ class Controller():
 
 		for key, deviceDescriptor in self.deviceDescriptors.iteritems():
 			self.runStates[key] = RunState(key) #make a new object to store the state info
-			self.deviceStates[key] = (DEVICE_DISCONNECTED, currentTime)
+			self.deviceStates[key] = (DEVICE_NULL, currentTime)
 		
 
 
@@ -155,6 +155,10 @@ class Controller():
 					elif lastKnownState == DEVICE_FEL: #if went from fel to nothing, probably transitioning to fastboot
 						self.deviceStates[uid] = (DEVICE_WAITING_FOR_FASTBOOT, currentTime)
 						continue # don't update state info
+					elif lastKnownState == DEVICE_FASTBOOT:
+						continue #preserve state
+					elif lastKnownState == DEVICE_SERIAL:
+						continue #preserve state
 					self.deviceStates[uid] = (currentState, currentTime)
 					self._onTriggerDevice(uid,currentState) #disconnect
 				else: #for FEL and serial gadget
