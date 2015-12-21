@@ -43,6 +43,7 @@ class WebFlasher():
         if not self.base_url: #ignore until we have a page listening
             return
         url = self.base_url + 'stateChange'
+        print "url is:" + url
         fullInfo = self.controller.stateInfo[info['uid']].copy() # get complete info, not just what changed
         if fullInfo.get('state'):
             fullInfo['stateClass'] = stateToClass[fullInfo['state']]
@@ -80,7 +81,7 @@ stateToClass = {RunState.PASSIVE_STATE: 'passive', RunState.PASS_STATE: 'success
 def mainPage():
 #     webFlasher.base_url = request.base_url
 #     print "base url is" + webFlasher.base_url
-    webFlasher.base_url = "http://localhost"
+    webFlasher.base_url = "http://127.0.0.1"
 
     return render_template('deviceTable.html', stateInfoArray=webFlasher.controller.stateInfo.values(), stateToClass=stateToClass)
  
