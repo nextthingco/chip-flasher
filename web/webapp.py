@@ -29,6 +29,7 @@ class WebFlasher():
 #     def run(self):
     def start(self):
         self.controller = Controller(self.log)
+        self.controller.onlyBroadcastLastChange = True
         controller = self.controller
         controller.setTimeoutMultiplier(2.3)
         controller.configure()
@@ -37,14 +38,13 @@ class WebFlasher():
         controller.addStateListener(lambda info: self.stateListener(info))
          
         call_repeatedly(1, lambda: controller.onPollingTick(0))
-        call_repeatedly(.1,lambda: controller.onUpdateTrigger(0))
+        call_repeatedly(2,lambda: controller.onUpdateTrigger(0))
  
     def stateListener(self,info):
         if not self.base_url: #ignore until we have a page listening
             return
         url = self.base_url + 'stateChange'
-        print "url is:" + url
-        fullInfo = self.controller.stateInfo[info['uid']].copy() # get complete info, not just what changed
+        fullInfo = info.copy() # get complete info, not just what changed
         if fullInfo.get('state'):
             fullInfo['stateClass'] = stateToClass[fullInfo['state']]
         if fullInfo.get('label'):

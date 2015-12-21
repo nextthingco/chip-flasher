@@ -58,7 +58,7 @@ class Controller():
 		self.updateQueueListeners = [] #listeners get called when something is added to queue
 		self.stateListeners = []
 		self.timeoutMultiplier = 1.0 #increase on slow flashing machines
-		
+		self.onlyBroadcastLastChange = True #whether to batch updates
 	def configure( self ):
 		'''
 		Kivy will call this method to start the app
@@ -122,7 +122,8 @@ class Controller():
 		'''
 		while not self.updateQueue.empty(): #process everything in the queue
 			info = self.updateQueue.get()
-			self._updateStateInfo(info)
+			last = self.updateQueue.empty()
+			self._updateStateInfo(info,last)
 				
 	def setTimeoutMultiplier(self, timeoutMultiplier):
 		self.timeoutMultiplier = timeoutMultiplier
@@ -256,7 +257,7 @@ class Controller():
 		testThread.start() #start the thread, which will call runTestSuite
 
 	
-	def _updateStateInfo(self, info):
+	def _updateStateInfo(self, info,last):
 		'''
 		update the run state and notify any listeners
 		info.uid: The port
@@ -282,8 +283,12 @@ class Controller():
 			runState.output = output
 
 		#notify listeners of the change so they can update their UI
-		for listener in self.stateListeners:
-			listener(info)		
+		if self.onlyBroadcastLastChange and last:
+			for listener in self.stateListeners:
+				listener(self.stateInfo[uid])
+		else:
+			for listener in self.stateListeners:
+				listener(info)
 		
 	
 	def _triggerUpdate(self):
