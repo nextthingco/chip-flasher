@@ -262,8 +262,6 @@ class Controller():
 		Queue a dictionary of GUI changes which Kivy will process in its main thread
 		:param info: dictionary of values to change. See TestSuiteGUIApp._udpateStateInfo for possible values
 		'''
-		info['uid'] = self.uid
-		info['runId'] = self.runId
 		# maybe the state value, if present, should be updated here immediately? Currently the main thread will do it
 		if not self.aborted:
 			self.updateQueue.put(info)
