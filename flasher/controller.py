@@ -257,7 +257,7 @@ class Controller():
 		testThread.start() #start the thread, which will call runTestSuite
 
 	
-	def _updateStateInfo(self, info,last):
+	def _updateStateInfo(self, info,last=True):
 		'''
 		update the run state and notify any listeners
 		info.uid: The port
