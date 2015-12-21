@@ -123,7 +123,7 @@ class Controller():
 		while not self.updateQueue.empty(): #process everything in the queue
 			info = self.updateQueue.get()
 			last = self.updateQueue.empty()
-			self._updateStateInfo(info,last)
+			self._processStateInfo(info,last)
 				
 	def setTimeoutMultiplier(self, timeoutMultiplier):
 		self.timeoutMultiplier = timeoutMultiplier
@@ -257,7 +257,18 @@ class Controller():
 		testThread.start() #start the thread, which will call runTestSuite
 
 	
-	def _updateStateInfo(self, info,last=True):
+	def _updateStateInfo(self,info):
+		'''
+		Queue a dictionary of GUI changes which Kivy will process in its main thread
+		:param info: dictionary of values to change. See TestSuiteGUIApp._udpateStateInfo for possible values
+		'''
+		info['uid'] = self.uid
+		info['runId'] = self.runId
+		# maybe the state value, if present, should be updated here immediately? Currently the main thread will do it
+		if not self.aborted:
+			self.updateQueue.put(info)
+
+	def _processStateInfo(self, info,last=True):
 		'''
 		update the run state and notify any listeners
 		info.uid: The port
@@ -283,9 +294,10 @@ class Controller():
 			runState.output = output
 
 		#notify listeners of the change so they can update their UI
-		if self.onlyBroadcastLastChange and last:
-			for listener in self.stateListeners:
-				listener(self.stateInfo[uid])
+		if self.onlyBroadcastLastChange:
+			if last:
+				for listener in self.stateListeners:
+					listener(self.stateInfo[uid])
 		else:
 			for listener in self.stateListeners:
 				listener(info)
