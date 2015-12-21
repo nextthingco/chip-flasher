@@ -68,11 +68,11 @@ def stateChange():
 
 @app.route('/js/<path:path>')
 def send_js(path):
-    return send_from_directory('js', path)
+    return send_from_directory('web/js', path)
         
 @app.route('/css/<path:path>')
 def send_css(path):
-    return send_from_directory('css', path)
+    return send_from_directory('web/css', path)
 
 stateToClass = {RunState.PASSIVE_STATE: 'passive', RunState.PASS_STATE: 'success', RunState.FAIL_STATE: 'fail', RunState.PROMPT_STATE: 'prompt', RunState.ACTIVE_STATE:'active', RunState.PAUSED_STATE:'paused', RunState.IDLE_STATE: 'passive', RunState.DISCONNECTED_STATE: 'disconnected'}
     
