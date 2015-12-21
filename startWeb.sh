@@ -1,1 +1,1 @@
-sudo python -m web/webapp
+python -m web/webapp
