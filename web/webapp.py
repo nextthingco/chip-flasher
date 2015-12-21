@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit
-from flasher import Controller
+
 from flasher import call_repeatedly
 from flasher import RunState
+from flasher import Controller
 import requests
 import json
 from logging import log
@@ -75,17 +76,17 @@ def send_css(path):
 
 stateToClass = {RunState.PASSIVE_STATE: 'passive', RunState.PASS_STATE: 'success', RunState.FAIL_STATE: 'fail', RunState.PROMPT_STATE: 'prompt', RunState.ACTIVE_STATE:'active', RunState.PAUSED_STATE:'paused', RunState.IDLE_STATE: 'passive', RunState.DISCONNECTED_STATE: 'disconnected'}
     
-    
+webFlasher = None    
 @app.route('/')
 def mainPage():
     webFlasher.base_url = request.base_url
     return render_template('deviceTable.html', stateInfoArray=webFlasher.controller.stateInfo.values(), stateToClass=stateToClass)
  
-
-
-
-if __name__ == '__main__':
+def main():    
     webFlasher = WebFlasher()
     webFlasher.start()
     socketio.run(app)
-    
+
+
+if __name__ == '__main__':
+    main()
