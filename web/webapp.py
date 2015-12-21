@@ -85,7 +85,7 @@ def mainPage():
 def main():    
     webFlasher = WebFlasher()
     webFlasher.start()
-    socketio.run(app)
+    socketio.run(app, host="0.0.0.0",port=5000)
 
 
 if __name__ == '__main__':
