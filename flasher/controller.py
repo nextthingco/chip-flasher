@@ -263,8 +263,7 @@ class Controller():
 		:param info: dictionary of values to change. See TestSuiteGUIApp._udpateStateInfo for possible values
 		'''
 		# maybe the state value, if present, should be updated here immediately? Currently the main thread will do it
-		if not self.aborted:
-			self.updateQueue.put(info)
+		self.updateQueue.put(info)
 
 	def _processStateInfo(self, info,last=True):
 		'''
