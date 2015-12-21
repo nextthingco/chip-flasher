@@ -62,9 +62,9 @@ class KivyApp(App):
 	def build( self ):
 		self.controller.configure()
 		Clock.schedule_interval(self._onPollingTick.__get__(self, KivyApp),1) # Poll for device changes every second
-		self.view = ChipFlashChipView(deviceDescriptors=self.controller.deviceDescriptors, hubs = self.controller.hubs)
+		self.view = KivyView(deviceDescriptors=self.controller.deviceDescriptors, hubs = self.controller.hubs)
 		self.view.addMainButtonListener(self._onMainButton.__get__(self,KivyApp)) #observe button events if GUI
-		self.controller.addStateListener(self.view.onUpdateStateInfo.__get__(self.view,ChipFlashChipView))
+		self.controller.addStateListener(self.view.onUpdateStateInfo.__get__(self.view,KivyView))
 		self.title = self.controller.getTitle()
 		return self.view
 
@@ -89,14 +89,14 @@ class KivyApp(App):
 		'''
 		self.controller.onMainButton(button)
 		
-class ChipFlashChipView( BoxLayout ):
+class KivyView( BoxLayout ):
 
 	def __init__( self, **kwargs ):
 		'''
 		The view part of the MVC. note that some values are passed in the kwargs dict. See below
 		Basically, this method will create and layout the gui's widgets
 		'''
-		super(ChipFlashChipView, self).__init__(**kwargs)
+		super(KivyView, self).__init__(**kwargs)
 		self.deviceDescriptors = kwargs['deviceDescriptors']
 		self.hubs = kwargs['hubs']
 		self.widgetsMap = {}
@@ -145,7 +145,7 @@ class ChipFlashChipView( BoxLayout ):
 				# The main button
 				widgets.button = Button(id = key, text=deviceDescriptor.uid, color = DISCONNECTED_COLOR, font_size=30 * rowSizeFactor, 
 																 font_name=FONT_NAME, halign="center", size_hint_x=None, width=mainButtonWidth)
-				widgets.button.bind( on_press=self._onClickedMainButton.__get__(self, ChipFlashChipView))
+				widgets.button.bind( on_press=self._onClickedMainButton.__get__(self, KivyView))
 				addTo.add_widget(widgets.button)
 
 				# The state column
@@ -156,7 +156,7 @@ class ChipFlashChipView( BoxLayout ):
 				#The label column kists of both text and a progress bar positioned inside a box layout
 				stateBox = BoxLayout(orientation='vertical')
 				widgets.label = LabelButton(id = key, text = '', color = DISCONNECTED_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center" )
-				widgets.label.bind( on_press=self._onShowOutput.__get__(self, ChipFlashChipView)) # show output window if label clicked
+				widgets.label.bind( on_press=self._onShowOutput.__get__(self, KivyView)) # show output window if label clicked
 				stateBox.add_widget(widgets.label)
 				widgets.progress = ProgressBar(id = key, value=0, max=1, halign="center",size_hint=(.9, 1.0/15) )
 				stateBox.add_widget(widgets.progress)
