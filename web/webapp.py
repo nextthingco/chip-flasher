@@ -13,6 +13,7 @@ import sys
 import threading
 app = Flask(__name__,static_folder='static')
 app.config['SECRET_KEY'] = 'secret!'
+app.config['DEBUG'] = False
 # app.debug=True
 socketio = SocketIO(app)
 stateToClass = {RunState.PASSIVE_STATE: 'passive', RunState.PASS_STATE: 'success', RunState.FAIL_STATE: 'fail', RunState.PROMPT_STATE: 'prompt', RunState.ACTIVE_STATE:'active', RunState.PAUSED_STATE:'paused', RunState.IDLE_STATE: 'passive', RunState.DISCONNECTED_STATE: 'disconnected'}
@@ -31,7 +32,7 @@ class WebFlasher():
         self.controller = Controller(self.log)
         self.controller.onlyBroadcastLastChange = True
         controller = self.controller
-        controller.setTimeoutMultiplier(2.3)
+        controller.setTimeoutMultiplier(4)
         controller.configure()
         socketio.emit("stateChange","start",broadcast=True)
 

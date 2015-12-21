@@ -7,3 +7,4 @@ apt-get install python-dev
 pip install flask
 pip install flask-socketio
 pip install eventlet
+#https://github.com/miguelgrinberg/Flask-SocketIO/issues/184
