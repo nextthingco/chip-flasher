@@ -30,7 +30,7 @@ class WebFlasher():
 #     def run(self):
     def start(self):
         self.controller = Controller(self.log)
-        self.controller.onlyBroadcastLastChange = True
+        self.controller.batchUpdates = True
         controller = self.controller
         controller.setTimeoutMultiplier(4)
         controller.configure()

@@ -13,6 +13,7 @@ from ui_strings import *
 from testingThread import TestingThread,TestResult
 from Queue import Queue
 import time
+from sets import Set
 # 
 # try:
 # 	LogManager #see if it exists
@@ -58,7 +59,8 @@ class Controller():
 		self.updateQueueListeners = [] #listeners get called when something is added to queue
 		self.stateListeners = []
 		self.timeoutMultiplier = 1.0 #increase on slow flashing machines
-		self.onlyBroadcastLastChange = True #whether to batch updates
+		self.batchUpdates = False #whether to batch updates or send changes immediatly
+
 	def configure( self ):
 		'''
 		Kivy will call this method to start the app
@@ -120,10 +122,15 @@ class Controller():
 		'''
 		This method is called by Kivy's Clock object before the next frame when self.kivyUpdateTrigger() has been called
 		'''
+		updated = Set()
 		while not self.updateQueue.empty(): #process everything in the queue
 			info = self.updateQueue.get()
-			last = self.updateQueue.empty()
-			self._processStateInfo(info,last)
+			updated.add(self._processStateInfo(info))
+			
+		if self.batchUpdates:
+			for uid in updated:
+				for listener in self.stateListeners:
+					listener(self.stateInfo[uid])			
 				
 	def setTimeoutMultiplier(self, timeoutMultiplier):
 		self.timeoutMultiplier = timeoutMultiplier
@@ -265,7 +272,7 @@ class Controller():
 		# maybe the state value, if present, should be updated here immediately? Currently the main thread will do it
 		self.updateQueue.put(info)
 
-	def _processStateInfo(self, info,last=True):
+	def _processStateInfo(self, info):
 		'''
 		update the run state and notify any listeners
 		info.uid: The port
@@ -275,6 +282,8 @@ class Controller():
 		info.progress: number value for progress bar
 		info.output: The output for the test case
 		info.prompt: Any prompt to show
+		
+		@return the uid of the info
 		'''
 		uid = info['uid']
  		self.stateInfo[uid].update(info) #merge in latest state info
@@ -290,15 +299,11 @@ class Controller():
 		if output:
 			runState.output = output
 
-		#notify listeners of the change so they can update their UI
-		if self.onlyBroadcastLastChange:
-			if last:
-				for listener in self.stateListeners:
-					listener(self.stateInfo[uid])
-		else:
+		if not self.batchUpdates: #update immediately
 			for listener in self.stateListeners:
 				listener(info)
-		
+
+		return uid
 	
 	def _triggerUpdate(self):
 		'''
