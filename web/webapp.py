@@ -79,6 +79,8 @@ stateToClass = {RunState.PASSIVE_STATE: 'passive', RunState.PASS_STATE: 'success
 @app.route('/')
 def mainPage():
     webFlasher.base_url = request.base_url
+    print "base url is" + webFlasher.base_url
+
     return render_template('deviceTable.html', stateInfoArray=webFlasher.controller.stateInfo.values(), stateToClass=stateToClass)
  
 
