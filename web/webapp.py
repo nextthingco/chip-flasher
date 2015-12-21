@@ -11,7 +11,7 @@ import logging
 import sys
 
 import threading
-app = Flask(__name__)
+app = Flask(__name__,static_folder='static')
 app.config['SECRET_KEY'] = 'secret!'
 # app.debug=True
 socketio = SocketIO(app)
@@ -66,13 +66,13 @@ def stateChange():
     socketio.emit("stateChange",info,broadcast = True)
     return jsonify("")
 
-@app.route('/js/<path:path>')
-def send_js(path):
-    return send_from_directory('web/js', path)
-        
-@app.route('/css/<path:path>')
-def send_css(path):
-    return send_from_directory('web/css', path)
+# @app.route('/js/<path:path>')
+# def send_js(path):
+#     return send_from_directory('js', path)
+#         
+# @app.route('/css/<path:path>')
+# def send_css(path):
+#     return send_from_directory('web/css', path)
 
 stateToClass = {RunState.PASSIVE_STATE: 'passive', RunState.PASS_STATE: 'success', RunState.FAIL_STATE: 'fail', RunState.PROMPT_STATE: 'prompt', RunState.ACTIVE_STATE:'active', RunState.PAUSED_STATE:'paused', RunState.IDLE_STATE: 'passive', RunState.DISCONNECTED_STATE: 'disconnected'}
     
