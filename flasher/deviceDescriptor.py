@@ -6,14 +6,14 @@ SYMLINK_REGEX = re.compile(r".*chip-(.*)-(.*)-(.*)")
                            
 NAME_FROM_UDEV_REGEX = re.compile(r".*chip-(.*)-usb")
 
-DEVICE_NULL = -1 #no state yet
-DEVICE_DISCONNECTED = 0
-DEVICE_FEL = 1
-DEVICE_FASTBOOT = 2
-DEVICE_SERIAL = 3
-DEVICE_WAITING_FOR_FASTBOOT = 4
 
 class DeviceDescriptor:
+    DEVICE_NULL = -1 #no state yet
+    DEVICE_DISCONNECTED = 0
+    DEVICE_FEL = 1
+    DEVICE_FASTBOOT = 2
+    DEVICE_SERIAL = 3
+    DEVICE_WAITING_FOR_FASTBOOT = 4
     def __init__(self, uid, hub, kernel, vendor, product, type): #store off all values for convenience
         self.uid = uid
         self.hub = hub
@@ -29,13 +29,13 @@ class DeviceDescriptor:
     
     def getDeviceState(self):
         if self.isFel():
-            return DEVICE_FEL
+            return self.DEVICE_FEL
         elif self.isSerial():
-            return DEVICE_SERIAL
+            return self.DEVICE_SERIAL
         elif self.isFastBoot():
-            return DEVICE_FASTBOOT
+            return self.DEVICE_FASTBOOT
         else:
-            return DEVICE_DISCONNECTED
+            return self.DEVICE_DISCONNECTED
     
     def isFel(self):
         return self.fel and os.path.exists(self.fel)

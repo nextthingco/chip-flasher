@@ -1,4 +1,5 @@
-from kivy.clock import Clock
+# from kivy.clock import Clock
+from scheduler import call_repeatedly
 class Progress(object):
     '''
     Small class to keep track of progress and update progress observers on change
@@ -11,10 +12,11 @@ class Progress(object):
         self.current = start
         self.timeout = timeout
         self.timedOut = False
-        Clock.schedule_interval(self.addProgress.__get__(self,Progress), 1 )
+        self.cancelProgressSchedule = call_repeatedly(1,self.addProgress.__get__(self,Progress), 1 )
     
     def stopListening(self):
-        Clock.unschedule(self.addProgress.__get__(self,Progress))
+        self.cancelProgressSchedule()
+#         Clock.unschedule(self.addProgress.__get__(self,Progress))
 
 #     def __del__(self):
 #         Clock.unschedule(self.addProgress.__get__(self,Progress))

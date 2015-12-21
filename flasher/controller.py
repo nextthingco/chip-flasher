@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 	
 from os import path
-from deviceDescriptor import *
+from deviceDescriptor import DeviceDescriptor
 from runState import RunState
 
 import subprocess
 import unittest
+from collections import OrderedDict
 from flasher import Flasher
 from chipHardwareTest import ChipHardwareTest
 from ui_strings import *
-from testingThread import *
+from testingThread import TestingThread,TestResult
 from Queue import Queue
+import time
 # 
 # try:
 # 	LogManager #see if it exists
@@ -38,11 +40,13 @@ class Controller():
 	'''
 	The main application for a GUI-based, parallel test suite runner
 	'''
-	def __init__( self, testSuiteName ):
+	def __init__( self, log = None, testSuiteName=None ):
 		cwd = path.dirname( path.dirname( path.realpath( __file__ ) ) )
+		self.log = log
 		self.testSuiteName = testSuiteName
 		self.testThreads = {}
 		self.runStates = {}
+		self.stateInfo = OrderedDict() # keep track of last known state info
 		self.deviceDescriptors, self.hubs = DeviceDescriptor.readRules(UDEV_RULES_FILE, SORT_DEVICES, SORT_HUBS)
 		self.deviceStates = {} # keep track of the last know state of each device. Used when polling for unplug/replugs
 		self.mutexes = {}
@@ -67,7 +71,8 @@ class Controller():
 
 		for key, deviceDescriptor in self.deviceDescriptors.iteritems():
 			self.runStates[key] = RunState(key) #make a new object to store the state info
-			self.deviceStates[key] = (DEVICE_NULL, currentTime)
+			self.stateInfo[key] = {'uid':key} #each one is a dictionary
+			self.deviceStates[key] = (DeviceDescriptor.DEVICE_NULL, currentTime)
 		
 
 
@@ -141,23 +146,23 @@ class Controller():
 			elapsedTime = currentTime - when #see how long its been since we
 			if lastKnownState != currentState: #if the state is different since last time
 # 				print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
-				if currentState == DEVICE_FASTBOOT:
+				if currentState == DeviceDescriptor.DEVICE_FASTBOOT:
 					self.deviceStates[uid] = (currentState, currentTime) #just update the time. don't trigger
-				elif currentState == DEVICE_DISCONNECTED:
-					if lastKnownState == DEVICE_WAITING_FOR_FASTBOOT:
+				elif currentState == DeviceDescriptor.DEVICE_DISCONNECTED:
+					if lastKnownState == DeviceDescriptor.DEVICE_WAITING_FOR_FASTBOOT:
 						if elapsedTime < AUTO_START_WAIT_BEFORE_DISCONNECT: # wait for possible transition. 
-							self.deviceStates[uid] = (DEVICE_WAITING_FOR_FASTBOOT, currentTime)
+							self.deviceStates[uid] = (DeviceDescriptor.DEVICE_WAITING_FOR_FASTBOOT, currentTime)
 							continue
 						else: # a disconnect
 							self.deviceStates[uid] = (currentState, currentTime)
 							self._onTriggerDevice(uid,currentState) #disconnect
 							
-					elif lastKnownState == DEVICE_FEL: #if went from fel to nothing, probably transitioning to fastboot
-						self.deviceStates[uid] = (DEVICE_WAITING_FOR_FASTBOOT, currentTime)
+					elif lastKnownState == DeviceDescriptor.DEVICE_FEL: #if went from fel to nothing, probably transitioning to fastboot
+						self.deviceStates[uid] = (DeviceDescriptor.DEVICE_WAITING_FOR_FASTBOOT, currentTime)
 						continue # don't update state info
-					elif lastKnownState == DEVICE_FASTBOOT:
+					elif lastKnownState == DeviceDescriptor.DEVICE_FASTBOOT:
 						continue #preserve state
-					elif lastKnownState == DEVICE_SERIAL:
+					elif lastKnownState == DeviceDescriptor.DEVICE_SERIAL:
 						continue #preserve state
 					self.deviceStates[uid] = (currentState, currentTime)
 					self._onTriggerDevice(uid,currentState) #disconnect
@@ -169,7 +174,7 @@ class Controller():
 				
 					
 
-	deviceStateToTestSuite = {DEVICE_FEL:'Flasher', DEVICE_SERIAL: 'ChipHardwareTest'}
+	deviceStateToTestSuite = {DeviceDescriptor.DEVICE_FEL:'Flasher', DeviceDescriptor.DEVICE_SERIAL: 'ChipHardwareTest'}
 	
 	def _loadSuite(self, deviceState = None):
 		'''
@@ -212,9 +217,9 @@ class Controller():
 		Trigger an event for the id. This can either start a test run, clear a prompt, or move from done state to idle state
 		:param button: Button that was clicked on
 		'''
-		if deviceState == DEVICE_DISCONNECTED: #device was unplugged
+		if deviceState == DeviceDescriptor.DEVICE_DISCONNECTED: #device was unplugged
 			self._abortThread(uid)
-			self._updateStateInfo({'uid':uid, 'state': DISCONNECTED_STATE}) #purposely not showing DISCONNECTED_TEXT because it may be useful to keep info on screen
+			self._updateStateInfo({'uid':uid, 'state': RunState.DISCONNECTED_STATE}) #purposely not showing DISCONNECTED_TEXT because it may be useful to keep info on screen
 			return	
 				
 		testingThread = self._getActiveThread(uid)
@@ -230,23 +235,23 @@ class Controller():
 		deviceDescriptor = self.deviceDescriptors[uid]
 
 		if runState.isDone(): #if currently in a PASS or FAIL state
-			self._updateStateInfo({'uid': uid, 'state': PASSIVE_STATE, 'stateLabel': WAITING_TEXT, 'label': ' '}) #labelcannot be "". It needs to be a space
+			self._updateStateInfo({'uid': uid, 'state': RunState.PASSIVE_STATE, 'stateLabel': WAITING_TEXT, 'label': ' '}) #labelcannot be "". It needs to be a space
 			self.output = ""
 			if not SKIP_IDLE_STATE:
-				self._updateStateInfo({'uid': uid, 'state': IDLE_STATE, 'stateLabel': WAITING_TEXT, 'label': ' ', 'output': ' '}) #label cannot be "". It needs to be a space 
+				self._updateStateInfo({'uid': uid, 'state': RunState.IDLE_STATE, 'stateLabel': WAITING_TEXT, 'label': ' ', 'output': ' '}) #label cannot be "". It needs to be a space 
 				return
 
 
-		self._updateStateInfo({'uid':uid, 'state': ACTIVE_STATE, 'stateLabel': RUNNING_TEXT})
+		self._updateStateInfo({'uid':uid, 'state': RunState.ACTIVE_STATE, 'stateLabel': RUNNING_TEXT})
 		if deviceState and not self.autoStartOnDeviceDetection: # if we just want graying out behavior
-			self._updateStateInfo({'uid': uid, 'state': IDLE_STATE, 'stateLabel': WAITING_TEXT, 'label': ' ', 'output': ' '}) #label cannot be "". It needs to be a space 
+			self._updateStateInfo({'uid': uid, 'state': RunState.IDLE_STATE, 'stateLabel': WAITING_TEXT, 'label': ' ', 'output': ' '}) #label cannot be "". It needs to be a space 
 			return
 
 		suite = self._loadSuite(deviceState)
 		testResult = TestResult()
 		self.count += 1 #processing another one!
 		
-		testThread = TestingThread(suite, deviceDescriptor, self.count, self.mutexes, self.updateQueue, testResult, self.timeoutMultiplier) #reesult will get written to testResult
+		testThread = TestingThread(self.log, suite, deviceDescriptor, self.count, self.mutexes, self.updateQueue, testResult, self.timeoutMultiplier) #reesult will get written to testResult
 		self.testThreads[uid] = testThread
 		testThread.start() #start the thread, which will call runTestSuite
 
@@ -263,6 +268,8 @@ class Controller():
 		info.prompt: Any prompt to show
 		'''
 		uid = info['uid']
+ 		self.stateInfo[uid].update(info) #merge in latest state info
+# 		print self.stateInfo[uid]
 		state = info.get('state')
 		output = info.get('output')
 		

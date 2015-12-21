@@ -3,19 +3,17 @@ from unittest import TestCase, TextTestRunner, TestLoader
 import logging
 import sys
 import os.path
-from kivy import Logger
 import random #for mocking
 from ui_strings import *
 from observable_test import *
 from commandRunner import CommandRunner
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+# logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 MOCK = False #For testing GUI without real things plugged in
 class Flasher(TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.log = Logger
         cls.timeoutMultiplier = 1.0
 
         
@@ -34,6 +32,7 @@ class Flasher(TestCase):
     
     def setUp(self):
         self.progressObservers = []
+        self.log = self.attributes['log']
         try:
             self.felPort = self.attributes['deviceDescriptor'].fel
         except: # run from regular unit test

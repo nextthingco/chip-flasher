@@ -1,5 +1,4 @@
 import threading
-from kivy.clock import Clock
 from progress import Progress
 import unittest
 from observable_test import *
@@ -14,7 +13,7 @@ class TestResult:
     resultText = None
     
 class TestingThread(threading.Thread):
-    def __init__(self,  suite, deviceDescriptor,runId, mutexes, updateQueue, testResult, timeoutMultiplier = 1.0):
+    def __init__(self,  log, suite, deviceDescriptor,runId, mutexes, updateQueue, testResult, timeoutMultiplier = 1.0):
         '''
         I am intentionally not passing in the parent to prevent abuse of threads
         :param suite: The unittest suite to run
@@ -26,6 +25,7 @@ class TestingThread(threading.Thread):
         :param timeoutMultiplier: Increase the timeout on slow devices
         '''
         threading.Thread.__init__(self)
+        self.log = log
         self.suite = suite
         self.deviceDescriptor = deviceDescriptor
         self.runId = runId #used for traces for how many runs
@@ -34,7 +34,7 @@ class TestingThread(threading.Thread):
         self.testResult = testResult
         self.timeoutMultiplier = timeoutMultiplier
         self.uid = deviceDescriptor.uid
-        self.testCaseAttributes = {'deviceDescriptor': deviceDescriptor} #such as for the flasher to get the port. Passed along to the unittest
+        self.testCaseAttributes = {'deviceDescriptor': deviceDescriptor, 'log':self.log} #such as for the flasher to get the port. Passed along to the unittest
         self.totalProgressSeconds = sum( progressForTest(testCase) for testCase in suite)
         self.output = "" 
         self.currentStateName = ""
@@ -58,12 +58,13 @@ class TestingThread(threading.Thread):
         #Process test results. self.testResult is populated. The calling thread can use it if it wants
         self.testResult.success = len(result.errors) + len(result.failures) == 0 # Any errors?
         if self.testResult.success:
-            state = PASS_STATE
+            state = RunState.PASS_STATE
             stateLabel = PASS_TEXT
             self.testResult.resultText = "Passed"
+            self._updateStateInfo({'progress':1}) # mark as finished
         else:
             self.testResult.resultText = self.currentStateName + "Failed"
-            state = FAIL_STATE
+            state = RunState.FAIL_STATE
             if self.currentStateFailMessage:
                 stateLabel = self.currentStateFailMessage
             else:
@@ -110,7 +111,7 @@ class TestingThread(threading.Thread):
         if before:
             #initialize pre-test stuff
             self.output += (str(self.runId) + ": BEFORE: " + englishName + " device: "+ self.deviceDescriptor.uid + "\n")
-            self._updateStateInfo({'state': ACTIVE_STATE, 'label': label, 'output': self.output, 'progress': 0})
+            self._updateStateInfo({'state': RunState.ACTIVE_STATE, 'label': label, 'output': self.output, 'progress': 0})
             testCase.output=""
             testCase.timeoutMultiplier = self.timeoutMultiplier #ideally this would use the timeout decorator instead and set a timeout
             self.progress = None
@@ -120,11 +121,11 @@ class TestingThread(threading.Thread):
                 if not mutex in self.mutexes:
                     self.mutexes[mutex] = threading.Lock() #make a new one. This should only get called once per mutex, per app run
                 lock = self.mutexes[mutex] #get the lock
-                self._updateStateInfo({'state': PAUSED_STATE, 'stateLabel': PAUSED_TEXT})
+                self._updateStateInfo({'state': RunState.PAUSED_STATE, 'stateLabel': PAUSED_TEXT})
                 lock.acquire() #Wait, if necessary, until the lock is free and then grab it
             
             # We've got the lock now, so now indicate we are active
-            self._updateStateInfo({'state': ACTIVE_STATE, 'stateLabel': RUNNING_TEXT})
+            self._updateStateInfo({'state': RunState.ACTIVE_STATE, 'stateLabel': RUNNING_TEXT})
             if progressSeconds: #progress bar should be shown
                 self.progress = Progress(progressObservers = [self._onProgressChange.__get__(self,TestingThread)], finish=progressSeconds, timeout = timeout )
             
@@ -139,7 +140,7 @@ class TestingThread(threading.Thread):
             #update the output from the test case
             self.output += testCase.output
             self.output += (str(self.runId) + ": AFTER: " + englishName + " device: "+ str(self.uid) + " time: " + str(stateInfo['executionTime']) + "\n")
-            self._updateStateInfo({'state': PASSIVE_STATE, 'output': self.output})
+            self._updateStateInfo({'state': RunState.PASSIVE_STATE, 'output': self.output})
 
 ######################################################################################################################################
 # Privates
@@ -147,9 +148,9 @@ class TestingThread(threading.Thread):
     def _showPromptIfAny(self, prompt):
         if prompt: #this can be before and/or after
             self.event = threading.Event() #create an event that will be used to wake up the thread via processButtonClick
-            self._updateStateInfo({'prompt': prompt, 'state': PROMPT_STATE})
+            self._updateStateInfo({'prompt': prompt, 'state': RunState.PROMPT_STATE})
             self.event.wait() #now wait for a call to processButtonClick sent main mainthread
-            self._updateStateInfo({'state': ACTIVE_STATE, 'label': label}) #after resume, now active. also reset label because prompt used it
+            self._updateStateInfo({'state': RunState.ACTIVE_STATE, 'label': label}) #after resume, now active. also reset label because prompt used it
 
     def _updateStateInfo(self,info):
         '''

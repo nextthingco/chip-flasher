@@ -3,7 +3,8 @@ import subprocess
 import os
 import signal
 from os import path
-from kivy.clock import Clock
+# from kivy.clock import Clock
+from scheduler import call_repeatedly
 from threading import Timer
 from progress import Progress
 	
@@ -47,7 +48,8 @@ class CommandRunner:
 				
 		try:
 			timer.start()
-			Clock.schedule_interval(self.progress.addProgress.__get__(self.progress, Progress), 1.0/expectedTime ) # callback for bound method
+			cancelSchedule = call_repeatedly(1,self.progress.addProgress.__get__(self.progress, Progress),1.0/expectedTime)
+# 			Clock.schedule_interval(self.progress.addProgress.__get__(self.progress, Progress), 1.0/expectedTime ) # callback for bound method
 			out ,err = proc.communicate()
 			#currently, the output is only updated at the end of the process. An alternative would be to
 			# do like here: http://stackoverflow.com/questions/2804543/read-subprocess-stdout-line-by-line
@@ -57,7 +59,8 @@ class CommandRunner:
 			returncode = proc.returncode
 		finally:
 			timer.cancel()
-			Clock.unschedule(self.progress.addProgress)
+			cancelSchedule()
+# 			Clock.unschedule(self.progress.addProgress)
 			log.info('error code='+str(proc.returncode))
 			log.info('LEAVE: call_and_return()')
 			if proc.returncode < 0:

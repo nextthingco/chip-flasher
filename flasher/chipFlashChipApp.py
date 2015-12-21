@@ -1,29 +1,38 @@
 # -*- coding: utf-8 -*-
 
 from deviceDescriptor import DeviceDescriptor
-from runState import *
 from ui_strings import *
 from controller import Controller
 from scheduler import call_repeatedly
+from logging import log
+import logging
+import sys
+
 class ChipFlashChipApp():
 	def __init__( self, testSuiteName ):
-		self.controller = Controller(testSuiteName)
-		self.controller.setTimeoutMultiplier(5.0)
+		logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+		self.log = logging.getLogger("flash")
+
+		self.controller = Controller(log, testSuiteName)
+		self.controller.setTimeoutMultiplier(2.3)
 							
 	def run( self ):
 		self.controller.configure()
 		self.view = ChipFlashChipView(deviceDescriptors=self.controller.deviceDescriptors, hubs = self.controller.hubs)
 		self.controller.addStateListener(self.view.onUpdateStateInfo.__get__(self.view,ChipFlashChipView))
-		call_repeatedly(1, self._onPollingTick.__get__(self,ChipFlashChipApp))
-		call_repeatedly(.1, self._onUpdateTrigger.__get__(self,ChipFlashChipApp))
+		
+		call_repeatedly(1, lambda: self.controller.onPollingTick(0))
+		call_repeatedly(.1,lambda: self.controller.onUpdateTrigger(0))
+# 		call_repeatedly(1, self._onPollingTick.__get__(self,ChipFlashChipApp))
+# 		call_repeatedly(.1, self._onUpdateTrigger.__get__(self,ChipFlashChipApp))
 
 		return self.view
 	
-	def _onUpdateTrigger(self):
-		self.controller.onUpdateTrigger(0)
-
-	def _onPollingTick(self):
-		self.controller.onPollingTick(0)
+# 	def _onUpdateTrigger(self):
+# 		self.controller.onUpdateTrigger(0)
+# 
+# 	def _onPollingTick(self):
+# 		self.controller.onPollingTick(0)
 
 		
 class ChipFlashChipView():

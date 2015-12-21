@@ -24,7 +24,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.splitter import Splitter
 
 from deviceDescriptor import DeviceDescriptor
-from runState import *
+from runState import RunState
 from ui_strings import *
 from controller import Controller
 
@@ -55,7 +55,7 @@ PAUSED_COLOR = [ 1, .5, 0, 1]
 class KivyApp(App):
 	def __init__( self, testSuiteName ):
 		super( KivyApp, self ).__init__()
-		self.controller = Controller(testSuiteName)
+		self.controller = Controller(log,testSuiteName)
 		self.kivyUpdateTrigger = Clock.create_trigger(self._onUpdateTrigger.__get__(self,KivyApp)) #kivy Trigger that will be set when added to queue
 		self.controller.addUpdateQueueListener(self.kivyUpdateTrigger) #this will be called everytime an update is added to the queue
 							
@@ -176,7 +176,7 @@ class ChipFlashChipView( BoxLayout ):
 		
 			
 	#static
-	_stateToColor ={PASSIVE_STATE: PASSIVE_COLOR, PASS_STATE: SUCCESS_COLOR, FAIL_STATE:FAIL_COLOR, PROMPT_STATE: PROMPT_COLOR, ACTIVE_STATE:ACTIVE_COLOR, PAUSED_STATE:PAUSED_COLOR, IDLE_STATE: PASSIVE_COLOR, DISCONNECTED_STATE: DISCONNECTED_COLOR}
+	_stateToColor ={RunState.PASSIVE_STATE: PASSIVE_COLOR, RunState.PASS_STATE: SUCCESS_COLOR, RunState.FAIL_STATE:FAIL_COLOR, RunState.PROMPT_STATE: PROMPT_COLOR, RunState.ACTIVE_STATE:ACTIVE_COLOR, RunState.PAUSED_STATE:PAUSED_COLOR, RunState.IDLE_STATE: PASSIVE_COLOR, RunState.DISCONNECTED_STATE: DISCONNECTED_COLOR}
 	
 	def onUpdateStateInfo(self, info):
 		'''
