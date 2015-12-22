@@ -130,7 +130,9 @@ class Controller():
 		if self.batchUpdates:
 			for uid in updated:
 				for listener in self.stateListeners:
-					listener(self.stateInfo[uid])			
+					info = self.stateInfo[uid].copy()
+					info.output = None #dont send output since its potentially big
+					listener(info)			
 				
 	def setTimeoutMultiplier(self, timeoutMultiplier):
 		self.timeoutMultiplier = timeoutMultiplier
