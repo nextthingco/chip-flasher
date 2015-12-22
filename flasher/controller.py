@@ -63,7 +63,7 @@ class Controller():
 
 	def configure( self ):
 		'''
-		Kivy will call this method to start the app
+		Set up the various maps based on the device descriptors
 		'''
 		
 		self.rev = 0
@@ -79,9 +79,17 @@ class Controller():
 
 
 	def addStateListener(self,listener):
+		'''
+		Add an observer to state change events
+		:param listener:
+		'''
 		self.stateListeners.append(listener)
 	
 	def onPollingTick(self,dt):
+		'''
+		Respond to a timer by polling for device changes
+		:param dt:
+		'''
 		self._checkAndTriggerDeviceChanges(dt)
 
 	def onMainButton(self, button):
@@ -127,14 +135,18 @@ class Controller():
 			info = self.updateQueue.get()
 			updated.add(self._processStateInfo(info))
 			
-		if self.batchUpdates:
+		if self.batchUpdates: #this is the case where instead of updating immediately, we optimize but collecting all changes and sending at once
 			for uid in updated:
 				for listener in self.stateListeners:
 					info = self.stateInfo[uid].copy()
-					info.output = None #dont send output since its potentially big
+					info.output = None #dont send output since its potentially big to send all the time
 					listener(info)			
 				
 	def setTimeoutMultiplier(self, timeoutMultiplier):
+		'''
+		Setter for timeoutMultiplier which is used to increase timeouts when working on a slow device
+		:param timeoutMultiplier:
+		'''
 		self.timeoutMultiplier = timeoutMultiplier
 ######################################################################################################################################
 # Privates
