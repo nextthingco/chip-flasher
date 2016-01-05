@@ -8,7 +8,7 @@ from logging import log
 import logging
 import sys
 
-class ChipFlashChipApp():
+class ConsoleApp():
 	def __init__( self, testSuiteName ):
 		logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 		self.log = logging.getLogger("flash")
@@ -18,8 +18,8 @@ class ChipFlashChipApp():
 							
 	def run( self ):
 		self.controller.configure()
-		self.view = ChipFlashChipView(deviceDescriptors=self.controller.deviceDescriptors, hubs = self.controller.hubs)
-# 		self.controller.addStateListener(self.view.onUpdateStateInfo.__get__(self.view,ChipFlashChipView))
+		self.view = ConsoleView(deviceDescriptors=self.controller.deviceDescriptors, hubs = self.controller.hubs)
+# 		self.controller.addStateListener(self.view.onUpdateStateInfo.__get__(self.view,ConsoleView))
 		self.controller.addStateListener(lambda info: self.view.onUpdateStateInfo(info))
 		
 		call_repeatedly(1, lambda: self.controller.onPollingTick(0))
@@ -29,7 +29,7 @@ class ChipFlashChipApp():
 	
 
 		
-class ChipFlashChipView():
+class ConsoleView():
 
 	def __init__( self, **kwargs ):
 		'''
@@ -77,7 +77,7 @@ class ChipFlashChipView():
 
 ########################################################################################
 if __name__ == '__main__':
-	app = ChipFlashChipApp("Flasher")
+	app = ConsoleApp("Flasher")
 	try:
 		app.run()
 	except (KeyboardInterrupt, SystemExit):

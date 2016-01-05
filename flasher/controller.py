@@ -139,7 +139,8 @@ class Controller():
 			for uid in updated:
 				for listener in self.stateListeners:
 					info = self.stateInfo[uid].copy()
-					info.output = None #dont send output since its potentially big to send all the time
+					if hasattr(info, 'output'):
+						info.output = None #dont send output since its potentially big to send all the time
 					listener(info)			
 				
 	def setTimeoutMultiplier(self, timeoutMultiplier):

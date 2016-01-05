@@ -13,3 +13,4 @@ flasher/testjig/*
 .pydevproject
 .DS_Store
 pip-selfcheck.json
+/logs/
