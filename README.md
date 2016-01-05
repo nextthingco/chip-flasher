@@ -1,21 +1,69 @@
 # CHIP-Flasher
-Flashing tools for CHIP Production, as well as public usage.
+Flashing and Testing tools for CHIP Production, as well as public usage.
 
 ## Installation
-    curl "https://raw.githubusercontent.com/NextThingCo/CHIP-flasher/ww/deveop/install.sh" | sudo bash
+Current versions:
+* edadoc - used in production at edadoc
+* autodetect - latest version with clean MVC and autodetection of chips
+    curl "https://raw.githubusercontent.com/NextThingCo/CHIP-flasher/autodetect/install.sh" | sudo bash
 
-# GUI
-`main.py` launches the UI for the flasher and hwtest that is run on Kivy. It can handle any
-unittest TestCase
- 
-It should be invoked using one of the scripts below:
+## Configuration
+    The application reads the file /etc/udev/rules.d/flasher.rules
+    This file maps physical ports to logical names for FEL, Fastboot, and Serial Gadget
+    It is used both my linux and the application itself. The GUI and the Web applications will
+    configure their output based on how you name your devices. For each port, there should be three lines, 
+    one for FEL, one for Fastboot, and one for Serial gadget.
+    
+    The naming scheme works like this:
+    chip-[id]-[column]-[fel|fastboot|serial]
+    where:
+    * id is a number which uniquely identifies the port in the UI
+    * column is a number with which ids are grouped in the UI. This is likely a number you give to a hub
+    * mode is one of fel, fastboot, or serial
+For example:
+'
+SUBSYSTEMS=="usb",  KERNELS=="1-1.3", ATTRS{idVendor}=="1f3a", ATTRS{idProduct}=="efe8",   SYMLINK+="chip-1-1-fel"
+SUBSYSTEMS=="usb",  KERNELS=="1-1.3", ATTRS{idVendor}=="1f3a", ATTRS{idProduct}=="1010",   SYMLINK+="chip-1-1-fastboot"
+SUBSYSTEMS=="tty",  KERNELS=="1-1.3", ATTRS{idVendor}=="0525", ATTRS{idProduct}=="a4a7",   SYMLINK+="chip-1-1-serial"
+'
+For the KERNELS, see https://w.nextthing.co/doku.php?id=usb_port_mapping
 
-'sudo ./startFlash.sh' to flash chips
-'sudo ./startHardwareTest.sh' to run login/hardware test
+## Applications
+    There are currently 3 ways to run the application:
+* GUI: using the Kivy framework. 
+'sudo ./gui.sh'
+* Web: using Flask, running on port 80
+'sudo ./web.sh'
+* Console: which dumps output to the terminal window
+'sudo ./console.sh'
 
-which just pass a TestCase-derived class name to use to run the tests
+## Running
+The application detects when devices are plugged in, and depending on their state (fel, or serial gadget), will either flash or run the hardware test.
 
-# CODE
+# Code
+The application uses a MVC architecture.
+* The Model layer is the bulk of the application. The principal class is TestingThread. Each testing thread will either flash, or do a hardware test.
+** Python's unittest framework is used to run the different stages of flashing/testing. Therefore, you'll see that in flasher.py that the class Flasher is a TestCase, and each stage is
+a test within that class. Note the particularity that the tests are executed in alphabetical order, hence the numerical function names you'll see. 
+** Custom decorators can be applied to each test (see observable_test.py). For example, you can give a test a name, an error code, and also specify the name of a 
+global mutex to use when running a test to avoid issues with code that is not re-entrant. This is currently used for the SPL phase of the flashing
+* The Controller is controller.py. It takes care of spawning threads and synchronizing UI updates via a queue so that all updates occur in the main thread.
+* There are different views which correspond to KivyApp/View ConsoleApp/View and WebFlasher
+** Polling/Updates
+Polling is used to check for a change in the device state on a port (e.g. plugged in). It is also used to
+trigger a check for updates in the UI queue
+** KivyApp/View use Kivy's Clock class for polling and update events
+** ConsoleApp/View and Webflasher use the function call_repeatedly for periodic events
+** Web App
+*** The web app uses Flask as a server. Communication with browsers is done using websockets.
+
+#Logging/Stats
+Currently no logging or stats takes place. Logging when running Kivy is awkward as Kivy replaces Python's logger.
+
+
+The Controller (controller.py) handles the interactions between whatever view layer you choose and the TestingThreads that do the work.
+The Model 
+
 The GUI uses the Kivy Framework. It uses an MVC architecture.
 
 * The Model is TestingThread
