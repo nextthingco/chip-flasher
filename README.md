@@ -3,7 +3,10 @@ Flashing and Testing tools for CHIP Production. If you are looking to just flash
 repository is used for flashing/testing many CHIPs in parallel, but requires additional configuration to make it work.
 
 ## Installation
-(Remember if you're using a new computer (e.g. freshly flashed CHIP), to `sudo apt-get update` before you do anything.)
+(Remember if you're using a new computer (e.g. freshly flashed CHIP), to [configure wifi](http://docs.getchip.com/#connecting-c-h-i-p-to-wi-fi-with-nmcli)
+and then 
+`sudo apt-get update`
+before you do anything.)
 
 `curl https://raw.githubusercontent.com/NextThingCo/CHIP-flasher/master/install.sh | sudo bash`
 
@@ -46,6 +49,7 @@ SUBSYSTEMS=="usb",  KERNELS=="1-1.3", ATTRS{idVendor}=="1f3a", ATTRS{idProduct}=
 SUBSYSTEMS=="usb",  KERNELS=="1-1.3", ATTRS{idVendor}=="1f3a", ATTRS{idProduct}=="1010",   SYMLINK+="chip-1-1-fastboot"
 SUBSYSTEMS=="tty",  KERNELS=="1-1.3", ATTRS{idVendor}=="0525", ATTRS{idProduct}=="a4a7",   SYMLINK+="chip-1-1-serial"
 ```
+
 For the KERNELS, see https://w.nextthing.co/doku.php?id=usb_port_mapping
 
 See DeviceDescriptor.py for more info on how the rules file is parsed
