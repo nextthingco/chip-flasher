@@ -97,7 +97,7 @@ function install_flasher {
     
     if [[ ! -d "tools" ]]; then
         info "Creating tools directory under flasher"
-        mdkir tools
+        mkdir tools 
         cd tools
         if [[ ! -d "sunxi-tools" ]]; then
             info "cloning sunxi-tools"
