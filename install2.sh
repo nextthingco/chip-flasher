@@ -119,14 +119,16 @@ function install_flasher {
 
     if [[ "$(uname)" == "Linux" ]]; then
         info "Making desktop link to gui app"
-        SCRIPTDIR="$(dirname $(readlink -e $0) )" #/flasher"
+#         SCRIPTDIR="$(dirname $(readlink -e $0) )" #/flasher"
+        SCRIPTDIR="$(dirname -- "$(readlink -f -- "$0")")"
         HOMEDIR="$(eval echo "~${SUDO_USER}")"
         sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/CHIP-flasher.desktop
         sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/gui.sh%" $SCRIPTDIR/CHIP-flasher.desktop
         cp ${SCRIPTDIR}/CHIP-flasher.desktop ${HOMEDIR}/Desktop
         chown $(logname):$(logname) ${HOMEDIR}/Desktop/CHIP-flasher.desktop
         chown -R $(logname):$(logname) ${SCRIPTDIR}
-        usermod -a -G dialout "${SUDO_USER}"
+        
+        info "Adding dialout permission"
         usermod -a -G dialout "${SUDO_USER}"
 
     fi
