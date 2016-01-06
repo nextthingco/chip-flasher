@@ -94,12 +94,14 @@ function install_flasher {
         popd
     fi
     pushd CHIP-flasher/flasher
+    echo $(pwd)
     
     if [[ ! -d "tools" ]]; then
         info "Creating tools directory under flasher"
         
         mkdir tools
         pushd tools
+        echo $(pwd)
 
         if [[ ! -d "sunxi-tools" ]]; then
             info "cloning sunxi-tools"
@@ -117,9 +119,11 @@ function install_flasher {
             make -C CHIP-tools
         fi
         popd
+        echo $(pwd)
     fi
-    popd 
 
+    popd 
+    echo $(pwd)
     if [[ "$(uname)" == "Linux" ]]; then
         info "Making desktop link to gui app"
 #         SCRIPTDIR="$(dirname $(readlink -e $0) )" #/flasher"
