@@ -31,21 +31,23 @@ Now, configure udev rules as shown below
     * column is a number with which ids are grouped in the UI. This is likely a number you give to a hub
     * mode is one of fel, fastboot, or serial
 For example:
-'
+```
 SUBSYSTEMS=="usb",  KERNELS=="1-1.3", ATTRS{idVendor}=="1f3a", ATTRS{idProduct}=="efe8",   SYMLINK+="chip-1-1-fel"
 SUBSYSTEMS=="usb",  KERNELS=="1-1.3", ATTRS{idVendor}=="1f3a", ATTRS{idProduct}=="1010",   SYMLINK+="chip-1-1-fastboot"
 SUBSYSTEMS=="tty",  KERNELS=="1-1.3", ATTRS{idVendor}=="0525", ATTRS{idProduct}=="a4a7",   SYMLINK+="chip-1-1-serial"
-'
+```
 For the KERNELS, see https://w.nextthing.co/doku.php?id=usb_port_mapping
+
+There are several .rules files in this project which serve as examples. On my mac running ubuntu, my flasher.rules file is simple.rules.
 
 ## Applications
     There are currently 3 ways to run the application:
 * GUI: using the Kivy framework. 
-'sudo ./gui.sh'
+`./gui.sh`
 * Web: using Flask, running on port 80
-'sudo ./web.sh'
+`./web.sh`
 * Console: which dumps output to the terminal window
-'sudo ./console.sh'
+`./console.sh`
 
 ## Running
 The application detects when devices are plugged in, and depending on their state (fel, or serial gadget), will either flash or run the hardware test.
