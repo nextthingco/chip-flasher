@@ -129,10 +129,10 @@ function install_flasher {
 #         SCRIPTDIR="$(dirname $(readlink -e $0) )" #/flasher"
         SCRIPTDIR="$(dirname -- "$(readlink -f -- "$0")")"
         HOMEDIR="$(eval echo "~${SUDO_USER}")"
-        sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/CHIP-flasher.desktop
-        sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/gui.sh%" $SCRIPTDIR/CHIP-flasher.desktop
-        cp ${SCRIPTDIR}/CHIP-flasher.desktop ${HOMEDIR}/Desktop
-        chown $(logname):$(logname) ${HOMEDIR}/Desktop/CHIP-flasher.desktop
+        sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/chip-flasher.desktop
+        sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/gui.sh%" $SCRIPTDIR/chip-flasher.desktop
+        cp ${SCRIPTDIR}/chip-flasher.desktop ${HOMEDIR}/Desktop
+        chown $(logname):$(logname) ${HOMEDIR}/Desktop/chip-flasher.desktop
         chown -R $(logname):$(logname) ${SCRIPTDIR}
         
         info "Adding dialout permission"
