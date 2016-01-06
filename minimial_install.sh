@@ -81,7 +81,7 @@ function install_linux {
     if [[ -z "$( ${PIP} show eventlet)" ]]; then
         ${PIP} install eventlet || error "could not install eventlet!"
     fi
-}
+} 
 
 function install_flasher {
     if [[ ! -d "CHIP-flasher" ]]; then
