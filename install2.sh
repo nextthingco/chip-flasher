@@ -124,7 +124,8 @@ function install_flasher {
 
     popd 
     echo $(pwd)
-    if [[ "$(uname)" == "Linux" ]]; then
+
+        if [[ "$(uname)" == "Linux" ]]; then
         info "Making desktop link to gui app"
 #         SCRIPTDIR="$(dirname $(readlink -e $0) )" #/flasher"
         SCRIPTDIR="$(dirname -- "$(readlink -f -- "$0")")"
