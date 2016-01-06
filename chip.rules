@@ -1,0 +1,6 @@
+# FEL Mode
+SUBSYSTEMS=="usb",  KERNELS=="2-1",   ATTRS{idVendor}=="1f3a", ATTRS{idProduct}=="efe8",   SYMLINK+="chip-1-1-fel"
+# Fastboot Mode
+SUBSYSTEMS=="usb",  KERNELS=="2-1",   ATTRS{idVendor}=="1f3a", ATTRS{idProduct}=="1010",   SYMLINK+="chip-1-1-fastboot"
+# Serial Gadget Mode
+SUBSYSTEM=="tty",  KERNELS=="2-1",   ATTRS{idVendor}=="0525", ATTRS{idProduct}=="a4a7",   SYMLINK+="chip-1-1-serial"

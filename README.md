@@ -55,6 +55,7 @@ For the KERNELS, see https://w.nextthing.co/doku.php?id=usb_port_mapping
 See DeviceDescriptor.py for more info on how the rules file is parsed
 
 There are several .rules files in this project which serve as examples. On my mac running ubuntu, my flasher.rules file is simple.rules.
+To flash chip from another chip, use chip.rules as your flasher.rules
 
 
 ## Applications
