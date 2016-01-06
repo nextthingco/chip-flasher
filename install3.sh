@@ -93,39 +93,32 @@ function install_flasher {
         git pull
         popd
     fi
-    pushd CHIP-flasher/flasher
-    echo $(pwd)
-    
-    if [[ ! -d "tools" ]]; then
-        info "Creating tools directory under flasher"
-        
-        mkdir tools
-        pushd tools
-        echo $(pwd)
 
-        if [[ ! -d "sunxi-tools" ]]; then
-            info "cloning sunxi-tools"
-            git clone https://github.com/NextThingCo/sunxi-tools
-            info "making sunxi-tools"
-            make -C sunxi-tools fel
-            info "creating fel symbolic link"
-            ln -s "$(pwd)/sunxi-tools/fel" /usr/local/bin/fel
-        fi
+    #Go inside flasher
+    pushd CHIP-flasher/flasher
     
-        if [[ ! -d "CHIP-tools" ]]; then
-            info "cloning CHIP-tools"
-            git clone https://github.com/NextThingCo/CHIP-tools
-            info "making CHIP-tools"
-            make -C CHIP-tools
-        fi
-        popd
-        echo $(pwd)
+    #if no tools, clone CHIP-tools and call them just tools
+    if [[ ! -d "tools" ]]; then
+        info "cloning CHIP-tools"
+        git clone https://github.com/NextThingCo/CHIP-tools tools
+        info "making CHIP-tools"
+        make -C tools
     fi
 
-    popd 
-    echo $(pwd)
+    #if no sunxi-tools, clone it
+    if [[ ! -d "sunxi-tools" ]]; then
+        info "cloning sunxi-tools"
+        git clone https://github.com/NextThingCo/sunxi-tools
+        info "making sunxi-tools"
+        make -C sunxi-tools fel
+        info "creating fel symbolic link"
+        ln -s "$(pwd)/sunxi-tools/fel" /usr/local/bin/fel
+    fi
 
-        if [[ "$(uname)" == "Linux" ]]; then
+    #go back out to outer directory
+    popd 
+
+    if [[ "$(uname)" == "Linux" ]]; then
         info "Making desktop link to gui app"
 #         SCRIPTDIR="$(dirname $(readlink -e $0) )" #/flasher"
         SCRIPTDIR="$(dirname -- "$(readlink -f -- "$0")")/CHIP-flasher"
