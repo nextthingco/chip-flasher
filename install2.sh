@@ -100,7 +100,7 @@ function install_flasher {
         
         mkdir tools && cd tools
 
-            if [[ ! -d "sunxi-tools" ]]; then
+        if [[ ! -d "sunxi-tools" ]]; then
             info "cloning sunxi-tools"
             git clone https://github.com/NextThingCo/sunxi-tools
             info "making sunxi-tools"
@@ -108,19 +108,23 @@ function install_flasher {
             info "creating fel symbolic link"
             ln -s "$(pwd)/sunxi-tools/fel" /usr/local/bin/fel
         fi
+    
         if [[ ! -d "CHIP-tools" ]]; then
             info "cloning CHIP-tools"
             git clone https://github.com/NextThingCo/CHIP-tools
+            info "making CHIP-tools"
+            make -C CHIP-tools
         fi
     fi
 
     if [[ "$(uname)" == "Linux" ]]; then
+        info "Making desktop link to gui app"
         SCRIPTDIR="$(dirname $(readlink -e $0) )" #/flasher"
         HOMEDIR="$(eval echo "~${SUDO_USER}")"
-        sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/chip-flasher.desktop
-        sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/start.sh%" $SCRIPTDIR/chip-flasher.desktop
-        cp ${SCRIPTDIR}/chip-flasher.desktop ${HOMEDIR}/Desktop
-        chown $(logname):$(logname) ${HOMEDIR}/Desktop/chip-flasher.desktop
+        sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/CHIP-flasher.desktop
+        sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/gui.sh%" $SCRIPTDIR/CHIP-flasher.desktop
+        cp ${SCRIPTDIR}/CHIP-flasher.desktop ${HOMEDIR}/Desktop
+        chown $(logname):$(logname) ${HOMEDIR}/Desktop/CHIP-flasher.desktop
         chown -R $(logname):$(logname) ${SCRIPTDIR}
         usermod -a -G dialout "${SUDO_USER}"
         usermod -a -G dialout "${SUDO_USER}"
