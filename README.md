@@ -1,8 +1,15 @@
 # CHIP-Flasher
-Flashing and Testing tools for CHIP Production, as well as public usage.
+Flashing and Testing tools for CHIP Production. If you are looking to just flash a single CHIP, please just use the CHIP-tools repository. This CHIP-flasher
+repository is used for flashing/testing many CHIPs in parallel, but requires additional configuration to make it work.
 
 ## Installation
+(Remember if you're using a new computer (e.g. freshly flashed CHIP), to `sudo apt-get update` before you do anything.)
+
 `curl https://raw.githubusercontent.com/NextThingCo/CHIP-flasher/master/install.sh | sudo bash`
+
+(If you don't have curl on your system, then you first need to:
+`sudo apt-get install curl`
+
 This will:
 * Clone the repository CHIP-flasher
 * Clone the repository CHIP-tools as CHIP-flasher/flasher/tools and make it
@@ -14,7 +21,8 @@ This will:
 Once installed, you'll have to flash once manually to create the img files for future flashing. To do this:
 ```
 cd CHIP-flasher/flasher/tools
-sudo ./chip-update-firmware.sh
+#The flags below will use the next-gui branch
+sudo ./chip-update_firmware.sh -f -d -b next-gui
 ```
 
 Now, configure udev rules as shown below
@@ -40,9 +48,10 @@ SUBSYSTEMS=="tty",  KERNELS=="1-1.3", ATTRS{idVendor}=="0525", ATTRS{idProduct}=
 ```
 For the KERNELS, see https://w.nextthing.co/doku.php?id=usb_port_mapping
 
+See DeviceDescriptor.py for more info on how the rules file is parsed
+
 There are several .rules files in this project which serve as examples. On my mac running ubuntu, my flasher.rules file is simple.rules.
 
-See DeviceDescriptor.py for how the rules file is parsed
 
 ## Applications
     There are currently 3 ways to run the application:
@@ -52,6 +61,7 @@ See DeviceDescriptor.py for how the rules file is parsed
 `./web.sh`
 * Console: which dumps output to the terminal window
 `./console.sh`
+In progress is the possibility to flash LEDS (using XIOs) to indicate status
 
 ## Running
 The application detects when devices are plugged in, and depending on their state (fel, or serial gadget), will either flash or run the hardware test.

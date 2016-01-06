@@ -1,5 +1,6 @@
 #!/bin/bash
 OS=`uname`
+ARM = `uname -a | grep armv7 | wc -l`
 KIVY=`which kivy`
 
 # utility variables
@@ -45,7 +46,9 @@ function install_linux {
                         python-dev
     fi
     if [[ -z "$( which gcc )" ]]; then
-        install_package build-essential
+        install_package build-essential \
+                pkg-config \
+                libusb-1.0-0-dev
     fi
     if [[ -z "$( which mkimage )" ]]; then
         install_package u-boot-tools
@@ -61,6 +64,11 @@ function install_linux {
     fi
     if [[ -z "img2simg" ]]; then
         install_package android-tools-fsutils
+    fi
+
+#On CHIP, need to configure the package libusb
+    if [[ ${ARM} ]]; then
+        sudo ln -s /usr/lib/arm-linux-gnueabihf/pkgconfig/libusb-1.0.pc /usr/share/pkgconfig/libusb-1.0.pc
     fi
     
     PIP=`which pip`
@@ -82,6 +90,7 @@ function install_linux {
         ${PIP} install eventlet || error "could not install eventlet!"
     fi
 } 
+
 
 function install_flasher {
     if [[ ! -d "CHIP-flasher" ]]; then
@@ -138,16 +147,5 @@ function install_flasher {
 case "${OS}" in
     Linux)  install_linux; install_flasher ;;
 esac
-
-
-
-#apt-get install python-kivy python-serial
-#ln -s /usr/bin/python2.7 /usr/local/bin/kivy
-#ln -s ~/Desktop/CHIP-tools ~/Desktop/CHIP-flasher/flasher/tools
-
-#for web
-#apt-get install python-dev
-#pip install flask
-#pip install flask-socketio
-#pip install eventlet
+# Note for socket IO, there is a little flakiness. See here
 #https://github.com/miguelgrinberg/Flask-SocketIO/issues/184
