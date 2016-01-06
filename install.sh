@@ -81,6 +81,9 @@ function install_linux {
         install_package python-kivy
         sudo ln -s /usr/bin/python2.7 /usr/local/bin/kivy
     fi
+    if [[ -z "$( ${PIP} show pyserial)" ]]; then
+        ${PIP} install pyserial || error "could not install pyserial!"
+    fi
     if [[ -z "$( ${PIP} show libusb1)" ]]; then
         ${PIP} install libusb1 || error "could not install libusb1!"
     fi
