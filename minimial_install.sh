@@ -96,13 +96,13 @@ function install_flasher {
     if [[ ! -d "tools" ]]; then
         mdkir tools
         cd tools
-        if [[ ! -d "CHIP-tools" ]]; then
-            git clone --branch=chip/next https://github.com/NextThingCo/CHIP-tools
-        fi
         if [[ ! -d "sunxi-tools" ]]; then
-            git clone --branch=chip/next https://github.com/NextThingCo/sunxi-tools
+            git clone https://github.com/NextThingCo/sunxi-tools
             make -C sunxi-tools fel
             ln -s "sunxi-tools/fel" /usr/local/bin/fel
+        fi
+        if [[ ! -d "CHIP-tools" ]]; then
+            git clone https://github.com/NextThingCo/CHIP-tools
         fi
     fi
 
