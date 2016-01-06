@@ -66,7 +66,7 @@ function install_linux {
     if [[ -z "$(which fastboot)" ]]; then
         install_package android-tools-fastboot
     fi
-    if [[ -z "img2simg" ]]; then
+    if [[ -z "$(which img2simg)" ]]; then
         install_package android-tools-fsutils
     fi
 
