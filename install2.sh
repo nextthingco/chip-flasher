@@ -128,7 +128,7 @@ function install_flasher {
         if [[ "$(uname)" == "Linux" ]]; then
         info "Making desktop link to gui app"
 #         SCRIPTDIR="$(dirname $(readlink -e $0) )" #/flasher"
-        SCRIPTDIR="$(dirname -- "$(readlink -f -- "$0")")"
+        SCRIPTDIR="$(dirname -- "$(readlink -f -- "$0")")/CHIP-flasher"
         HOMEDIR="$(eval echo "~${SUDO_USER}")"
         sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/chip-flasher.desktop
         sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/gui.sh%" $SCRIPTDIR/chip-flasher.desktop
