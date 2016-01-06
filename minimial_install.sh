@@ -85,8 +85,10 @@ function install_linux {
 
 function install_flasher {
     if [[ ! -d "CHIP-flasher" ]]; then
+        info "cloning CHIP-flasher"
         git clone --branch=autodetect https://github.com/NextThingCo/CHIP-flasher
     else
+        info "Updating CHIP-flasher"
         pushd CHIP-flasher
         git pull
         popd
@@ -94,14 +96,19 @@ function install_flasher {
     cd CHIP-flasher/flasher
     
     if [[ ! -d "tools" ]]; then
+        info "Creating tools directory under flasher"
         mdkir tools
         cd tools
         if [[ ! -d "sunxi-tools" ]]; then
+            info "cloning sunxi-tools"
             git clone https://github.com/NextThingCo/sunxi-tools
+            info "making sunxi-tools"
             make -C sunxi-tools fel
-            ln -s "sunxi-tools/fel" /usr/local/bin/fel
+            info "creating fel symbolic link"
+            ln -s "$(pwd)/sunxi-tools/fel" /usr/local/bin/fel
         fi
         if [[ ! -d "CHIP-tools" ]]; then
+            info "cloning CHIP-tools"
             git clone https://github.com/NextThingCo/CHIP-tools
         fi
     fi
