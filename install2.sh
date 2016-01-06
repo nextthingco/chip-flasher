@@ -93,12 +93,13 @@ function install_flasher {
         git pull
         popd
     fi
-    cd CHIP-flasher/flasher
+    pushd CHIP-flasher/flasher
     
     if [[ ! -d "tools" ]]; then
         info "Creating tools directory under flasher"
         
-        mkdir tools && cd tools
+        mkdir tools
+        pushd tools
 
         if [[ ! -d "sunxi-tools" ]]; then
             info "cloning sunxi-tools"
@@ -115,7 +116,9 @@ function install_flasher {
             info "making CHIP-tools"
             make -C CHIP-tools
         fi
+        popd
     fi
+    popd 
 
     if [[ "$(uname)" == "Linux" ]]; then
         info "Making desktop link to gui app"
