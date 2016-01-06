@@ -1,6 +1,6 @@
 #!/bin/bash
 OS=`uname`
-ARM = `uname -a | grep armv7 | wc -l`
+ARM=`uname -a | grep armv7 | wc -l`
 KIVY=`which kivy`
 
 # utility variables
@@ -42,14 +42,18 @@ function install_linux {
     export DISPLAY=:0
 
     if [[ -z "$( which pip )" ]]; then
-        install_package python-pip \
-                        python-dev
+        install_package python-pip
+        install_package python-dev
     fi
     if [[ -z "$( which gcc )" ]]; then
-        install_package build-essential \
-                pkg-config \
-                libusb-1.0-0-dev
+        install_package build-essential
     fi
+
+    if [[ -z "$( which pkg-config )" ]]; then
+        install_package pkg-config
+        install_package libusb-1.0-0-dev
+    fi
+
     if [[ -z "$( which mkimage )" ]]; then
         install_package u-boot-tools
     fi
