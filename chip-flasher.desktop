@@ -2,5 +2,5 @@
 Type=Application
 Terminal=false
 Name=chip-flasher
-Icon=/home/ntc/CHIP-flasher/logo.png
-Exec=/home/ntc/CHIP-flasher/gui.sh
+Icon=/home/howie/Desktop/CHIP-flasher/logo.png
+Exec=/home/howie/Desktop/CHIP-flasher/gui.sh

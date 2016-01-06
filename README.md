@@ -2,10 +2,20 @@
 Flashing and Testing tools for CHIP Production, as well as public usage.
 
 ## Installation
-Current versions:
-* edadoc - used in production at edadoc
-* autodetect - latest version with clean MVC and autodetection of chips
-    curl "https://raw.githubusercontent.com/NextThingCo/CHIP-flasher/autodetect/install.sh" | sudo bash
+`curl https://raw.githubusercontent.com/NextThingCo/CHIP-flasher/master/install.sh | sudo bash`
+This will:
+* Clone the repository CHIP-flasher
+* Clone the repository CHIP-tools as CHIP-flasher/flasher/tools and make it
+* Clone the repository sunxi-tools as CHIP-flasher/flasher/sunxi-tools and make it
+* Make a symbolic link to the FEL command in sunxi-tools
+* Create desktop entry (TODO verify it works)
+* Add dialout permissions
+
+Once installed, you'll have to flash once manually to create the img files for future flashing. To do this:
+`cd CHIP-flasher/flasher/tools`
+`sudo ./chip-update-firmware.sh`
+
+Now, configure udev rules as shown below
 
 ## Configuration
     The application reads the file /etc/udev/rules.d/flasher.rules
