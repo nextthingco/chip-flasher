@@ -25,7 +25,7 @@ Once installed, you'll have to flash once manually to create the img files for f
 ```
 cd CHIP-flasher/flasher/tools
 #The flags below will use the next-gui branch
-sudo ./chip-update_firmware.sh -f -d -b next-gui
+sudo ./chip-update-firmware.sh -f -d -b next-gui
 ```
 
 Now, configure udev rules as shown below
