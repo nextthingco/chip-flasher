@@ -2,5 +2,5 @@
 Type=Application
 Terminal=false
 Name=chip-flasher
-Icon=/home/ntc/flasher/logo.png
-Exec=/home/ntc/flasher/start.sh
+Icon=/home/ntc/Desktop/CHIP-flasher/logo.png
+Exec=/home/ntc/Desktop/CHIP-flasher/start.sh
