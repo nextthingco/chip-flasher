@@ -20,8 +20,30 @@ dummy = DeviceDescriptor.makeDummy()
 CONNECT_TIME = 60
 FINE_SERIAL_TIME = 45
 
+#These erroer codes correspond to the ERROR messages echoed by the hwtest.sh script
+#Note that 301 is for no device found. 
+errorCodeMap = { \
+    "Turn on wlan0": 302,
+    "Turn on wlan1": 303,
+    "Hardware list": 304,  
+    "I2C bus 0": 305,
+    "I2C bus 1": 306,
+    "I2C bus 2": 307,
+    "testing AXP209 on I2C bus 0": 308,
+    "GPIO expander test": 309,
+    "Doing 10s stress test": 310,
+    "Wifi enumeration test": 311,
+    "Checking bitflips on NAND": 312
+}
 
-
+# Check to make sure that the tests are all run. If a test is not found, then return it and its code
+def checkForMissingTests(str):
+    for text,code in errorCodeMap.iteritems():
+        if not text in str:
+            return text, code 
+    return "",0
+    
+errorRegex = re.compile("\# (.*)\.\.\.ERROR")
 # This is Alex's code. 
 #------------------------------------------------------------------
 def answer_prompt(sio,prompt_to_wait_for,answer_to_write,send_cr=True):
@@ -96,16 +118,26 @@ def test(serial_port):
   answer_prompt(sio,'Password:','chip',False)
   answer_prompt(sio,'#','hwtest')
   d=scanfor(sio,r'.*### [^#]+ ###.*','poweroff')
-
+  ser.close()
+  
+  missingText, missingCode = checkForMissingTests(d)
+  if missingCode != 0:
+      print "---> MISSING TEST " + missingText
+      return missingCode + 50,d # return 50 more than the error for the code itself
+      
+  
   if re.search(r'.*### ALL TESTS PASSED ###.*',d):
     print "---> TESTS PASSED"
-    ser.close();
     return 0, d
     
-  ser.close();
-  
+  match = errorRegex.search(d)
+  errorCode = 300 # this is a default which should't happen
+  if match:
+      code = match.group(1) #use the first one found for now
+      if code in errorCodeMap: #this should not be necessary to test
+          errorCode = errorCodeMap[code]
   print "---> TESTS FAILED"
-  return 1 , d
+  return errorCode , d
 
 
 #end of Alex's code
@@ -148,7 +180,8 @@ class ChipHardwareTest(TestCase):
         if not hasattr(self,"output"):
             self.output = ""
         self.output += details
-    
+        if result != 0:
+            self.errorCode = result #store it away for later use
         self.assertEqual(0,result)
 
 def main():
