@@ -157,7 +157,7 @@ function install_linux {
 }
 function install_flasher {
 	if [[ ! -d "flasher" ]]; then
-		git clone --branch=ww/develop https://github.com/NextThingCo/CHIP-flasher flasher
+		git clone --branch=edadoc https://github.com/NextThingCo/CHIP-flasher flasher
 	else
 		pushd flasher
 		git pull
