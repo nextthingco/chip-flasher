@@ -76,6 +76,8 @@ function install_linux {
 	}
 	header "Installing for Linux"
 	export DISPLAY=:0
+	
+	sudo apt-get -y update
 
 	if [[ -z "$( which teamviewer)" ]]; then
 		install_package libc6:i386 \
