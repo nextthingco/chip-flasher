@@ -63,7 +63,9 @@ class TestingThread(threading.Thread):
         else:
             self.testResult.resultText = self.currentStateName + "Failed"
             state = FAIL_STATE
-            if self.currentStateFailMessage:
+            if self.errorCode: #an error code produced by the test
+                stateLabel = FAIL_WITH_ERROR_CODE_TEXT.format(self.errorCode)
+            elif self.currentStateFailMessage:
                 stateLabel = self.currentStateFailMessage
             else:
                 stateLabel = FAIL_TEXT
@@ -109,6 +111,8 @@ class TestingThread(threading.Thread):
             testCase.output=""
             self.progress = None
             self._showPromptIfAny(promptBeforeForTest(testCase)) # @promptBefore
+            testCase.errorCode = None
+            self.errorCode = None
             
             if mutex: #if this test needs a mutex as indicated in the test suite
                 if not mutex in self.mutexes:
@@ -124,6 +128,8 @@ class TestingThread(threading.Thread):
             
             
         else: #AFTER
+            if testCase.errorCode:
+                self.errorCode = testCase.errorCode
             self._showPromptIfAny(promptAfterForTest(testCase)) # @promptAfter
             if mutex: # @mutex is an annotation defined in observable_test
                 self.mutexes[mutex].release() #free up the lock
