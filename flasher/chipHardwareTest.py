@@ -4,6 +4,7 @@ from unittest import TestCase, TextTestRunner, TestLoader
 from observable_test import *
 from commandRunner import CommandRunner
 from deviceDescriptor import DeviceDescriptor
+from nand import *
 import os
 import re
 import time
@@ -43,7 +44,7 @@ def checkForMissingTests(str):
             return text, code 
     return "",0
     
-errorRegex = re.compile("\# (.*)\.\.\.ERROR")
+ERROR_REGEX = re.compile("\# (.*)\.\.\.ERROR")
 # This is Alex's code. 
 #------------------------------------------------------------------
 def answer_prompt(sio,prompt_to_wait_for,answer_to_write,send_cr=True):
@@ -125,12 +126,16 @@ def test(serial_port):
       print "---> MISSING TEST " + missingText
       return missingCode + 50,d # return 50 more than the error for the code itself
       
-  
+  #see the results of the bit flip test    
+  if not bitFlipTest(d):
+    return errorCodeMap["Checking bitflips on NAND"],d
+
+
   if re.search(r'.*### ALL TESTS PASSED ###.*',d):
     print "---> TESTS PASSED"
     return 0, d
     
-  match = errorRegex.search(d)
+  match = ERROR_REGEX.search(d)
   errorCode = 300 # this is a default which should't happen
   if match:
       code = match.group(1) #use the first one found for now
@@ -139,6 +144,24 @@ def test(serial_port):
   print "---> TESTS FAILED"
   return errorCode , d
 
+# A regex to search for the checking text followed by 3 decimal numbers
+BITFLIP_REGEX = re.compile("\# Checking bitflips on NAND\.\.\.\s([-+]?[0-9]*\.?[0-9]+.)\s*([-+]?[0-9]*\.?[0-9]+.)\s*([-+]?[0-9]*\.?[0-9]+.)")
+def bitFlipTest(str):
+    match = BITFLIP_REGEX.search(str)
+    if not match: #this should not happen
+        print "Error, could not parse the bitflip info"
+        return False
+    uncorrectableBitflips = float(match.group(1))
+    correctableBitflips = float(match.group(2))
+    rmsCorrectableBitflips = float(match.group(3))
+    
+    return ( uncorrectableBitflips <= MAX_UNCORRECTABLE_BITFLIPS and 
+        correctableBitflips <= MAX_CORRECTABLE_BITFLIPS and 
+        rmsCorrectableBitflips <= MAX_RMS_CORRECTABLE_BITFLIPS)
+        
+    
+    
+    # Checking bitflips on NAND... 0 49.9 1.64012
 
 #end of Alex's code
 class ChipHardwareTest(TestCase):
