@@ -1,0 +1,32 @@
+Station 3 Error Codes
+301 Device not found
+302	Turn on wlan0
+303	Turn on wlan1
+304	Hardware list
+305	I2C bus 0
+306	I2C bus 1
+307	I2C bus 2
+308	testing AXP209 on I2C bus 0
+309	GPIO expander test
+310	Doing 10s stress test
+311	Wifi enumeration test
+312	Checking bitflips on NAND
+
+
+352	Turn on wlan0 - test not found
+353	Turn on wlan1 - test not found
+354	Hardware list - test not found
+355	I2C bus 0 - test not found
+356	I2C bus 1 - test not found
+357	I2C bus 2 - test not found
+358	testing AXP209 on I2C bus 0 - test not found
+359	GPIO expander test - test not found
+360	Doing 10s stress test - test not found
+361	Wifi enumeration test - test not found
+362	Checking bitflips on NAND - test not found
+
+Notes:
+301 remains the same as before
+302 has been replaced with all of the new ones
+353-361 should never occur
+362 will happen if we test a CHIP that doesn't have the nand test code on it
