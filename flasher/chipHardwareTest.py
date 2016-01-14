@@ -153,11 +153,11 @@ def bitFlipTest(str):
         return False
     uncorrectableBitflips = float(match.group(1))
     correctableBitflips = float(match.group(2))
-    rmsCorrectableBitflips = float(match.group(3))
+    stdDevCorrectableBitflips = float(match.group(3))
     
     return ( uncorrectableBitflips <= MAX_UNCORRECTABLE_BITFLIPS and 
         correctableBitflips <= MAX_CORRECTABLE_BITFLIPS and 
-        rmsCorrectableBitflips <= MAX_RMS_CORRECTABLE_BITFLIPS)
+        stdDevCorrectableBitflips <= MAX_STD_DEV_CORRECTABLE_BITFLIPS)
         
     
     
