@@ -158,35 +158,36 @@ function install_linux {
 	# fi
 }
 function install_flasher {
-	if [[ ! -d "flasher" ]]; then
-		git clone --branch=edadoc https://github.com/NextThingCo/CHIP-flasher flasher
+	HOMEDIR="$(eval echo "~${SUDO_USER}")"
+	if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher" ]]; then
+		git clone --branch=edadoc https://github.com/NextThingCo/CHIP-flasher $HOMEDIR/Desktop/CHIP-flasher
 	else
-		pushd flasher
+		pushd $HOMEDIR/Desktop/CHIP-flasher
 		git pull
 		popd
 	fi
-	if [[ ! -d "flasher/tools" ]]; then
-		git clone --branch=chip/next https://github.com/NextThingCo/CHIP-tools flasher/tools
+	if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher/tools" ]]; then
+		git clone --branch=chip/next https://github.com/NextThingCo/CHIP-tools $HOMEDIR/Desktop/CHIP-flasher/tools
 	else
-		pushd flasher/tools
+		pushd $HOMEDIR/Desktop/CHIP-flasher/tools
 		git pull
 		popd
 	fi
 
-	# if [[ ! -d "flasher/testjig" ]]; then
-	# 	git clone https://github.com/NextThingCo/ChipTestJig flasher/testjig
+	# if [[ ! -d "Desktop/CHIP-flasher/testjig" ]]; then
+	# 	git clone https://github.com/NextThingCo/ChipTestJig Desktop/CHIP-flasher/testjig
 	# else
-	# 	pushd flasher/testjig
+	# 	pushd Desktop/CHIP-flasher/testjig
 	# 	git pull
 	# 	popd
 	# fi
-	if [[ ! -f "flasher/sunxi-tools/fel" ]]; then
-		if [[ ! -d "flasher/sunxi-tools" ]]; then
-			git clone https://github.com/nextthingco/sunxi-tools flasher/sunxi-tools
+	if [[ ! -f "$HOMEDIR/Desktop/CHIP-flasher/sunxi-tools/fel" ]]; then
+		if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher/sunxi-tools" ]]; then
+			git clone https://github.com/nextthingco/sunxi-tools $HOMEDIR/Desktop/CHIP-flasher/sunxi-tools
 		fi
 		if [[ "${OS}" == "Darwin" ]]; then
 			if [[ -z "$(which fel)" ]]; then
-				pushd flasher/sunxi-tools
+				pushd $HOMEDIR/Desktop/CHIP-flasher/sunxi-tools
 					cat <<-EOF > fix-osx.patch
 						diff --git a/include/endian_compat.h b/include/endian_compat.h
 						index e463a52..a927bbd 100644
@@ -223,8 +224,8 @@ function install_flasher {
 				popd
 			fi
 		fi
-		make -C flasher/sunxi-tools fel
-		ln -s "$(pwd)/flasher/sunxi-tools/fel" /usr/local/bin/fel
+		make -C $HOMEDIR/Desktop/CHIP-flasher/sunxi-tools fel
+		ln -s "$HOMEDIR/Desktop/CHIP-flasher/sunxi-tools/fel" /usr/local/bin/fel
 	fi
 
 	if [[ "$(uname)" == "Linux" ]]; then
