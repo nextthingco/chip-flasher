@@ -232,7 +232,7 @@ function install_flasher {
 		HOMEDIR="$(eval echo "~${SUDO_USER}")"
 		SCRIPTDIR="$HOMEDIR/Desktop/CHIP-flasher" #/flasher"
 		sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/chip-flasher.desktop
-		sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/start.sh%" $SCRIPTDIR/chip-flasher.desktop
+		sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/startFlash.sh%" $SCRIPTDIR/chip-flasher.desktop
 		cp ${SCRIPTDIR}/chip-flasher.desktop ${HOMEDIR}/Desktop
 		chown $(logname):$(logname) ${HOMEDIR}/Desktop/chip-flasher.desktop
         chown -R $(logname):$(logname) ${SCRIPTDIR}
