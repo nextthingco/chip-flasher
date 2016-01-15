@@ -239,7 +239,7 @@ function install_flasher {
 		usermod -a -G dialout "${SUDO_USER}"
 		usermod -a -G dialout "${SUDO_USER}"
 
-		cat <<-EOF | sudo tee /etc/udev/rules.d/99-allwinner.rules
+		cat <<-EOF | sudo tee /etc/udev/rules.d/flasher.rules
 			# FEL Mode
 			SUBSYSTEMS=="usb",      KERNELS=="1-1.3",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-1-1-fel"
 			SUBSYSTEMS=="usb",      KERNELS=="1-1.4",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-2-1-fel"
