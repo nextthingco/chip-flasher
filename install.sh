@@ -160,7 +160,7 @@ function install_linux {
 function install_flasher {
 	HOMEDIR="$(eval echo "~${SUDO_USER}")"
 	if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher" ]]; then
-		git clone --branch=edadoc https://github.com/NextThingCo/CHIP-flasher $HOMEDIR/Desktop/CHIP-flasher
+		git clone --branch=production https://github.com/NextThingCo/CHIP-flasher $HOMEDIR/Desktop/CHIP-flasher
 	else
 		pushd $HOMEDIR/Desktop/CHIP-flasher
 		git pull
