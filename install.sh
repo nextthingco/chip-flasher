@@ -156,3 +156,9 @@ case "${OS}" in
 esac
 # Note for socket IO, there is a little flakiness. See here
 #https://github.com/miguelgrinberg/Flask-SocketIO/issues/184
+
+
+#for UI
+sudo apt-get install libxslt-dev
+sudo apt-get install libxml2
+#pip install lxml and pip install requests.
