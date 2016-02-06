@@ -6,11 +6,10 @@ from flasher import RunState
 from flasher import Controller
 import requests
 import json
-from logging import log
 import logging
 import sys
+import XioView
 
-import threading
 app = Flask(__name__,static_folder='static')
 app.config['SECRET_KEY'] = 'secret!'
 app.config['DEBUG'] = False
@@ -20,11 +19,12 @@ stateToClass = {RunState.PASSIVE_STATE: 'passive', RunState.PASS_STATE: 'success
 
 
 class WebFlasher():
-    def __init__(self):
+    def __init__(self, xio=False):
         self.controller = None
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
         self.log = logging.getLogger("flash")
         self.base_url = None
+        self._xio = xio
         
         
 #     def run(self):
@@ -36,12 +36,15 @@ class WebFlasher():
         controller.configure()
         socketio.emit("stateChange","start",broadcast=True)
 
-        controller.addStateListener(lambda info: self.stateListener(info))
+        controller.addStateListener(lambda info: self.onUpdateStateInfo(info))
+        if self._xio:
+            self._xioView = XioView(deviceDescriptors=self.controller.deviceDescriptors, hubs = self.controller.hubs)
+            controller.addStateListener(lambda info: self._xioView.onUpdateStateInfo(info))
          
         call_repeatedly(1, lambda: controller.onPollingTick(0))
         call_repeatedly(2,lambda: controller.onUpdateTrigger(0))
  
-    def stateListener(self,info):
+    def onUpdateStateInfo(self,info):
         if not self.base_url: #ignore until we have a page listening
             return
         url = self.base_url + 'stateChange'
@@ -57,10 +60,6 @@ class WebFlasher():
         headers = {'content-type': 'application/json'}
 
         requests.post(url, data=json.dumps(payload), headers=headers) #post message to flask. This makes sure that socketio uses main thread
-
-
-
-
 
 @app.route('/stateChange',methods=['POST'])
 def stateChange():
@@ -78,17 +77,20 @@ def stateChange():
 
 stateToClass = {RunState.PASSIVE_STATE: 'passive', RunState.PASS_STATE: 'success', RunState.FAIL_STATE: 'fail', RunState.PROMPT_STATE: 'prompt', RunState.ACTIVE_STATE:'active', RunState.PAUSED_STATE:'paused', RunState.IDLE_STATE: 'passive', RunState.DISCONNECTED_STATE: 'disconnected'}
     
-@app.route('/')
-def mainPage():
+@app.route('/flash')
+def flashPage():
 #     webFlasher.base_url = request.base_url
 #     print "base url is" + webFlasher.base_url
     webFlasher.base_url = "http://127.0.0.1/"
 
     return render_template('deviceTable.html', stateInfoArray=webFlasher.controller.stateInfo.values(), stateToClass=stateToClass)
  
+@app.route('/')
+def configPage():
+    return render_template('chip_config.html')
 
 if __name__ == '__main__':
-    webFlasher = WebFlasher()
+    webFlasher = WebFlasher(True)
     webFlasher.start()
     socketio.run(app, host="0.0.0.0",port=80)
 
