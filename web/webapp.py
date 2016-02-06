@@ -8,7 +8,7 @@ import requests
 import json
 import logging
 import sys
-from XioView import XioView
+from xioView import XioView
 
 app = Flask(__name__,static_folder='static')
 app.config['SECRET_KEY'] = 'secret!'
