@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
 import threading
 import time
-from libsoc import *
+from libsoc import GPIO
+from libsoc import DIRECTION_OUTPUT
 from flasher import RunState
 
-class XioView():
+class XioView:
     BLINKS = {RunState.DISCONNECTED_STATE:[0,.1],
               RunState.PASSIVE_STATE: [2,2],
               RunState.ACTIVE_STATE: [.5,.5],
@@ -16,7 +16,7 @@ class XioView():
     def __init__( self, **kwargs ):
         self._xios = [0,1, 2,4,6,7]
         self._xioMap = {}
-        self._blinkThread = None
+        self._blinkThreads = {}
         '''
         The view part of the MVC. note that some values are passed in the kwargs dict. See below
         Basically, this method will create and layout the gui's widgets
@@ -30,7 +30,7 @@ class XioView():
                     continue #not on this hub, ignore
                 self._xioMap[key] = self._xios[count];
                 count = count + 1
-                if count >= self._xios.length:
+                if count >= len(self._xios):
                     break # no more lights!
 
     def onUpdateStateInfo(self, info):
@@ -40,11 +40,11 @@ class XioView():
         '''
         uid = info['uid']
         state = info.get('state')
-        if not self._blinkThread:
+        if not uid in self._blinkThreads:
             xio = self._xioMap[uid]
-            self._blinkThread = BlinkThread(xio)
-            self._blinkThread.start()
-        self._blinkThread.setBlinkPattern(XioView.BLINKS[state])
+            self._blinkThreads[uid] = BlinkThread(xio)
+            self._blinkThreads[uid].start()
+        self._blinkThreads[uid].setBlinkPattern(XioView.BLINKS[state])
                                            
 class BlinkThread(threading.Thread):
     BASE_XIO = 408
@@ -52,7 +52,7 @@ class BlinkThread(threading.Thread):
     def setBlinkPattern(self,blinkPattern):
         self._blinkPattern = blinkPattern
         
-    def xioTodev(self,xio):
+    def xioToDev(self,xio):
         return self.BASE_XIO + xio;
 
     _stopped = False
@@ -61,7 +61,7 @@ class BlinkThread(threading.Thread):
         :param onFor: ms to keep light on
         :param onFor: ms to keep light off
         '''
-        self._xio = GPIO(xioToDev(xioNumber),DIRECTION_OUTPUT)
+        self._xio = GPIO(self.xioToDev(xioNumber),DIRECTION_OUTPUT)
         self._xio.open()
         self._xio.set_high() #start off in high (off) state
         self._blinkPattern = [0,.1]
