@@ -77,7 +77,7 @@ def stateChange():
 
 stateToClass = {RunState.PASSIVE_STATE: 'passive', RunState.PASS_STATE: 'success', RunState.FAIL_STATE: 'fail', RunState.PROMPT_STATE: 'prompt', RunState.ACTIVE_STATE:'active', RunState.PAUSED_STATE:'paused', RunState.IDLE_STATE: 'passive', RunState.DISCONNECTED_STATE: 'disconnected'}
     
-@app.route('/flash')
+@app.route('/')
 def flashPage():
 #     webFlasher.base_url = request.base_url
 #     print "base url is" + webFlasher.base_url
@@ -85,7 +85,7 @@ def flashPage():
 
     return render_template('deviceTable.html', stateInfoArray=webFlasher.controller.stateInfo.values(), stateToClass=stateToClass)
  
-@app.route('/')
+@app.route('/config')
 def configPage():
     return render_template('chip_config.html')
 
