@@ -14,6 +14,7 @@ from config import *
 from testingThread import TestingThread,TestResult
 from Queue import Queue
 import time
+import sys
 from sets import Set
 #
 # try:
@@ -111,7 +112,10 @@ class Controller():
         self.rev = rev
         self.hostname = hostname
 
-        return self.testSuiteName + ": Host: " + self.hostname + " | Revision: " + self.rev[0:10] + " | Firmware Build: " + self.build_string
+        name = self.testSuiteName
+        if name is None:
+            name = "Multi"
+        return name + ": Host: " + self.hostname + " | Revision: " + self.rev[0:10] + " | Firmware Build: " + self.build_string
 
     def getFileInfo(self):
         cwd = path.dirname( path.dirname( path.realpath( __file__ ) ) )
@@ -216,10 +220,12 @@ class Controller():
                When runing
         '''
         tl = unittest.TestLoader()
-        if deviceState:
-            suiteName = self.deviceStateToTestSuite[deviceState]
-        else:
+        if self.testSuiteName:
             suiteName = self.testSuiteName
+        else:
+#         if deviceState:
+            suiteName = self.deviceStateToTestSuite[deviceState]
+
         suiteClass = get_class(suiteName)
         suite = tl.loadTestsFromTestCase(suiteClass)
         suite.suiteClass = suiteClass

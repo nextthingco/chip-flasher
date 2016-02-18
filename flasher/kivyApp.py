@@ -22,6 +22,7 @@ from kivy.uix.stencilview import StencilView
 from collections import OrderedDict
 import collections
 import os
+import sys
 
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
@@ -378,7 +379,11 @@ class ScrollableLabel(ScrollView):
 
 ##########################################################################
 if __name__ == '__main__':
-    app = KivyApp("Flasher")
+    suite = None
+    if len(sys.argv) == 2:
+       suite = sys.argv[1]
+
+    app = KivyApp(suite)
     try:
         app.run()
     except (KeyboardInterrupt, SystemExit):

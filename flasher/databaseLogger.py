@@ -29,28 +29,31 @@ class DatabaseLogger():
 
     def computeStats(self,queries):
         dict = OrderedDict()
-        for query in queries:
-            self.con.row_factory = sql.Row
-            cur = self.con.cursor()
-            cur.execute(query)
-#             group = 'group by' in query
-            while True:
-                row = cur.fetchone()
-                if not row:
-                    break
-#                 print "row len " + str(len(row))
-                for i in range(0,len(row)):
-                    field = row.keys()[i]
-                    value = row[i]
-                    if '_key' in field: #if this is a key field, meaning values in a sub dict
-                        keyField = field.split('_')[0] #remove the suffix
-                        valField = keyField +"_val" #find corresponding value field
-                        valFieldValue = row[row.keys().index(valField)] #get the value of the value field
-                        if not keyField in dict: #if no dict yet
-                            dict[keyField] = OrderedDict()
-                        dict[keyField][value] = valFieldValue
-                    elif not '_val' in field:
-                        dict[row.keys()[i]] = row[i]
+        try:
+            for query in queries:
+                self.con.row_factory = sql.Row
+                cur = self.con.cursor()
+                cur.execute(query)
+    #             group = 'group by' in query
+                while True:
+                    row = cur.fetchone()
+                    if not row:
+                        break
+    #                 print "row len " + str(len(row))
+                    for i in range(0,len(row)):
+                        field = row.keys()[i]
+                        value = row[i]
+                        if '_key' in field: #if this is a key field, meaning values in a sub dict
+                            keyField = field.split('_')[0] #remove the suffix
+                            valField = keyField +"_val" #find corresponding value field
+                            valFieldValue = row[row.keys().index(valField)] #get the value of the value field
+                            if not keyField in dict: #if no dict yet
+                                dict[keyField] = OrderedDict()
+                            dict[keyField][value] = valFieldValue
+                        elif not '_val' in field:
+                            dict[row.keys()[i]] = row[i]
+        except Exception,e:
+            print e
         return dict
 
     def formatStats(self,stats,level=0):
