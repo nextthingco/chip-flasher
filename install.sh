@@ -129,6 +129,9 @@ function install_flasher {
 		if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher/sunxi-tools" ]]; then
 			git clone https://github.com/nextthingco/sunxi-tools $HOMEDIR/Desktop/CHIP-flasher/sunxi-tools
 		fi
+		make -C $HOMEDIR/Desktop/CHIP-flasher/sunxi-tools fel
+		ln -s "$HOMEDIR/Desktop/CHIP-flasher/sunxi-tools/fel" /usr/local/bin/fel
+	fi
 	if [[ "$(uname)" == "Linux" ]]; then
 		HOMEDIR="$(eval echo "~${SUDO_USER}")"
 		SCRIPTDIR="$HOMEDIR/Desktop/CHIP-flasher" #/flasher"
