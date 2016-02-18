@@ -208,12 +208,13 @@ function install_flasher {
 		EOF
 		sudo udevadm control --reload-rules
 	fi
-
 }
 
 case "${OS}" in
-    Linux)  install_linux; install_flasher ;;
+	Darwin) install_darwin; install_flasher ;;
+	Linux)	install_linux; install_flasher ;;
 esac
+
 # Note for socket IO, there is a little flakiness. See here
 #https://github.com/miguelgrinberg/Flask-SocketIO/issues/184
 
