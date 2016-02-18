@@ -152,7 +152,7 @@ class Flasher(TestCase):
         return [
             "select count(*) as 'total', sum(1-result) as 'failed', sum(result) as 'passed' from {0} where {1}".format(table,where),
             "select avg(elapsedTime) as 'averageTime' from {0} where result=1 AND {1}".format(table,where),
-            "select error as errors_key, count(error) as errors_val from {0} where error != 0 and {1} group by error".format(table,where)
+            "select error as errors_key, count(error) as errors_val from {0} where error != 0 and {1} group by error order by error".format(table,where)
         ]
 
 

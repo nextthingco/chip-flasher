@@ -284,7 +284,7 @@ class ChipHardwareTest(TestCase):
             "select avg(correctableBitflips) from {0} where correctableBitflips != -1 AND {1}".format(table,where),
             "select avg(badBlocks) from {0} where badBlocks != -1 AND {1}".format(table,where),
             "select avg(bbtBlocks) from {0} where bbtBlocks != -1 AND {1}".format(table,where),
-            "select error as errors_key, count(error) as errors_val from {0} where error != 0 and {1} group by error".format(table,where)
+            "select error as errors_key, count(error) as errors_val from {0} where error != 0 and {1} group by error order by error".format(table,where)
         ]
 def main():
     tl = TestLoader()

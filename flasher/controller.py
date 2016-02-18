@@ -92,7 +92,10 @@ class Controller():
         self._onTriggerDevice(button.id)
 
     def powerOff(self):
-        subprocess.Popen( ["systemctl poweroff"],stdout=subprocess.PIPE ).communicate()
+        try:
+            subprocess.Popen( ["systemctl","poweroff"])
+        except Exception,e:
+            print e
 
     def getTitle( self ):
         '''
