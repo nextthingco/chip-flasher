@@ -23,9 +23,15 @@ TESTING_TEXT= u"Testing\n测试中"
 
 PASS_TEXT= u"PASS\n通过"
 FAIL_TEXT= u"FAIL\n失败"
+FAIL_WITH_ERROR_CODE_TEXT=u"FAIL {0}\n失败"
+
 FAIL_201_TEXT= u"FAIL 201\n失败"
 FAIL_202_TEXT= u"FAIL 202\n失败"
 FAIL_203_TEXT= u"FAIL 203\n失败"
 
 FAIL_301_TEXT= u"FAIL 301\n失败"
 FAIL_302_TEXT= u"FAIL 302\n失败"
+
+POWER_OFF_TEXT=u"Power Off - 关机"
+YES_TEXT=u"Yes - 确认"
+NO_TEXT=u"No - 取消"

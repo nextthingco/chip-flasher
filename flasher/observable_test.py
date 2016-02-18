@@ -5,16 +5,16 @@ import time
 
 def observeTest(func):
     '''
-    Decorator for unit tests. This will wrap the run function to add timings and also 
-    to call observers both before and after the run function is called. 
+    Decorator for unit tests. This will wrap the run function to add timings and also
+    to call observers both before and after the run function is called.
     Observers are called with a dict containing information about the test itself:
     when: ["before" | "after"]
     method: The name of the python function used in the test
     label: A more descriptive label for this test, perhaps to show in a GUI
-    testCase: The object for which the method is a member. 
-    
+    testCase: The object for which the method is a member.
+
     Additionally, decorator attributes are copied into the instance method
-    
+
     :param func: The test function to get decorated
     '''
     @wraps(func)
@@ -22,7 +22,7 @@ def observeTest(func):
         instance = func.im_self  # the test case object
         methodName = instance._testMethodName  # the name of the bound testing func
 
-        '''    
+        '''
         Now copy over  decorator-populated attrubtes from the unbound func to the instance method.
         Basically, the issue is that Python 2.7 decorators (e.g. @myDecorator) are executed before any instances are instantiated
         As a result, the instance methods (bound to their object) do not have the unbound version's attributes
@@ -36,10 +36,10 @@ def observeTest(func):
             label = instance._attributes['label']  # use the label that was set in the @label
         else:
             label = methodName  # in case not found, use the method's name for the label
-            
-        # Populate the stateInfo for observer callbacks            
+
+        # Populate the stateInfo for observer callbacks
         stateInfo = {"when":"before", "method":methodName, "label": label, "testCase": instance }
-        
+
         start = time.time()  # let's keep track of execution time
         [observer(stateInfo) for observer in instance.stateInfoObservers]  # tell observers test is about to run
         try:
@@ -47,14 +47,14 @@ def observeTest(func):
         except:
             raise # the finally block below will close out timer and notify observers
         finally:
-            end = time.time() 
+            end = time.time()
             stateInfo['executionTime'] = end - start  # is stateInfo the right place for this?
-            stateInfo['when'] = "after"  # The test is over, so  
+            stateInfo['when'] = "after"  # The test is over, so
             [observer(stateInfo) for observer in instance.stateInfoObservers]  # notify test done
-        return r 
+        return r
     return wrapper
 
-# 
+#
 def _addAttribute(meth, att, name):
     '''
     Convenience method for the specific decorators below
@@ -66,7 +66,7 @@ def _addAttribute(meth, att, name):
         meth._attributes = {}
     meth._attributes[att] = name
     return meth
-          
+
 def requiresFixture(name):
     '''
     @label decorator
@@ -75,7 +75,7 @@ def requiresFixture(name):
     def method_call(method):
         return _addAttribute(method, "requiresFixture", name)
     return method_call
-    
+
 def label(text):
     '''
     @label decorator
@@ -84,8 +84,8 @@ def label(text):
     def method_call(method):
         return _addAttribute(method, "label", text)
     return method_call
-    
-        
+
+
 def failMessage(text):
     '''
     @failMessage decorator
@@ -94,7 +94,15 @@ def failMessage(text):
     def method_call(method):
         return _addAttribute(method, "failMessage", text)
     return method_call
-    
+
+def errorNumber(num):
+    '''
+    @errorNumberber decorator
+    :param num: Error code as number
+    '''
+    def method_call(method):
+        return _addAttribute(method, "errorNumber", num)
+    return method_call
 
 def progress(seconds):
     '''
@@ -113,7 +121,7 @@ def promptBefore(text):
     def method_call(method):
         return _addAttribute(method, "promptBefore", text)
     return method_call
-    
+
 def promptAfter(text):
     '''
     @label decorator
@@ -142,8 +150,8 @@ def timeout(seconds):
     def method_call(method):
         return _addAttribute(method, "timeout", seconds)
     return method_call
-    
-def decorateTest(test, stateInfoObservers=None, progressObservers=None, attributes = None):  
+
+def decorateTest(test, stateInfoObservers=None, progressObservers=None, attributes = None, returnValues = None):
     '''
     Decorate a test to use the observeTest decorator above, passing along observers
     :param test:
@@ -156,8 +164,9 @@ def decorateTest(test, stateInfoObservers=None, progressObservers=None, attribut
     test.progressObservers = []
     test.progressObservers.extend(progressObservers)
     test.attributes = attributes
-    
-    
+    test.returnValues = returnValues
+
+
 def _decoratedAttribute(test, name):
     '''
     Helper function for methods below to extract an attribute of a test's method
@@ -171,8 +180,8 @@ def _decoratedAttribute(test, name):
     if name in attributes:
         return attributes[name]
     return None
-    
-    
+
+
 def labelForTest(test):
     '''
     Get the @label
@@ -187,6 +196,13 @@ def failMessageForTest(test):
     :param test:
     '''
     return _decoratedAttribute(test, 'failMessage')
+
+def errorNumberForTest(test):
+    '''
+    Get the @progress
+    :param test:
+    '''
+    return _decoratedAttribute(test, 'errorNumber')
 
 def promptBeforeForTest(test):
     '''
