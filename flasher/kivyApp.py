@@ -122,7 +122,7 @@ class KivyView(BoxLayout):
 
         self.output = ScrollableLabel()
         outputView.add_widget(self.output)
-        buttonGrid = GridLayout(cols=4,size_hint=(1,.15),valign="bottom")
+        buttonGrid = GridLayout(cols=5,size_hint=(1,.15),valign="bottom")
         outputView.add_widget(buttonGrid)
 
         fileInfoButton = Button(text="File Info")
@@ -136,6 +136,10 @@ class KivyView(BoxLayout):
         hwStatsButton = Button(text="HW Test Stats")
         buttonGrid.add_widget(hwStatsButton)
         hwStatsButton.bind(on_press=lambda button: self._stats("ChipHardwareTest"))
+
+        browseStatsButton = Button(text="Browse Stats")
+        buttonGrid.add_widget(browseStatsButton)
+        browseStatsButton.bind(on_press=lambda button: self._browseStats())
 
         powerButton = Button(text=POWER_OFF_TEXT,font_name=FONT_NAME)
         buttonGrid.add_widget(powerButton)
@@ -332,6 +336,9 @@ class KivyView(BoxLayout):
 
         popup = Popup(title="",font_name=FONT_NAME, content=bl,size_hint=(None, None), size=(400, 110),auto_dismiss=False) #kivy wont let me set proper font for title, so i cant get unicode
         popup.open()
+
+    def _browseStats(self):
+        self.databaseLogger.launchSqlitebrowser()
 
 class Widgets:
     '''

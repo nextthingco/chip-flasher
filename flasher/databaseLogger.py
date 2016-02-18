@@ -2,6 +2,8 @@ import sqlite3 as sql
 import sys
 import time
 import socket
+
+from subprocess import Popen
 from collections import OrderedDict
 # from flasher import Flasher
 from config import *
@@ -70,6 +72,9 @@ class DatabaseLogger():
 
     def _fileName(self):
         return self.hostName + "_" + LOG_DB
+
+    def launchSqlitebrowser(self):
+        Popen( ["sqlitebrowser",self._fileName()]) #spawns
 
     def __init__( self, **kwargs ):
         self.con = None

@@ -8,10 +8,9 @@ SORT_HUBS = True # Whether the hub name from the UDEV file (chip_id_hub_xxx) sho
 
 AUTO_START_ON_DEVICE_DETECTION = True #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled
 AUTO_START_WAIT_BEFORE_DISCONNECT = 20 #wait n seconds before considering a disconnect to handle switch to FASTBOOT
-DONE_WAIT_BEFORE_DISCONNECT = False #This only works on flashing, not hw test. Also, requires chip to go back into fastboot after flashing
+DONE_WAIT_BEFORE_DISCONNECT = 2 #This only works on flashing, not hw test. Also, requires chip to go back into fastboot after flashing
 
-GRAY_OUT_ON_DISCONNECT = True
-DONE_WAIT_BEFORE_DISCONNECT = 2 #transition fastboot->nothing->fastboot at end of flash. this value is the nothing time
+GRAY_OUT_ON_DISCONNECT = False
 
 #database of logs. It will be prefixed by the hostname_
 LOG_DB = 'log.db'
