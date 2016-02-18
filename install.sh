@@ -218,5 +218,5 @@ esac
 #https://github.com/miguelgrinberg/Flask-SocketIO/issues/184
 
 #for UI - web
-sudo apt-get install libxslt-dev
-sudo apt-get install libxml2
+#sudo apt-get install libxslt-dev
+#sudo apt-get install libxml2
