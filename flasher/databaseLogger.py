@@ -157,7 +157,8 @@ class DatabaseLogger():
 #         print values
 
         query = 'INSERT INTO {0} ({1}) VALUES ({2})'.format(suiteClass.statsTableName(),','.join(fields),','.join(values))
-#         print query
+        print "Writing to database:\n"
+        print query
         try:
             self.con.execute(query)
             self.con.commit()
