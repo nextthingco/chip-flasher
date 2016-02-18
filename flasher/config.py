@@ -1,5 +1,4 @@
-#An id that is written to the database tables to identify the batch
-RUN_NAME="batch1"
+RUN_NAME="batch1" #An id that is written to the database tables to identify the batch
 
 #Constants to change behavior. Also see constants in KivyView
 SKIP_IDLE_STATE = True # If true, then there won't be an idle state between done and testing
@@ -9,12 +8,12 @@ SORT_HUBS = True # Whether the hub name from the UDEV file (chip_id_hub_xxx) sho
 
 AUTO_START_ON_DEVICE_DETECTION = True #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled
 AUTO_START_WAIT_BEFORE_DISCONNECT = 20 #wait n seconds before considering a disconnect to handle switch to FASTBOOT
-DONE_WAIT_BEFORE_DISCONNECT = True
+DONE_WAIT_BEFORE_DISCONNECT = False #This only works on flashing, not hw test. Also, requires chip to go back into fastboot after flashing
 
 GRAY_OUT_ON_DISCONNECT = True
 DONE_WAIT_BEFORE_DISCONNECT = 2 #transition fastboot->nothing->fastboot at end of flash. this value is the nothing time
 
-#database of logs
+#database of logs. It will be prefixed by the hostname_
 LOG_DB = 'log.db'
 
 #number of seconds to wait for a serial connection in hwtest
@@ -44,5 +43,5 @@ MAX_UNCORRECTABLE_BITFLIPS = 0
 MAX_CORRECTABLE_BITFLIPS = 99
 MAX_STD_DEV_CORRECTABLE_BITFLIPS = 10
 
-MAX_BAD_BLOCKS = 100
+MAX_BAD_BLOCKS = 100 #max allowed bad blocks in chip hardware test
 MIN_BBT_BLOCKS = 3 # the minimum number of blocks needed for the bad block tables (bbt)
