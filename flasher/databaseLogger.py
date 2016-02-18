@@ -74,7 +74,10 @@ class DatabaseLogger():
         return self.hostName + "_" + LOG_DB
 
     def launchSqlitebrowser(self):
-        Popen( ["sqlitebrowser",self._fileName()]) #spawns
+        try:
+            Popen( ["sqlitebrowser",self._fileName()]) #spawns
+        except Exception, e:
+            print e
 
     def __init__( self, **kwargs ):
         self.con = None
