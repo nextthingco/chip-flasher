@@ -102,62 +102,43 @@ function install_linux {
 
 
 function install_flasher {
-    HOMEDIR="$(eval echo "~${SUDO_USER}")"
-    if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher" ]]; then
-        git clone --branch=master https://github.com/NextThingCo/CHIP-flasher $HOMEDIR/Desktop/CHIP-flasher
-    else
-        pushd $HOMEDIR/Desktop/CHIP-flasher
-        git pull
-        popd
-    fi
-    if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher/tools" ]]; then
-        git clone --branch=chip/next https://github.com/NextThingCo/CHIP-tools $HOMEDIR/Desktop/CHIP-flasher/tools
-    else
-        pushd $HOMEDIR/Desktop/CHIP-flasher/tools
-        git pull
-        popd
-    fi
+	HOMEDIR="$(eval echo "~${SUDO_USER}")"
+	if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher" ]]; then
+		git clone --branch=production https://github.com/NextThingCo/CHIP-flasher $HOMEDIR/Desktop/CHIP-flasher
+	else
+		pushd $HOMEDIR/Desktop/CHIP-flasher
+		git pull
+		popd
+	fi
+	if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher/tools" ]]; then
+		git clone --branch=chip/next https://github.com/NextThingCo/CHIP-tools $HOMEDIR/Desktop/CHIP-flasher/tools
+	else
+		pushd $HOMEDIR/Desktop/CHIP-flasher/tools
+		git pull
+		popd
+	fi
 
-    #Go inside flasher
-    pushd CHIP-flasher/flasher
-
-    #if no tools, clone CHIP-tools and call them just tools
-    if [[ ! -d "tools" ]]; then
-        info "cloning CHIP-tools"
-        git clone https://github.com/NextThingCo/CHIP-tools tools
-        info "making CHIP-tools"
-        make -C tools
-    fi
-
-    #if no sunxi-tools, clone it
-    if [[ ! -d "sunxi-tools" ]]; then
-        info "cloning sunxi-tools"
-        git clone https://github.com/NextThingCo/sunxi-tools
-        info "making sunxi-tools"
-        make -C sunxi-tools fel
-        info "creating fel symbolic link"
-        ln -s "$(pwd)/sunxi-tools/fel" /usr/local/bin/fel
-    fi
-
-    if [[ ! -f "$HOMEDIR/Desktop/CHIP-flasher/sunxi-tools/fel" ]]; then
-        if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher/sunxi-tools" ]]; then
-            git clone https://github.com/nextthingco/sunxi-tools $HOMEDIR/Desktop/CHIP-flasher/sunxi-tools
-        fi
-        make -C $HOMEDIR/Desktop/CHIP-flasher/sunxi-tools fel
-        ln -s "$HOMEDIR/Desktop/CHIP-flasher/sunxi-tools/fel" /usr/local/bin/fel
-
-
-
-     if [[ "$(uname)" == "Linux" ]]; then
-        HOMEDIR="$(eval echo "~${SUDO_USER}")"
-        SCRIPTDIR="$HOMEDIR/Desktop/CHIP-flasher" #/flasher"
-        sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/chip-flasher.desktop
-        sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/gui.sh%" $SCRIPTDIR/chip-flasher.desktop
-        cp ${SCRIPTDIR}/chip-flasher.desktop ${HOMEDIR}/Desktop
-        chown $(logname):$(logname) ${HOMEDIR}/Desktop/chip-flasher.desktop
+	# if [[ ! -d "Desktop/CHIP-flasher/testjig" ]]; then
+	# 	git clone https://github.com/NextThingCo/ChipTestJig Desktop/CHIP-flasher/testjig
+	# else
+	# 	pushd Desktop/CHIP-flasher/testjig
+	# 	git pull
+	# 	popd
+	# fi
+	if [[ ! -f "$HOMEDIR/Desktop/CHIP-flasher/sunxi-tools/fel" ]]; then
+		if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher/sunxi-tools" ]]; then
+			git clone https://github.com/nextthingco/sunxi-tools $HOMEDIR/Desktop/CHIP-flasher/sunxi-tools
+		fi
+	if [[ "$(uname)" == "Linux" ]]; then
+		HOMEDIR="$(eval echo "~${SUDO_USER}")"
+		SCRIPTDIR="$HOMEDIR/Desktop/CHIP-flasher" #/flasher"
+		sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/chip-flasher.desktop
+		sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/startFlash.sh%" $SCRIPTDIR/chip-flasher.desktop
+		cp ${SCRIPTDIR}/chip-flasher.desktop ${HOMEDIR}/Desktop
+		chown $(logname):$(logname) ${HOMEDIR}/Desktop/chip-flasher.desktop
         chown -R $(logname):$(logname) ${SCRIPTDIR}
-        usermod -a -G dialout "${SUDO_USER}"
-        usermod -a -G dialout "${SUDO_USER}"
+		usermod -a -G dialout "${SUDO_USER}"
+		usermod -a -G dialout "${SUDO_USER}"
 
 		cat <<-EOF | sudo tee /etc/udev/rules.d/flasher.rules
 			# FEL Mode
