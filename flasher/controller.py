@@ -198,6 +198,8 @@ class Controller():
                         if GRAY_OUT_ON_DISCONNECT:
                             if elapsedTime < DONE_WAIT_BEFORE_DISCONNECT: # wait for possible transition.
                                 continue
+                        else:
+                            continue
                     elif lastKnownState == DeviceDescriptor.DEVICE_SERIAL:
                         continue #preserve state
 
