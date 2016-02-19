@@ -183,7 +183,7 @@ class Controller():
             runState = self.runStates[uid]
             elapsedTime = currentTime - when #see how long its been since we
             if lastKnownState != currentState: #if the state is different since last time
-#                 print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
+                print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
                 if currentState == DeviceDescriptor.DEVICE_FASTBOOT:
                     self.deviceStates[uid] = (currentState, currentTime) #just update the time. don't trigger
                 elif currentState == DeviceDescriptor.DEVICE_DISCONNECTED:
@@ -202,9 +202,11 @@ class Controller():
                             if elapsedTime < DONE_WAIT_BEFORE_DISCONNECT: # wait for possible transition.
                                 continue
                         else:
-                            continue
+                            self.deviceStates[uid] = (currentState, currentTime)
+                            continue #dont trigger
                     elif lastKnownState == DeviceDescriptor.DEVICE_SERIAL:
-                        continue #preserve state
+                        self.deviceStates[uid] = (currentState, currentTime)
+                        continue #dont trigger
 
                     self.deviceStates[uid] = (currentState, currentTime)
                     self._onTriggerDevice(uid,currentState) #disconnect
