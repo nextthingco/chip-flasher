@@ -44,14 +44,14 @@ class Flasher(TestCase):
         return os.path.exists(self.felPort)
 
 # Uncomment for mocking
-    def _doFlashStageMock(self,stage,timeout=400):
+    def _doFlashStageMock(self,stage,timeout=25):
         if True:
             time.sleep(stage)
             if random.random() < 0.1:
                 self.fail("Mock Failure")
             return
 
-    def _doFlashStage(self,stage,timeout=400):
+    def _doFlashStage(self,stage,timeout=25):
         if MOCK:
             return self._doFlashStageMock(stage,timeout)
         timeout = timeout * self.timeoutMultiplier

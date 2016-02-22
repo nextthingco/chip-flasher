@@ -7,6 +7,7 @@ SORT_DEVICES = True # Whether the device id from the UDEV file (chip_id_hub_xxx)
 SORT_HUBS = True # Whether the hub name from the UDEV file (chip_id_hub_xxx) should be sorted on screen. Sort is alphabetic
 
 AUTO_START_ON_DEVICE_DETECTION = True #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled
+ALLOW_CLICKS_IN_AUTO_START=True #if in autostart mode, allow the button to work or not
 AUTO_START_WAIT_BEFORE_DISCONNECT = 20 #wait n seconds before considering a disconnect to handle switch to FASTBOOT
 DONE_WAIT_BEFORE_DISCONNECT = 2 #This only works on flashing, not hw test. Also, requires chip to go back into fastboot after flashing
 

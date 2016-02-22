@@ -183,7 +183,7 @@ class Controller():
             runState = self.runStates[uid]
             elapsedTime = currentTime - when #see how long its been since we
             if lastKnownState != currentState: #if the state is different since last time
-                print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
+#                 print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
                 if currentState == DeviceDescriptor.DEVICE_FASTBOOT:
                     self.deviceStates[uid] = (currentState, currentTime) #just update the time. don't trigger
                 elif currentState == DeviceDescriptor.DEVICE_DISCONNECTED:
@@ -227,11 +227,15 @@ class Controller():
                When runing
         '''
         tl = unittest.TestLoader()
+        suiteName = None
         if self.testSuiteName:
             suiteName = self.testSuiteName
         else:
+            if deviceState == None:
+                suiteName = 'Flasher' #for debugging from IDE, need something if no command line
+            else:
 #         if deviceState:
-            suiteName = self.deviceStateToTestSuite[deviceState]
+                suiteName = self.deviceStateToTestSuite[deviceState]
 
         suiteClass = get_class(suiteName)
         suite = tl.loadTestsFromTestCase(suiteClass)
@@ -276,7 +280,7 @@ class Controller():
             testingThread.processButtonClick() #maybe the thread has a prompt and wants to wake up
             return
 
-        if self.autoStartOnDeviceDetection and not deviceState: #ignore button clicks if in polling mode
+        if self.autoStartOnDeviceDetection and not deviceState and not ALLOW_CLICKS_IN_AUTO_START: # ignore button clicks if in polling mode
             return
 
         runState = self.runStates[uid]
@@ -291,7 +295,7 @@ class Controller():
 
 
         self._updateStateInfo({'uid':uid, 'state': RunState.ACTIVE_STATE, 'stateLabel': RUNNING_TEXT})
-        if deviceState and not self.autoStartOnDeviceDetection: # if we just want graying out behavior
+        if deviceState and not self.autoStartOnDeviceDetection and not ALLOW_CLICKS_IN_AUTO_START: # if we just want graying out behavior
             self._updateStateInfo({'uid': uid, 'state': RunState.IDLE_STATE, 'stateLabel': WAITING_TEXT, 'label': ' ', 'output': ' '}) #label cannot be "". It needs to be a space
             return
 
