@@ -124,12 +124,12 @@ class UdevMaker(object):
 
 def execute(win):
     udevMaker=UdevMaker(win)
-    devs=udevMaker.produceFile()
+    udevMaker.produceFile()
 
 def main():
     if len(sys.argv) == 1:
         print "You must specify an output file. e.g. flasher.rules\n"
-        exit(1)
+        return 1
     win=curses.initscr()
     curses.noecho()
     curses.cbreak()
@@ -138,6 +138,7 @@ def main():
     curses.nocbreak();
     curses.echo()
     curses.endwin()
+    return 0
     
     
 if __name__ == "__main__":
