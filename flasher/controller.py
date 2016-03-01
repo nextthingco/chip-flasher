@@ -269,6 +269,8 @@ class Controller():
         Trigger an event for the id. This can either start a test run, clear a prompt, or move from done state to idle state
         :param button: Button that was clicked on
         '''
+
+        buttonClickTrigger = deviceState == None
         if deviceState == DeviceDescriptor.DEVICE_DISCONNECTED: #device was unplugged
             self._abortThread(uid)
             self._updateStateInfo({'uid':uid, 'state': RunState.DISCONNECTED_STATE}) #purposely not showing DISCONNECTED_TEXT because it may be useful to keep info on screen
@@ -280,7 +282,7 @@ class Controller():
             testingThread.processButtonClick() #maybe the thread has a prompt and wants to wake up
             return
 
-        if self.autoStartOnDeviceDetection and not deviceState and not ALLOW_CLICKS_IN_AUTO_START: # ignore button clicks if in polling mode
+        if buttonClickTrigger and self.autoStartOnDeviceDetection  and not ALLOW_CLICKS_IN_AUTO_START: # ignore button clicks if in polling mode
             return
 
         runState = self.runStates[uid]
@@ -293,11 +295,14 @@ class Controller():
                 self._updateStateInfo({'uid': uid, 'state': RunState.IDLE_STATE, 'stateLabel': WAITING_TEXT, 'label': ' ', 'output': ' '}) #label cannot be "". It needs to be a space
                 return
 
+        if not buttonClickTrigger and not self.autoStartOnDeviceDetection:
+            return
 
         self._updateStateInfo({'uid':uid, 'state': RunState.ACTIVE_STATE, 'stateLabel': RUNNING_TEXT})
-        if deviceState and not self.autoStartOnDeviceDetection and not ALLOW_CLICKS_IN_AUTO_START: # if we just want graying out behavior
+        if deviceState and GRAY_OUT_ON_DISCONNECT : # if we just want graying out behavior
             self._updateStateInfo({'uid': uid, 'state': RunState.IDLE_STATE, 'stateLabel': WAITING_TEXT, 'label': ' ', 'output': ' '}) #label cannot be "". It needs to be a space
             return
+
 
         suite = self._loadSuite(deviceState)
         testResult = TestResult()

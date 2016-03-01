@@ -19,6 +19,12 @@ LOG_DB = 'log.db'
 #number of seconds to wait for a serial connection in hwtest
 FIND_SERIAL_TIME = 45
 
+#number of seconds before a timeout during the non-ubi stages of flashing
+FLASH_FEL_STAGE_TIMEOUT = 25
+
+#number of seconds before timeout during upload UBI stage
+FLASH_UBI_STAGE_TIMEOUT = 400
+
 #Constants to change appearance
 HUBS_IN_COLUMNS = True # if True, there will be one visual column per hub as defined by the UDEV entry: chip-id-hub-mode
 SHOW_STATE = True # if True, shows an Idle.., Testing,  Pass/Fail column. With a 49 port hub, you probably want this to be false

@@ -4,6 +4,7 @@ import logging
 import sys
 import os.path
 import random #for mocking
+from config import *
 from ui_strings import *
 from observable_test import *
 from commandRunner import CommandRunner
@@ -44,14 +45,14 @@ class Flasher(TestCase):
         return os.path.exists(self.felPort)
 
 # Uncomment for mocking
-    def _doFlashStageMock(self,stage,timeout=25):
+    def _doFlashStageMock(self,stage,timeout=FLASH_FEL_STAGE_TIMEOUT):
         if True:
             time.sleep(stage)
             if random.random() < 0.1:
                 self.fail("Mock Failure")
             return
 
-    def _doFlashStage(self,stage,timeout=25):
+    def _doFlashStage(self,stage,timeout=FLASH_FEL_STAGE_TIMEOUT):
         if MOCK:
             return self._doFlashStageMock(stage,timeout)
         timeout = timeout * self.timeoutMultiplier
@@ -129,7 +130,7 @@ class Flasher(TestCase):
     @failMessage(FAIL_203_TEXT)
     @errorNumber(203)
     def test_Stage5(self):
-        self._doFlashStage(5, timeout = 400)
+        self._doFlashStage(5, timeout = FLASH_UBI_STAGE_TIMEOUT)
 
 #     def statsTableColumns(self):
 #         return []

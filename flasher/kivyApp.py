@@ -93,8 +93,14 @@ class KivyApp(App):
         '''
         self.controller.onMainButton(button)
 
+#A Box layout that clips its borders to prevent spillover into other views. Kivy should do this by default!
 class BoxStencil(BoxLayout, StencilView):
     pass
+
+#A Grid layout that clips its borders to prevent spillover into other views. Kivy should do this by default!
+class GridStencil(GridLayout, StencilView):
+    pass
+
 
 class KivyView(BoxLayout):
 
@@ -122,7 +128,7 @@ class KivyView(BoxLayout):
 
         self.output = ScrollableLabel()
         outputView.add_widget(self.output)
-        buttonGrid = GridLayout(cols=5,size_hint=(1,.15),valign="bottom")
+        buttonGrid = GridStencil(cols=5,size_hint=(1,.15),valign="bottom")
         outputView.add_widget(buttonGrid)
 
         fileInfoButton = Button(text="File Info")
@@ -162,7 +168,7 @@ class KivyView(BoxLayout):
             rowSizeFactor = rowSizeFactor / hubColumns
 
         mainButtonWidth = 50 * rowSizeFactor
-        hubPanels = GridLayout(cols=hubColumns)
+        hubPanels = GridStencil(cols=hubColumns)
 
         # Layout the grid for the hubs
         cols = 3
@@ -198,7 +204,7 @@ class KivyView(BoxLayout):
 
                 # The label column kists of both text and a progress bar
                 # positioned inside a box layout
-                stateBox = BoxLayout(orientation='vertical')
+                stateBox = BoxStencil(orientation='vertical')
                 widgets.label = LabelButton(
                     id=key, text='', color=DISCONNECTED_COLOR, font_size=13 * rowSizeFactor, font_name=FONT_NAME, halign="center")
                 # show output window if label clicked
