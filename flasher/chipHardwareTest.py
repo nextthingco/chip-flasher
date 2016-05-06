@@ -33,8 +33,9 @@ errorCodeMap = { \
     "testing AXP209 on I2C bus 0": 308,
     "GPIO expander test": 309,
     "Doing 10s stress test": 310,
-    "Wifi enumeration test": 311,
-    "Checking bitflips on NAND": 312
+    "Wifi enumeration test": 311
+#     ,
+#     "Checking bitflips on NAND": 312
 }
 
 # Check to make sure that the tests are all run. If a test is not found, then return it and its code
@@ -127,8 +128,8 @@ def test(serial_port):
       return missingCode + 50,d # return 50 more than the error for the code itself
       
   #see the results of the bit flip test    
-  if not bitFlipTest(d):
-    return errorCodeMap["Checking bitflips on NAND"],d
+#   if not bitFlipTest(d):
+#     return errorCodeMap["Checking bitflips on NAND"],d
 
 
   if re.search(r'.*### ALL TESTS PASSED ###.*',d):
