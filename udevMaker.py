@@ -115,9 +115,10 @@ class UdevMaker(object):
             for family in self.families: #there are currently 3 sections to the rules file: FEL, Fastboot, and Serial Gadget
                 rulesFile.write("# " + family[0] + "\n")
                 for dev in devs:
+                    subsystem_label = "SUBSYSTEM" if family[1] == "tty" else "SUBSYSTEMS"
                     rulesFile.write(
-                        'SUBSYSTEMS=="{0}",  KERNELS=="{1}",   ATTRS{{idVendor}}=="{2}", ATTRS{{idProduct}}=="{3}",   SYMLINK+="chip-{4}-{5}-{6}"\n'.format(
-                            family[1], dev['dev'], family[2], family[3], dev['port'], dev['hub'], family[4]
+                        '{0}=="{1}",  KERNELS=="{2}",   ATTRS{{idVendor}}=="{3}", ATTRS{{idProduct}}=="{4}",   SYMLINK+="chip-{5}-{6}-{7}"\n'.format(
+                            subsystem_label, family[1], dev['dev'], family[2], family[3], dev['port'], dev['hub'], family[4]
                             )
                         )
 
