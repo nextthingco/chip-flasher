@@ -57,7 +57,6 @@ class UdevMaker(object):
 
             portMatch = PORT_REGEX.search(line)
             if portMatch:
-                
                 depth = len(portMatch.group(1)) / 4 # number of spaces, grouped by 4. This is what lsusb -t does
                 port = int(portMatch.group(2))
                 name = str(port) + "."
@@ -66,7 +65,10 @@ class UdevMaker(object):
                 else:
                     if depth < currentDepth: #if we've come out of a branch, prune the array
                         result = result[:depth]
-                    result[depth] = name
+                    if depth == len(result):
+                        result.append(name)
+                    else:
+                        result[depth] = name
                 currentDepth = depth
                 if int(portMatch.group(3)) == device: #is this the device we're looking for?
                     break
