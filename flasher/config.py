@@ -6,10 +6,12 @@ UDEV_RULES_FILE = '/etc/udev/rules.d/flasher.rules'
 SORT_DEVICES = True # Whether the device id from the UDEV file (chip_id_hub_xxx) should be sorted on screen. Sort is numeric
 SORT_HUBS = True # Whether the hub name from the UDEV file (chip_id_hub_xxx) should be sorted on screen. Sort is alphabetic
 
-AUTO_START_ON_DEVICE_DETECTION = True #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled
+AUTO_START_ON_DEVICE_DETECTION = False #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled
 AUTO_START_WAIT_BEFORE_DISCONNECT = 20 #wait n seconds before considering a disconnect to handle switch to FASTBOOT
 DONE_WAIT_BEFORE_DISCONNECT = 2 #This only works on flashing, not hw test. Also, requires chip to go back into fastboot after flashing
 
+ALLOW_INDIVIDUAL_BUTTONS = False #True to allow CHIPS to be started individually, False for Flash All
+SHOW_ALL_BUTTON = True #True to have an all button on top, False otherwise.
 GRAY_OUT_ON_DISCONNECT = False
 
 #database of logs. It will be prefixed by the hostname_
@@ -29,8 +31,11 @@ PASSIVE_COLOR = [ 1, 1, 0, 1] # we will use YELLOW for passive
 PROMPT_COLOR = [ 1, .4, .3, 1] # we will use ORANGE for prompts
 DISCONNECTED_COLOR = [.3, .3, .3, 1] #when device is disconnected
 WHITE_COLOR = [ 1, 1, 1, 1]
+RED_COLOR = [1, 0, 0, 1]
+GREEN_COLOR = [0, 1, 0, 1]
 YELLOW_COLOR = [ 1, 1, 0, 1]
 PAUSED_COLOR = [ 1, .5, 0, 1]
+BLACK_COLOR = [0, 0, 0, 1]
 
 # The threshhold limits for the NAND test for the hwtest that's run on CHIP
 # The output of the NAND test has the form:
@@ -45,3 +50,5 @@ MAX_STD_DEV_CORRECTABLE_BITFLIPS = 10
 MAX_BAD_BLOCKS = 100 #max allowed bad blocks in chip hardware test
 #MIN_BBT_BLOCKS = 3 # the minimum number of blocks needed for the bad block tables (bbt)
 MIN_BBT_BLOCKS = 0 #Temporarily setting to 0 because something seems wrong with the test
+
+EXCLUDE_HW_TESTS = [312,313] #do not try to run these tests

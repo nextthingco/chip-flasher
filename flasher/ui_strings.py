@@ -35,3 +35,5 @@ FAIL_302_TEXT= u"FAIL 302\n失败"
 POWER_OFF_TEXT=u"Power Off - 关机"
 YES_TEXT=u"Yes - 确认"
 NO_TEXT=u"No - 取消"
+
+START_RUNNING=u"Start All\n开始运行"

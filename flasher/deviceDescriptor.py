@@ -93,7 +93,7 @@ class DeviceDescriptor:
                         descriptor.fel = device
                     elif vendor == '1f3a' and product == '1010':
                         descriptor.fastboot = device
-                    elif vendor == "0525" and product == 'a4a7':
+                    elif (vendor == '0525' and product in ['a4a7','a4aa']) or ('vendor' == '1d6b' and produc == '0104'):
                         descriptor.serial = device
                     
                     if not hub in hubs: #add to hub list

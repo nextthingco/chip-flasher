@@ -212,8 +212,13 @@ class ChipHardwareTest(TestCase):
                 bbtBlocks >= MIN_BBT_BLOCKS)
 
 
+    def removeExcludedTests(self):
+         global errorCodeMap
+         errorCodeMap = {k: v for k, v in errorCodeMap.iteritems() if not v in EXCLUDE_HW_TESTS} #filter to allow tests that are not excluded in the config.py file
+        
     def setUp(self):
         self.progressObservers = []
+        self.removeExcludedTests()
 #         self.returnValues['uncorrectableBitflips'] = -1
 #         self.returnValues['correctableBitflips'] = 0
 #         self.returnValues['stdDevCorrectableBitflips'] = 0

@@ -8,6 +8,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
 from kivy.core.window import Window
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.graphics import Color
@@ -36,7 +37,8 @@ from controller import Controller
 from databaseLogger import DatabaseLogger
 
 OSX_FONT = "/Library/Fonts/Arial Unicode.ttf"
-UBUNTU_FONT = "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
+# UBUNTU_FONT = "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
+UBUNTU_FONT = "/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-B.ttf"
 if os.path.isfile(OSX_FONT):
     FONT_NAME = OSX_FONT
 else:
@@ -61,7 +63,7 @@ class KivyApp(App):
         # Poll for device changes every second
         Clock.schedule_interval(self._onPollingTick.__get__(self, KivyApp), 1)
         self.databaseLogger = DatabaseLogger()
-        self.view = KivyView(deviceDescriptors=self.controller.deviceDescriptors,
+        self.view = KivyView(orientation='vertical', deviceDescriptors=self.controller.deviceDescriptors,
                              hubs=self.controller.hubs, fileInfo=self.controller.getFileInfo(),databaseLogger = self.databaseLogger)
         # observe button events if GUI
         self.view.addMainButtonListener(
@@ -113,6 +115,7 @@ class KivyView(BoxLayout):
         # right of the splitter
         self.outputDetailUid = None
         self.mainButtonListeners = []
+        self.mainButtons = []
         # LAYOUT
         # the right half of the splitter
         outputView = BoxStencil(orientation='vertical')
@@ -186,8 +189,10 @@ class KivyView(BoxLayout):
                 # The main button
                 widgets.button = Button(id=key, text=deviceDescriptor.uid, color=DISCONNECTED_COLOR, font_size=30 * rowSizeFactor,
                                         font_name=FONT_NAME, halign="center", size_hint_x=None, width=mainButtonWidth)
-                widgets.button.bind(
-                    on_press=self._onClickedMainButton.__get__(self, KivyView))
+                self.mainButtons.append(widgets.button)
+                if ALLOW_INDIVIDUAL_BUTTONS:
+                    widgets.button.bind(on_press=self._onClickedMainButton.__get__(self, KivyView))
+                    
                 addTo.add_widget(widgets.button)
 
                 # The state column
@@ -211,8 +216,16 @@ class KivyView(BoxLayout):
                 addTo.add_widget(stateBox)
 
         splitter.add_widget(outputView)
-        self.add_widget(hubPanels)
-        self.add_widget(splitter)
+        mainBox = BoxLayout(border=1)
+        mainBox.add_widget(hubPanels)
+        mainBox.add_widget(splitter)
+        if SHOW_ALL_BUTTON:
+            panelBox = FloatLayout(size_hint_y =.1, valign="center",padding=10 , background_color = BLACK_COLOR )
+            all = Button(id="all", text=START_RUNNING,  pos_hint = {'x':.425, 'y':.1}, width=.2, size_hint = (0.2,.8),   halign="center", color=WHITE_COLOR)
+            all.bind(on_press=self._onClickedAllButton.__get__(self, KivyView))
+            panelBox.add_widget(all)
+            self.add_widget(panelBox)
+        self.add_widget(mainBox)
 
     def addMainButtonListener(self, listener):
         '''
@@ -276,6 +289,16 @@ class KivyView(BoxLayout):
 ##########################################################################
 # Privates
 ##########################################################################
+
+    def _onClickedAllButton(self, button):
+        '''
+        When the button is clicked, simulate a click on all buttons
+        :param button:
+        '''
+        for button in self.mainButtons:
+            self._onClickedMainButton(button)
+
+
     def _onClickedMainButton(self, button):
         '''
         When the button is clicked, notify all listeners
