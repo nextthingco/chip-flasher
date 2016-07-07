@@ -65,9 +65,9 @@ class DeviceDescriptor:
                     # currently using vid_pid to determine type. The "type" field could be used instead  
                     if vendor == '1f3a' and product == 'efe8':
                         descriptor.fel = device
-                    elif vendor == '18d1' and product == '1010':
+                    elif vendor == '1f3a' and product == '1010':
                         descriptor.fastboot = device
-                    elif vendor == "0525" and product == 'a4a7':
+                    elif (vendor == '0525' and product in ['a4a7','a4aa']) or ('vendor' == '1d6b' and product == '0104'):
                         descriptor.serial = device
                     
                     if not hub in hubs: #add to hub list
