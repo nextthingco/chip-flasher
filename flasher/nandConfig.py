@@ -81,31 +81,32 @@ class NandConfig(TestCase):
     @timeout(15)
     def test_001_initial(self):
         print "logging in"
-        ser = self.deviceDescriptor.ser = SerialConnection("root","chip",self.deviceDescriptor.serial)
+        ser = self.deviceDescriptor.serialConnection = SerialConnection("root","chip",self.deviceDescriptor.serial)
         ser.connect()
-        time.sleep(10);
+        time.sleep(5);
         print "sending hostname"
         #print( "Waiting for CHIP to boot...")
-        hostname = self.deviceDescriptor.hostname = ser.send("hostname")
-        print "Hostname is: " + hostname
-        if re.search(r'.*chip.*',hostname):
+        deviceId = self.deviceDescriptor.deviceId = ser.send("hostname")
+        print "Hostname is: " + deviceId
+        if re.search(r'.*chip.*',deviceId):
             print( "CHIP FOUND! Running tests...")
         else:
-            print hostname
+            print deviceId
             raise Exception( "Hostname not found." )
 
     @label("change hostname")
     @progress(6)
     @timeout(15)
     def test_002_hostname(self):
-        ser = self.deviceDescriptor.ser
+        ser = self.deviceDescriptor.serialConnection
 
         newName = HOSTNAME_FORMAT.format(self.hostnameCounter);
         self.hostnameCounter += 1;
-        hostname = self.deviceDescriptor.hostname
-        print "CUrrent host name is " + hostname
-        cmd1 = 'sed -i "s/{0}/{1}/g" /etc/hostname'.format(hostname,newName)
-        cmd2 = 'sed -i "s/{0}/{1}/g" /etc/hosts'.format(hostname,newName)
+        deviceId = self.deviceDescriptor.deviceId
+        print "CUrrent host name is " + deviceId
+        cmd1 = 'sed -i "s/{0}/{1}/g" /etc/hostname'.format(deviceId,newName)
+        cmd2 = 'sed -i "s/{0}/{1}/g" /etc/hosts'.format(deviceId,newName)
+        self.deviceDescriptor.deviceId = newName
 
         ser.send(cmd1)
         ser.send(cmd2)        
@@ -114,8 +115,8 @@ class NandConfig(TestCase):
     @progress(5)
     @timeout(15)
     def test_003_wifi(self):
-        ser = self.deviceDescriptor.ser
-        connectionString = WIFI_CONNECT_FORMAT.format(WIFI_SSID, WIFI_PASSWORD)
+        ser = self.deviceDescriptor.serialConnection
+        connectionString = WIFI_CONNECT_FORMAT.format(TEST_FARM_SSID, TEST_FARM_PASSWORD)
         conResult = ser.send(connectionString);
         print conResult
         
@@ -125,7 +126,7 @@ class NandConfig(TestCase):
     @progress(60)
     @timeout(200)
     def test_004_update(self):
-        ser = self.deviceDescriptor.ser
+        ser = self.deviceDescriptor.serialConnection
   
         ser.send("apt-get update")
 
@@ -133,14 +134,14 @@ class NandConfig(TestCase):
     @progress(60)
     @timeout(60)
     def test_005_git(self):
-        ser = self.deviceDescriptor.ser
+        ser = self.deviceDescriptor.serialConnection
         ser.send("apt-get -y install git")
         
     @label("clone repo")
     @progress(10)
     @timeout(10)
     def test_006_repo(self):
-        ser = self.deviceDescriptor.ser
+        ser = self.deviceDescriptor.serialConnection
         cmd = NAND_TEST_REPO.format(NAND_REPO_USER,NAND_REPO_PASSWORD)
         ser.send(cmd)
         
@@ -148,7 +149,7 @@ class NandConfig(TestCase):
     @progress(10)
     @timeout(10)
     def test_007_repo(self):
-        ser = self.deviceDescriptor.ser
+        ser = self.deviceDescriptor.serialConnection
         ser.send("cd CHIP-nandTests");
         ser.send(NAND_TEST)
         
@@ -156,9 +157,9 @@ class NandConfig(TestCase):
     @progress(10)
     @timeout(10)
     def test_009_disconnect(self):
-        ser = self.deviceDescriptor.ser
+        ser = self.deviceDescriptor.serialConnection
         ser.close()
-        ser = None
+        self.deviceDescriptor.serialConnection = None
 
 
     

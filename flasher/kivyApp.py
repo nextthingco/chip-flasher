@@ -171,6 +171,9 @@ class KivyView(BoxLayout):
         cols = 3
         if not SHOW_STATE:
             cols = cols - 1
+        if SHOW_DEVICE_ID_COLUMN:
+            cols = cols +1
+            
         for i, hub in enumerate(self.hubs):  # go through the hubs
             # the spliter is way off to the right
             testingView = GridLayout(cols=cols, size_hint=(.99, 1))
@@ -195,6 +198,11 @@ class KivyView(BoxLayout):
                     
                 addTo.add_widget(widgets.button)
 
+                widgets.deviceIdLabel = Label(id=key, text="", color=DISCONNECTED_COLOR, font_size=13 *
+                                           rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=120 * rowSizeFactor)
+                if SHOW_DEVICE_ID_COLUMN:
+                    addTo.add_widget(widgets.deviceIdLabel)
+                    
                 # The state column
                 widgets.stateLabel = Label(id=key, text=WAITING_TEXT, color=DISCONNECTED_COLOR, font_size=13 *
                                            rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=60 * rowSizeFactor)
@@ -262,6 +270,7 @@ class KivyView(BoxLayout):
         progress = info.get('progress')
         output = info.get('output')
         prompt = info.get('prompt')
+        deviceId = info.get('deviceId')
 
         widgets = self.widgetsMap[uid]
         if state:
@@ -285,6 +294,8 @@ class KivyView(BoxLayout):
             # if the output detail is showing this output, it will be updated
             self._onShowOutput(None, uid)
 
+        if deviceId:
+            widgets.deviceIdLabel.text = deviceId
 
 ##########################################################################
 # Privates
@@ -372,6 +383,7 @@ class Widgets:
         self.button = None
         self.stateLabel = None
         self.label = None
+        self.deviceIdLabel = None
         self.progress = None
         self.output = ""  # This is actually the output text for the widget
 
@@ -384,6 +396,7 @@ class Widgets:
         self.button.color = color
         self.stateLabel.color = color
         self.label.color = color
+        self.deviceIdLabel.color = color
         self.progress.color = color
 
 

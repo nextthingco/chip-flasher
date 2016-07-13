@@ -115,7 +115,7 @@ class SerialConnection(object):
             sawLogin = False # if already saw login prompt, don't send a second one. This is because login message contains the word login:
             while True:
                 try:
-                    index = self.tty.expect_list([LOGIN_REGEX, PASSWORD_REGEX, UBOOT_REGEX, COMMAND_PROMPT_REGEX, pexpect.EOF, pexpect.TIMEOUT,LOGIN_INCORRECT], timeout=15)
+                    index = self.tty.expect_list([LOGIN_REGEX, PASSWORD_REGEX, UBOOT_REGEX, COMMAND_PROMPT_REGEX, pexpect.EOF, pexpect.TIMEOUT,LOGIN_INCORRECT], timeout=30)
                 except Exception, e:
                     print ("couldn't read, maybe timeout")
 #                     serialLog.exception(e)
