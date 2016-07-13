@@ -153,6 +153,15 @@ class NandConfig(TestCase):
         ser.send("cd CHIP-nandTests");
         ser.send(NAND_TEST)
         
+        
+    @label("add syslog server")
+    @progress(10)
+    @timeout(10)
+    def test_008_repo(self):
+        ser = self.deviceDescriptor.serialConnection
+        cmd = "echo '*.*   @@seshat.local:514' | tee -a /etc/rsyslog.conf"
+        ser.send(cmd);
+        
     @label("Disconnecting")
     @progress(10)
     @timeout(10)
