@@ -29,7 +29,7 @@ BAUD=115200
 # BAUD=9600
 
 SERIAL_DEVICE_NAME="/dev/chip-2-1-serial" 
-TIMEOUT = 10 #this really doesn't do much
+TIMEOUT = 10000 #this really doesn't do much
 # 
 # logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 # serialLog = logging.getLogger("serial")
@@ -181,15 +181,19 @@ class SerialConnection(object):
                 return None
 
         try:
+            print "command: " + cmd
 #             self.tty.read() # read everything currently in buffer
-            self.tty.expect(pexpect.EOF,timeout=1)
+#             self.tty.expect(pexpect.EOF,timeout=1)
             self.tty.sendline(cmd) #send command to remote
             if (blind): #if don't care about the result. For example, poweroff
                 return None
             commandRegex = re.compile(re.escape(cmd +"\r\n")) #regex to strip off the command just issued
             bf1 = self._expect(commandRegex) # if this is ever hanging, check to see the line length isn't too long!
+
             result = self._expect(COMMAND_PROMPT_REGEX, timeout=TIMEOUT) #Now _expect the newline and command prompt
+
             result = result.rstrip("\r\n") #in most cases there will be a new line. Only if the return is blank will it be empty
+            print "result: " + result
             return result
         except Exception, e: # This will happen if the command is invalid on the remote. 
             print e

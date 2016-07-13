@@ -9,6 +9,7 @@ import unittest
 from collections import OrderedDict
 from flasher import Flasher
 from chipHardwareTest import ChipHardwareTest
+from nandConfig import NandConfig
 from ui_strings import *
 from config import *
 from testingThread import TestingThread,TestResult
@@ -183,7 +184,7 @@ class Controller():
             runState = self.runStates[uid]
             elapsedTime = currentTime - when #see how long its been since we
             if lastKnownState != currentState: #if the state is different since last time
-                print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
+#                 print "state : lastKnown: " + str(lastKnownState) + " current " + str(currentState) + " elapsed " + str(elapsedTime)
                 if currentState == DeviceDescriptor.DEVICE_FASTBOOT:
                     self.deviceStates[uid] = (currentState, currentTime) #just update the time. don't trigger
                 elif currentState == DeviceDescriptor.DEVICE_DISCONNECTED:

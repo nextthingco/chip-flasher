@@ -52,3 +52,18 @@ MAX_BAD_BLOCKS = 100 #max allowed bad blocks in chip hardware test
 MIN_BBT_BLOCKS = 0 #Temporarily setting to 0 because something seems wrong with the test
 
 EXCLUDE_HW_TESTS = [312,313] #do not try to run these tests
+
+
+#####################################################################################
+WIFI_SSID='NTC 2461'
+WIFI_PASSWORD='ntc2461@ccess'
+
+LOCAL_SSID='FARM'
+LOCAL_PASSWORD=''
+
+HOSTNAME_FORMAT='TN_{:03d}'
+
+HOSTNAME_COUNTER = 7
+
+NAND_TEST_REPO = "git clone https://{0}:{1}@github.com/NextThingCo/CHIP-nandTests.git"
+NAND_TEST = "bash startTest.sh nandBonnie.sh"
