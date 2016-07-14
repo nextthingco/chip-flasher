@@ -11,8 +11,8 @@ import re
 from pexpect import fdpexpect
 import pexpect
 
-COMMAND_PROMPT = r'.*chip.*[$#] '
-COMMAND_PROMPT_REGEX = re.compile(r'.*chip.*[$#] ')
+COMMAND_PROMPT = r'.*(chip|TN_\d\d\d).*[$#] '
+COMMAND_PROMPT_REGEX = re.compile(r'.*(chip|TN_\d\d\d).*[$#] ')
 COMMAND_DELIMETER = "END_COMMAND" # careful not to put any special REGEX chars in this string
 DELIMETER_NEW_LINE_REGEX = re.compile(COMMAND_DELIMETER +  r"\r\n")
 DELIMITER_NEW_LINE_COMMAND_PROMPT_REGEX = re.compile(COMMAND_DELIMETER + r"\r\n" + COMMAND_PROMPT)
@@ -112,6 +112,11 @@ class SerialConnection(object):
         Logs in if necessary. The result of this call is the remote has a command prompt and is ready
         '''
         try:
+            #send some blanks to get a response
+            self.tty.sendline("")
+            self.tty.sendline("")
+            self.tty.sendline("")
+
             sawLogin = False # if already saw login prompt, don't send a second one. This is because login message contains the word login:
             while True:
                 try:

@@ -27,7 +27,7 @@ class NandConfig(TestCase):
     def logHostAndSerial(self, hostname, serial):
         with self.logMutex:
             with open(HOSTNAME_SERIAL_FILE,"a") as file:
-                file.write("{0}\t{1}".format(hostname,serial))
+                file.write("{0}\t{1}\n".format(hostname,serial))
 
     def setUp(self):
         self.progressObservers = []
@@ -100,7 +100,7 @@ class NandConfig(TestCase):
         serialNumber = self.deviceDescriptor.serialNumber = ser.send(SERIAL_NUMBER_COMMAND)
         
         print "Hostname is: " + deviceId + " serial is " + serialNumber
-        if re.search(r'.*chip.*',deviceId):
+        if re.search(r'.*(chip|TN_\d\d\d).*',deviceId):
             print( "CHIP FOUND! Running tests...")
         else:
             print deviceId
