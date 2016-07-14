@@ -100,6 +100,7 @@ class NandConfig(TestCase):
     def test_002_hostname(self):
         ser = self.deviceDescriptor.serialConnection
 
+        self.deviceDescriptor.testGroup = self.hostnameCounter % len(NAND_TESTS) #chips will be assigned a test to run
         newName = HOSTNAME_FORMAT.format(self.hostnameCounter);
         self.hostnameCounter += 1;
         deviceId = self.deviceDescriptor.deviceId
@@ -151,7 +152,12 @@ class NandConfig(TestCase):
     def test_007_repo(self):
         ser = self.deviceDescriptor.serialConnection
         ser.send("cd CHIP-nandTests");
-        ser.send(NAND_TEST)
+        testName = NAND_TESTS[self.deviceDescriptor.testGroup]
+        if NAND_TEST_FORCE:
+            testName = NAND_TEST_FORCE
+
+        test = NAND_TEST_FORMAT.format(testName)
+        ser.send(test)
         
         
     @label("add syslog server")

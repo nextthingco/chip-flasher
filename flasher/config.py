@@ -64,5 +64,6 @@ HOSTNAME_FORMAT='TN_{:03d}'
 HOSTNAME_COUNTER = 7
 
 NAND_TEST_REPO = "git clone https://{0}:{1}@github.com/NextThingCo/CHIP-nandTests.git"
-NAND_TEST = "bash startTest.sh nandBonnie.sh"
-
+NAND_TEST_FORMAT = "bash startTest.sh {0}"
+NAND_TESTS=["dd.sh","nandBonnie.sh","nandStress.sh"]
+NAND_TEST_FORCE=None
