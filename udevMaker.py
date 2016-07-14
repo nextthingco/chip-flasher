@@ -20,7 +20,8 @@ class UdevMaker(object):
         self.win = win
         self.families = [['FEL Mode', 'usb', '1f3a', 'efe8', 'fel'],
                          ['Fastboot Mode', 'usb', '1f3a', '1010', 'fastboot'],
-                         ['Serial Gadget Mode', 'tty', '0525', 'a4a7', 'serial']]
+                         ['Serial Gadget Mode', 'tty', '0525', 'a4a7', 'serial'],
+                         ['Serial Gadget Mode 4.4', 'tty', '0525', 'a4aa', 'serial']]
 
     def findDevice(self):
         lsusb = subprocess.Popen(
@@ -66,7 +67,7 @@ class UdevMaker(object):
                     if depth < currentDepth: #if we've come out of a branch, prune the array
                         result = result[:depth]
                     if depth == len(result):
-	                    result.append(name)
+                        result.append(name)
                     else:
                         result[depth] = name
                 currentDepth = depth
