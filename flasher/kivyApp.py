@@ -173,6 +173,8 @@ class KivyView(BoxLayout):
             cols = cols - 1
         if SHOW_DEVICE_ID_COLUMN:
             cols = cols +1
+        if SHOW_SERIAL_NUMBER_COLUMN:
+            cols = cols +1
             
         for i, hub in enumerate(self.hubs):  # go through the hubs
             # the spliter is way off to the right
@@ -203,6 +205,11 @@ class KivyView(BoxLayout):
                 if SHOW_DEVICE_ID_COLUMN:
                     addTo.add_widget(widgets.deviceIdLabel)
                     
+                widgets.serialNumberLabel = Label(id=key, text="", color=DISCONNECTED_COLOR, font_size=8 *
+                                           rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=120 * rowSizeFactor)
+                if SHOW_SERIAL_NUMBER_COLUMN:
+                    addTo.add_widget(widgets.serialNumberLabel)
+
                 # The state column
                 widgets.stateLabel = Label(id=key, text=WAITING_TEXT, color=DISCONNECTED_COLOR, font_size=13 *
                                            rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=60 * rowSizeFactor)
@@ -271,6 +278,7 @@ class KivyView(BoxLayout):
         output = info.get('output')
         prompt = info.get('prompt')
         deviceId = info.get('deviceId')
+        serialNumber = info.get('serialNumber')
 
         widgets = self.widgetsMap[uid]
         if state:
@@ -296,6 +304,9 @@ class KivyView(BoxLayout):
 
         if deviceId:
             widgets.deviceIdLabel.text = deviceId
+
+        if serialNumber:
+            widgets.serialNumberLabel.text = serialNumber
 
 ##########################################################################
 # Privates
@@ -397,6 +408,7 @@ class Widgets:
         self.stateLabel.color = color
         self.label.color = color
         self.deviceIdLabel.color = color
+        self.serialNumberLabel.color = color
         self.progress.color = color
 
 

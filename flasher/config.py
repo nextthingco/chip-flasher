@@ -13,8 +13,8 @@ DONE_WAIT_BEFORE_DISCONNECT = 2 #This only works on flashing, not hw test. Also,
 ALLOW_INDIVIDUAL_BUTTONS = True #True to allow CHIPS to be started individually, False for Flash All
 SHOW_ALL_BUTTON = False #True to have an all button on top, False otherwise.
 GRAY_OUT_ON_DISCONNECT = False
-SHOW_DEVICE_ID_COLUMN=True # True if a column with hostname (or serial) is displayed
-
+SHOW_DEVICE_ID_COLUMN=True # True if a column with hostname  is displayed
+SHOW_SERIAL_NUMBER_COLUMN=True # True if a serial number column should show
 #database of logs. It will be prefixed by the hostname_
 LOG_DB = 'log.db'
 
@@ -56,9 +56,8 @@ EXCLUDE_HW_TESTS = [312,313] #do not try to run these tests
 
 
 #####################################################################################
-WIFI_SSID='NTC 2461'
-WIFI_PASSWORD='ntc2461@ccess'
-
+SERIAL_NUMBER_COMMAND = "cat /proc/cpuinfo | grep Serial | awk '{print $3}'"
+HOSTNAME_SERIAL_FILE="hostnameSerial.log"
 HOSTNAME_FORMAT='TN_{:03d}'
 
 HOSTNAME_COUNTER = 7

@@ -6,6 +6,7 @@ from commandRunner import CommandRunner
 import os
 import re
 import time
+import threading
 from config import *
 from deviceDescriptor import DeviceDescriptor
 from ui_strings import *
@@ -18,6 +19,15 @@ WIFI_CONNECT_FORMAT="nmcli device wifi connect '{0}' password '{1}' ifname wlan0
 class NandConfig(TestCase):
     ser = None
     hostnameCounter = HOSTNAME_COUNTER
+
+    def __init__(self, *args, **kwargs):
+        super(NandConfig, self).__init__(*args, **kwargs)       
+        self.logMutex = threading.Lock()
+        
+    def logHostAndSerial(self, hostname, serial):
+        with self.logMutex:
+            with open(HOSTNAME_SERIAL_FILE,"a") as file:
+                file.write("{0}\t{1}".format(hostname,serial))
 
     def setUp(self):
         self.progressObservers = []
@@ -87,7 +97,9 @@ class NandConfig(TestCase):
         print "sending hostname"
         #print( "Waiting for CHIP to boot...")
         deviceId = self.deviceDescriptor.deviceId = ser.send("hostname")
-        print "Hostname is: " + deviceId
+        serialNumber = self.deviceDescriptor.serialNumber = ser.send(SERIAL_NUMBER_COMMAND)
+        
+        print "Hostname is: " + deviceId + " serial is " + serialNumber
         if re.search(r'.*chip.*',deviceId):
             print( "CHIP FOUND! Running tests...")
         else:
@@ -104,6 +116,9 @@ class NandConfig(TestCase):
         newName = HOSTNAME_FORMAT.format(self.hostnameCounter);
         self.hostnameCounter += 1;
         deviceId = self.deviceDescriptor.deviceId
+        
+        self.logHostAndSerial(newName,self.deviceDescriptor.serialNumber )
+        
         print "CUrrent host name is " + deviceId
         cmd1 = 'sed -i "s/{0}/{1}/g" /etc/hostname'.format(deviceId,newName)
         cmd2 = 'sed -i "s/{0}/{1}/g" /etc/hosts'.format(deviceId,newName)

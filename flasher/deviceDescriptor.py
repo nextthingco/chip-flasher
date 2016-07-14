@@ -25,6 +25,7 @@ class DeviceDescriptor:
         self.fastboot = None
         self.serial = None
         self.deviceId = None
+        self.serialNumber = None
         self.serialConnection = None #used when accessing device as a serial gadget
         self.widgetInfo = {} #widgets in GUI
     

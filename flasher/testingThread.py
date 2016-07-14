@@ -122,7 +122,7 @@ class TestingThread(threading.Thread):
         if before:
             #initialize pre-test stuff
             self.output += (str(self.runId) + ": BEFORE: " + englishName + " device: "+ self.deviceDescriptor.uid + "\n")
-            self._updateStateInfo({'state': RunState.ACTIVE_STATE, 'label': label, 'output': self.output, 'progress': 0,  "deviceId":self.deviceDescriptor.deviceId})
+            self._updateStateInfo({'state': RunState.ACTIVE_STATE, 'label': label, 'output': self.output, 'progress': 0,  "deviceId":self.deviceDescriptor.deviceId, "serialNumber": self.deviceDescriptor.serialNumber})
             testCase.output=""
             testCase.timeoutMultiplier = self.timeoutMultiplier #ideally this would use the timeout decorator instead and set a timeout
             self.progress = None
@@ -156,7 +156,7 @@ class TestingThread(threading.Thread):
             self.output += testCase.output
             self.output += (str(self.runId) + ": AFTER: " + englishName + " device: "+ str(self.uid) + " time: " + str(stateInfo['executionTime']) + "\n")
             
-            self._updateStateInfo({'state': RunState.PASSIVE_STATE, 'output': self.output, "deviceId":self.deviceDescriptor.deviceId})
+            self._updateStateInfo({'state': RunState.PASSIVE_STATE, 'output': self.output, "deviceId":self.deviceDescriptor.deviceId, "serialNumber": self.deviceDescriptor.serialNumber})
 
     def getElapsedTime(self):
         return time.time() - self.startTime
