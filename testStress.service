@@ -1,0 +1,13 @@
+[Unit]
+Description=UBIFS Stress test
+Requires=systemd-remount-fs.service
+Before=systemd-remount-fs.service
+
+[Service]
+Type=oneshot
+StandardOutput=syslog+console
+ExecStart=/usr/sbin/bootstrap.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
