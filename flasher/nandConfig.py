@@ -171,8 +171,13 @@ class NandConfig(TestCase):
 
         
         global hostnameCounter
-        newName = HOSTNAME_FORMAT.format(hostnameCounter);
-        hostnameCounter += 1;
+        number = hostnameCounter
+        if HOSTNAME_ADD_PORT:
+            number += (self.deviceDescriptor.uid - 1) #-1 because ports start at 1
+        else:
+            hostnameCounter += 1;
+        
+        newName = HOSTNAME_FORMAT.format(number);
         deviceId = self.deviceDescriptor.deviceId
         
         self.logHostAndSerial(newName,self.deviceDescriptor.serialNumber )

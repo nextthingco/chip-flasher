@@ -14,7 +14,7 @@ ALLOW_INDIVIDUAL_BUTTONS = True #True to allow CHIPS to be started individually,
 SHOW_ALL_BUTTON = True #True to have an all button on top, False otherwise.
 GRAY_OUT_ON_DISCONNECT = False
 SHOW_DEVICE_ID_COLUMN=True # True if a column with hostname  is displayed
-SHOW_SERIAL_NUMBER_COLUMN=True # True if a serial number column should show
+SHOW_SERIAL_NUMBER_COLUMN=False # True if a serial number column should show
 #database of logs. It will be prefixed by the hostname_
 LOG_DB = 'log.db'
 
@@ -61,6 +61,7 @@ HOSTNAME_SERIAL_FILE="hostnameSerial.log"
 HOSTNAME_FORMAT='TN_{:03d}'
 
 HOSTNAME_COUNTER = 100
+HOSTNAME_ADD_PORT = True
 NAND_TEST_PROJECT="CHIP-nandTests"
 NAND_TEST_REPO = "git clone https://{0}:{1}@github.com/NextThingCo/" + NAND_TEST_PROJECT + ".git"
 NAND_TEST_FORMAT = "bash startTest.sh {0}"

@@ -15,6 +15,10 @@ nm-online -q -t 45 || { echo "failed to connect to wifi"; exit -1; }
 
 git pull https://%NAND_REPO_USER%:%NAND_REPO_PASSWORD%@github.com/NextThingCo/$DIRECTORY
 
+if [[ -f runAtBoot.sh ]]; then
+bash runAtBoot.sh
+fi
+
 #determine which test to run using a modulus of the hostnames number by the number of tests
 COUNT=$(hostname | cut -c4-6)
 COUNT=$((10#$COUNT))
