@@ -3,7 +3,7 @@ echo `hostname`
 cd ~
 DIRECTORY="CHIP-nandTests"
 if [ ! -d "$DIRECTORY" ]; then
-nm-online -q -t 30 || { echo "Failed"; exit 1; }
+nm-online -q -t 30 2> /dev/null || { echo "Failed"; exit 1; }
  apt-get update
  apt-get install --yes --force-yes git bonnie++ 
  git clone https://%NAND_REPO_USER%:%NAND_REPO_PASSWORD%@github.com/NextThingCo/$DIRECTORY.git
@@ -11,7 +11,7 @@ fi
 cd $DIRECTORY
 
 #wait for a connection
-nm-online -q -t 45 || { echo "failed to connect to wifi"; exit -1; }
+nm-online -q -t 45 2> /dev/null || { echo "failed to connect to wifi"; exit -1; }
 
 git pull https://%NAND_REPO_USER%:%NAND_REPO_PASSWORD%@github.com/NextThingCo/$DIRECTORY
 
