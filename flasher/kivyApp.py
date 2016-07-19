@@ -37,8 +37,8 @@ from controller import Controller
 from databaseLogger import DatabaseLogger
 
 OSX_FONT = "/Library/Fonts/Arial Unicode.ttf"
-UBUNTU_FONT = "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
-# UBUNTU_FONT = "/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-B.ttf"
+# UBUNTU_FONT = "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
+UBUNTU_FONT = "/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-B.ttf"
 if os.path.isfile(OSX_FONT):
     FONT_NAME = OSX_FONT
 else:
@@ -164,7 +164,6 @@ class KivyView(BoxLayout):
         if HUBS_IN_COLUMNS:
             rowSizeFactor = rowSizeFactor / hubColumns
 
-        mainButtonWidth = 50 * rowSizeFactor
         hubPanels = GridLayout(cols=hubColumns)
 
         # Layout the grid for the hubs
@@ -176,6 +175,8 @@ class KivyView(BoxLayout):
         if SHOW_SERIAL_NUMBER_COLUMN:
             cols = cols +1
             
+        widthFactor = rowSizeFactor * (3.0 / cols)
+        mainButtonWidth = 50 * widthFactor
         for i, hub in enumerate(self.hubs):  # go through the hubs
             # the spliter is way off to the right
             testingView = GridLayout(cols=cols, size_hint=(.99, 1))
@@ -201,18 +202,18 @@ class KivyView(BoxLayout):
                 addTo.add_widget(widgets.button)
 
                 widgets.deviceIdLabel = Label(id=key, text="", color=DISCONNECTED_COLOR, font_size=13 *
-                                           rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=120 * rowSizeFactor)
+                                           rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=120 * widthFactor)
                 if SHOW_DEVICE_ID_COLUMN:
                     addTo.add_widget(widgets.deviceIdLabel)
                     
                 widgets.serialNumberLabel = Label(id=key, text="", color=DISCONNECTED_COLOR, font_size=8 *
-                                           rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=120 * rowSizeFactor)
+                                           rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=120 * widthFactor)
                 if SHOW_SERIAL_NUMBER_COLUMN:
                     addTo.add_widget(widgets.serialNumberLabel)
 
                 # The state column
                 widgets.stateLabel = Label(id=key, text=WAITING_TEXT, color=DISCONNECTED_COLOR, font_size=13 *
-                                           rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=60 * rowSizeFactor)
+                                           rowSizeFactor, font_name=FONT_NAME, halign="center", size_hint_x=None, width=60 * widthFactor)
                 if SHOW_STATE:
                     addTo.add_widget(widgets.stateLabel)
 

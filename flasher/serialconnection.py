@@ -84,7 +84,10 @@ class SerialConnection(object):
             self.tty = None
             print ("Could not open serial device [2]: " + self.serialDeviceName)
             return False
-            
+       
+    def flush(self):
+        self.ser.flush()
+                
     def connect(self, timeout=60):
         '''
         Connect AND login
@@ -186,7 +189,7 @@ class SerialConnection(object):
                 return None
 
         try:
-            print "command: " + cmd
+#             print "command: " + cmd
 #             self.tty.read() # read everything currently in buffer
 #             self.tty.expect(pexpect.EOF,timeout=1)
             self.tty.sendline(cmd) #send command to remote
@@ -198,7 +201,7 @@ class SerialConnection(object):
             result = self._expect(COMMAND_PROMPT_REGEX, timeout=TIMEOUT) #Now _expect the newline and command prompt
 
             result = result.rstrip("\r\n") #in most cases there will be a new line. Only if the return is blank will it be empty
-            print "result: " + result
+#             print "result: " + result
             return result
         except Exception, e: # This will happen if the command is invalid on the remote. 
             print e
@@ -225,6 +228,23 @@ class SerialConnection(object):
                 index = self.tty.expect_exact([pexpect.EOF, findString],timeout=timeout) 
             else:
                 index = self.tty.expect_list([pexpect.EOF, findString],timeout=timeout) 
+        return self.tty.before
+
+    def xxx_expect(self,findString , timeout=TIMEOUT, exact = False):
+        '''
+        :param findString:either a regex or a string (if exact)
+        :param timeout: how long to try before timeout
+        :param exact: find the string literally as opposed to treating it as a regex
+        '''
+        index = 0
+        start = time.clock()
+        end = start + timeout
+        step = .1
+        
+        if exact:
+            index = self.tty.expect_exact([findString],timeout=timeout) 
+        else:
+            index = self.tty.expect_list([findString],timeout=timeout) 
         return self.tty.before
             
            

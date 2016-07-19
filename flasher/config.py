@@ -6,12 +6,12 @@ UDEV_RULES_FILE = '/etc/udev/rules.d/flasher.rules'
 SORT_DEVICES = True # Whether the device id from the UDEV file (chip_id_hub_xxx) should be sorted on screen. Sort is numeric
 SORT_HUBS = True # Whether the hub name from the UDEV file (chip_id_hub_xxx) should be sorted on screen. Sort is alphabetic
 
-AUTO_START_ON_DEVICE_DETECTION = True #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled
+AUTO_START_ON_DEVICE_DETECTION = False #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled
 AUTO_START_WAIT_BEFORE_DISCONNECT = 20 #wait n seconds before considering a disconnect to handle switch to FASTBOOT
 DONE_WAIT_BEFORE_DISCONNECT = 2 #This only works on flashing, not hw test. Also, requires chip to go back into fastboot after flashing
 
 ALLOW_INDIVIDUAL_BUTTONS = True #True to allow CHIPS to be started individually, False for Flash All
-SHOW_ALL_BUTTON = False #True to have an all button on top, False otherwise.
+SHOW_ALL_BUTTON = True #True to have an all button on top, False otherwise.
 GRAY_OUT_ON_DISCONNECT = False
 SHOW_DEVICE_ID_COLUMN=True # True if a column with hostname  is displayed
 SHOW_SERIAL_NUMBER_COLUMN=True # True if a serial number column should show
@@ -60,9 +60,9 @@ SERIAL_NUMBER_COMMAND = "cat /proc/cpuinfo | grep Serial | awk '{print $3}'"
 HOSTNAME_SERIAL_FILE="hostnameSerial.log"
 HOSTNAME_FORMAT='TN_{:03d}'
 
-HOSTNAME_COUNTER = 7
-
-NAND_TEST_REPO = "git clone https://{0}:{1}@github.com/NextThingCo/CHIP-nandTests.git"
+HOSTNAME_COUNTER = 100
+NAND_TEST_PROJECT="CHIP-nandTests"
+NAND_TEST_REPO = "git clone https://{0}:{1}@github.com/NextThingCo/" + NAND_TEST_PROJECT + ".git"
 NAND_TEST_FORMAT = "bash startTest.sh {0}"
 NAND_TESTS=["dd.sh","nandBonnie.sh","nandStress.sh"]
 NAND_TEST_FORCE=None

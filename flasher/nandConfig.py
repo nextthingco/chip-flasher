@@ -7,6 +7,7 @@ import os
 import re
 import time
 import threading
+import string
 from config import *
 from deviceDescriptor import DeviceDescriptor
 from ui_strings import *
@@ -14,11 +15,13 @@ from secrets import *
 
 dummy = DeviceDescriptor.makeDummy()
 
+WIFI_DISCONNECT = "nmcli device disconnect wlan0"
 WIFI_CONNECT_FORMAT="nmcli device wifi connect '{0}' password '{1}' ifname wlan0"
+
+hostnameCounter = HOSTNAME_COUNTER
 
 class NandConfig(TestCase):
     ser = None
-    hostnameCounter = HOSTNAME_COUNTER
 
     def __init__(self, *args, **kwargs):
         super(NandConfig, self).__init__(*args, **kwargs)       
@@ -41,33 +44,6 @@ class NandConfig(TestCase):
 
     def tearDown(self):
         pass
-#         print "killing serial connection"
-#         self.ser.close()
-#         self.ser = None
-        
-#     def setUp(self):
-#         try:
-#             print "setup------------------------"
-# #             if False:
-# #                 if( not os.path.exists("/etc/udev/rules.d/uart.rules") ):
-# #                     # Create udev rule for our UART serial cable if it doesn't already exist.
-# #                     # This code will probably need to change once we're testing more than one CHIP at once.
-# #                     file = open("/etc/udev/rules.d/uart.rules", "w")
-# #                     file.write("ACTION==\"add\", ATTRS{idVendor}==\"067b\", ATTRS{idProduct}==\"2303\", SYMLINK+=\"uart\"")
-# #                     file.close()
-# #                     os.system("sudo udevadm trigger")
-# #                     print( "UART udev rule created! You may need to unplug and replug the USB device and restart.")
-# #                     print( "Please try again.")
-# #     
-# #                 self.ser = SerialConnection("root","chip","/dev/uart")
-#             self.ser = SerialConnection("root","chip","/dev/chip_usb")
-# 
-#         except Exception, e:
-#             raise Exception( "Failed to connect to CHIP" )
-# 
-#     def tearDown(self):
-#         TestCase.tearDown(self)
-#         self.ser.close()
 
 
     def findSerialDevice(self):
@@ -78,6 +54,8 @@ class NandConfig(TestCase):
     @errorNumber(301)
     @failMessage(FAIL_301_TEXT)
     def test_000_serial(self):
+        self.deviceDescriptor.serialNumber = "-"
+        self.deviceDescriptor.deviceId = "-"
         for attempt in range(1, FIND_SERIAL_TIME):
             if self.findSerialDevice():
                 return True
@@ -86,6 +64,42 @@ class NandConfig(TestCase):
             "No Serial device found: " + self.deviceDescriptor.serial)
 
         
+    def copyFileToSerial2(self, source, dest):
+        ser = self.deviceDescriptor.serialConnection
+        self.send(ser,"rm -f " + dest) #clear out old one so we can re-execute if need be
+        ser.send("cat <<-EOF >> " +dest, blind=True)
+        time.sleep(.4)
+        with open(source) as f:
+            for line in f:
+                line = line.rstrip() #get rid of newline
+                line = string.replace(line,"'","'\''")
+                line = string.replace(line,"%NAND_REPO_USER%",NAND_REPO_USER)
+                line = string.replace(line,"%NAND_REPO_PASSWORD%",NAND_REPO_PASSWORD)
+                
+#                 print line
+                ser.send(line,blind=True)
+                ser.flush()
+                time.sleep(.4)
+        ser.send("EOF")
+        time.sleep(.4)
+        ser.flush()
+                
+    def copyFileToSerial(self, source, dest):
+        ser = self.deviceDescriptor.serialConnection
+        self.send(ser,"rm -f " + dest) #clear out old one so we can re-execute if need be
+        with open(source) as f:
+            for line in f:
+                line = line.rstrip() #get rid of newline
+                line = line.strip();
+                line = string.replace(line,"'","\'")
+                line = string.replace(line,"%NAND_REPO_USER%",NAND_REPO_USER)
+                line = string.replace(line,"%NAND_REPO_PASSWORD%",NAND_REPO_PASSWORD)
+                
+                print line
+                ser.send("echo '{0}' >> {1}".format(line,dest),blind=False)
+                ser.flush()
+                time.sleep(.4)
+
     @label("Logging in")
     @progress(10)
     @timeout(15)
@@ -93,105 +107,108 @@ class NandConfig(TestCase):
         print "logging in"
         ser = self.deviceDescriptor.serialConnection = SerialConnection("root","chip",self.deviceDescriptor.serial)
         ser.connect()
-        time.sleep(5);
-        print "sending hostname"
+        time.sleep(3);
         #print( "Waiting for CHIP to boot...")
-        deviceId = self.deviceDescriptor.deviceId = ser.send("hostname")
-        serialNumber = self.deviceDescriptor.serialNumber = ser.send(SERIAL_NUMBER_COMMAND)
-        
-        print "Hostname is: " + deviceId + " serial is " + serialNumber
-        if re.search(r'.*(chip|TN_\d\d\d).*',deviceId):
-            print( "CHIP FOUND! Running tests...")
-        else:
-            print deviceId
-            raise Exception( "Hostname not found." )
 
-    @label("change hostname")
-    @progress(6)
+
+        
+    @label("Copy Scripts")
+    @progress(5)
     @timeout(15)
-    def test_002_hostname(self):
-        ser = self.deviceDescriptor.serialConnection
-
-        self.deviceDescriptor.testGroup = self.hostnameCounter % len(NAND_TESTS) #chips will be assigned a test to run
-        newName = HOSTNAME_FORMAT.format(self.hostnameCounter);
-        self.hostnameCounter += 1;
-        deviceId = self.deviceDescriptor.deviceId
+    def test_002_copyScripts(self):
+        ser = self.deviceDescriptor.serialConnection        
+        self.copyFileToSerial("bootstrap.sh", "/usr/sbin/bootstrap.sh")
+        ser.flush()
+        time.sleep(2)
+        self.send(ser,"chmod +x /usr/sbin/bootstrap.sh")
         
-        self.logHostAndSerial(newName,self.deviceDescriptor.serialNumber )
+        ser.flush()
+    
+        self.copyFileToSerial("bootstrap.service", "/etc/systemd/system/bootstrap.service")
         
-        print "CUrrent host name is " + deviceId
-        cmd1 = 'sed -i "s/{0}/{1}/g" /etc/hostname'.format(deviceId,newName)
-        cmd2 = 'sed -i "s/{0}/{1}/g" /etc/hosts'.format(deviceId,newName)
-        self.deviceDescriptor.deviceId = newName
+        self.copyFileToSerial("testStress.service", "/etc/systemd/system/testStress.service")
 
-        ser.send(cmd1)
-        ser.send(cmd2)        
+        self.send(ser,"systemctl enable bootstrap.service")
+        ser.flush()
+
 
     @label("Connect to wifi")
     @progress(5)
     @timeout(15)
     def test_003_wifi(self):
         ser = self.deviceDescriptor.serialConnection
+        ser.send(WIFI_DISCONNECT) #disconnect if alredy connected. Allows reflashing with a network already up
         connectionString = WIFI_CONNECT_FORMAT.format(TEST_FARM_SSID, TEST_FARM_PASSWORD)
         conResult = ser.send(connectionString);
+        if  "ailed" in conResult:
+            raise Exception("Could not connect")
         print conResult
-        
 
 
-    @label("apt-get update")
-    @progress(60)
-    @timeout(200)
-    def test_004_update(self):
+    @label("change hostname")
+    @progress(6)
+    @timeout(15)
+    def test_004_hostname(self):
+        #if all has gone well, set the hostname and write it and serial to a file
         ser = self.deviceDescriptor.serialConnection
-  
-        ser.send("apt-get update")
+        deviceId = self.deviceDescriptor.deviceId = ser.send("hostname")
+        
+        if deviceId == None:
+            raise Exception("no deviceId")
+                            
+        serialNumber = self.deviceDescriptor.serialNumber = ser.send(SERIAL_NUMBER_COMMAND)
+        
+        if serialNumber == None:
+            raise Exception("no serial")
+            
+        print "Serial number " + serialNumber
+#         print "Hostname is: " + deviceId + " serial is " + serialNumber
+#         if re.search(r'.*(chip|TN_\d\d\d).*',deviceId):
+#             print( "CHIP FOUND! Running tests...")
+#         else:
+#             print deviceId
+#             raise Exception( "Hostname not found." )
 
-    @label("install git")
-    @progress(60)
-    @timeout(60)
-    def test_005_git(self):
-        ser = self.deviceDescriptor.serialConnection
-        ser.send("apt-get -y install git")
         
-    @label("clone repo")
-    @progress(10)
-    @timeout(10)
-    def test_006_repo(self):
-        ser = self.deviceDescriptor.serialConnection
-        cmd = NAND_TEST_REPO.format(NAND_REPO_USER,NAND_REPO_PASSWORD)
-        ser.send(cmd)
+        global hostnameCounter
+        newName = HOSTNAME_FORMAT.format(hostnameCounter);
+        hostnameCounter += 1;
+        deviceId = self.deviceDescriptor.deviceId
         
-    @label("install tests")
-    @progress(10)
-    @timeout(10)
-    def test_007_repo(self):
-        ser = self.deviceDescriptor.serialConnection
-        ser.send("cd CHIP-nandTests");
-        testName = NAND_TESTS[self.deviceDescriptor.testGroup]
-        if NAND_TEST_FORCE:
-            testName = NAND_TEST_FORCE
+        self.logHostAndSerial(newName,self.deviceDescriptor.serialNumber )
+        
+#         print "Current host name is " + deviceId
+        cmd1 = 'sed -i "s/{0}/{1}/g" /etc/hostname'.format(deviceId,newName)
+        cmd2 = 'sed -i "s/{0}/{1}/g" /etc/hosts'.format(deviceId,newName)
+        self.deviceDescriptor.deviceId = newName
 
-        test = NAND_TEST_FORMAT.format(testName)
-        ser.send(test)
-        
-        
+        self.send(ser,cmd1)
+        self.send(ser,cmd2)
+        ser.flush()
+
+
     @label("add syslog server")
     @progress(10)
     @timeout(10)
-    def test_008_repo(self):
+    def test_009_repo(self):
         ser = self.deviceDescriptor.serialConnection
         cmd = "echo '*.*   @@seshat.local:514' | tee -a /etc/rsyslog.conf"
-        ser.send(cmd);
+        self.send(ser,cmd);
+        ser.flush()
         
     @label("Disconnecting")
     @progress(10)
     @timeout(10)
-    def test_009_disconnect(self):
+    def test_010_disconnect(self):
         ser = self.deviceDescriptor.serialConnection
+        ser.flush()
         ser.close()
         self.deviceDescriptor.serialConnection = None
 
 
+    def send(self,ser,cmd):
+        ser.send(cmd)
+        time.sleep(.4)
     
 def main():
     tl = TestLoader()
