@@ -10,6 +10,7 @@ from collections import OrderedDict
 from flasher import Flasher
 from chipHardwareTest import ChipHardwareTest
 from nandConfig import NandConfig
+from fixtureConfig import FixtureConfig
 from ui_strings import *
 from config import *
 from testingThread import TestingThread,TestResult

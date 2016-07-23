@@ -90,3 +90,8 @@ trigger a check for updates in the UI queue
 
 ##Logging/Stats
 Currently no logging or stats takes place. Logging when running Kivy is awkward as Kivy replaces Python's logger.
+
+
+##Other run options:
+startNand.sh will run the test suite nandConfig which configures CHIPS for NAND testing
+startFixture.sh will configure CHIPS as fixtures to test other CHIPS.

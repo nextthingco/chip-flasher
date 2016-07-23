@@ -20,11 +20,11 @@ WIFI_CONNECT_FORMAT="nmcli device wifi connect '{0}' password '{1}' ifname wlan0
 
 hostnameCounter = HOSTNAME_COUNTER
 
-class NandConfig(TestCase):
+class FixtureConfig(TestCase):
     ser = None
 
     def __init__(self, *args, **kwargs):
-        super(NandConfig, self).__init__(*args, **kwargs)       
+        super(FixtureConfig, self).__init__(*args, **kwargs)       
         self.logMutex = threading.Lock()
         
     def logHostAndSerial(self, hostname, serial):
@@ -63,43 +63,6 @@ class NandConfig(TestCase):
         raise Exception(
             "No Serial device found: " + self.deviceDescriptor.serial)
 
-        
-    def copyFileToSerial2(self, source, dest):
-        ser = self.deviceDescriptor.serialConnection
-        self.send(ser,"rm -f " + dest) #clear out old one so we can re-execute if need be
-        ser.send("cat <<-EOF >> " +dest, blind=True)
-        time.sleep(.4)
-        with open(source) as f:
-            for line in f:
-                line = line.rstrip() #get rid of newline
-                line = string.replace(line,"'","'\''")
-                line = string.replace(line,"%NAND_REPO_USER%",NAND_REPO_USER)
-                line = string.replace(line,"%NAND_REPO_PASSWORD%",NAND_REPO_PASSWORD)
-                
-#                 print line
-                ser.send(line,blind=True)
-                ser.flush()
-                time.sleep(.4)
-        ser.send("EOF")
-        time.sleep(.4)
-        ser.flush()
-                
-    def copyFileToSerial(self, source, dest):
-        ser = self.deviceDescriptor.serialConnection
-        self.send(ser,"rm -f " + dest) #clear out old one so we can re-execute if need be
-        with open(source) as f:
-            for line in f:
-                line = line.rstrip() #get rid of newline
-                line = line.strip();
-                line = string.replace(line,"'","\'")
-                line = string.replace(line,"%NAND_REPO_USER%",NAND_REPO_USER)
-                line = string.replace(line,"%NAND_REPO_PASSWORD%",NAND_REPO_PASSWORD)
-                
-                print line
-                ser.send("echo '{0}' >> {1}".format(line,dest),blind=False)
-                ser.flush()
-                time.sleep(.4)
-
     @label("Logging in")
     @progress(10)
     @timeout(15)
@@ -112,25 +75,6 @@ class NandConfig(TestCase):
 
 
         
-    @label("Copy Scripts")
-    @progress(5)
-    @timeout(15)
-    def test_002_copyScripts(self):
-        ser = self.deviceDescriptor.serialConnection        
-        self.copyFileToSerial(BOOTSTRAP_SCRIPT, "/usr/sbin/bootstrap.sh")
-        ser.flush()
-        time.sleep(2)
-        self.send(ser,"chmod +x /usr/sbin/bootstrap.sh")
-        
-        ser.flush()
-    
-        self.copyFileToSerial(BOOTSTRAP_SERVICE, "/etc/systemd/system/bootstrap.service")
-        
-        self.copyFileToSerial(TEST_STRESS_SERVICE, "/etc/systemd/system/testStress.service")
-
-        self.send(ser,"systemctl enable bootstrap.service")
-        ser.flush()
-
 
     @label("Connect to wifi")
     @progress(5)
@@ -139,16 +83,86 @@ class NandConfig(TestCase):
         ser = self.deviceDescriptor.serialConnection
         ser.send(WIFI_DISCONNECT) #disconnect if alredy connected. Allows reflashing with a network already up
         connectionString = WIFI_CONNECT_FORMAT.format(TEST_FARM_SSID, TEST_FARM_PASSWORD)
-        conResult = ser.send(connectionString);
+        conResult = self.send(ser,connectionString);
         if  "ailed" in conResult:
             raise Exception("Could not connect")
         print conResult
 
 
+    @label("connect to wifi")
+    @progress(5)
+    @timeout(15)
+    def test_003_wifi(self):
+        ser = self.deviceDescriptor.serialConnection
+        ser.send(WIFI_DISCONNECT) #disconnect if alredy connected. Allows reflashing with a network already up
+        connectionString = WIFI_CONNECT_FORMAT.format(TEST_FARM_SSID, TEST_FARM_PASSWORD)
+        conResult = self.send(ser,connectionString);
+        if  "ailed" in conResult:
+            raise Exception("Could not connect")
+        print conResult
+        
+        
+    @label("apt-get update")
+    @progress(60)
+    @timeout(200)
+    def test_004_update(self):
+        ser = self.deviceDescriptor.serialConnection
+        self.send(ser,"apt-get update")
+        
+
+    @label("install packages")
+    @progress(60)
+    @timeout(60)
+    def test_005_git(self):
+        ser = self.deviceDescriptor.serialConnection
+        self.send(ser, "apt-get --yes --force-yes install git")
+        
+    @label("clone repo")
+    @progress(10)
+    @timeout(10)
+    def test_006_repo(self):
+        ser = self.deviceDescriptor.serialConnection
+        ser.send("rm -rf " + NAND_TEST_PROJECT) #in case of reflash, remove old one
+        cmd = NAND_TEST_REPO.format(NAND_REPO_USER,NAND_REPO_PASSWORD)
+        self.send(ser,cmd)
+        
+    @label("copy script to /user/sbin")
+    @progress(10)
+    @timeout(10)
+    def test_007_copyLogUart(self):
+        ser = self.deviceDescriptor.serialConnection
+        ser.send("cd " + NAND_TEST_PROJECT)
+        self.send(ser,"cp log-uart /usr/sbin/.")
+        self.send(ser,"chmod +x /usr/sbin/log-uart")
+
+    @label("copy udev file  to /user/sbin")
+    @progress(10)
+    @timeout(10)
+    def test_008_copyRules(self):
+        ser = self.deviceDescriptor.serialConnection
+        self.send(ser, "cp udev.rules /etc/udev/rules.d/10-testFixture.rules")
+
+
+    @label("reload udev rules")
+    @progress(10)
+    @timeout(10)
+    def test_009_reloadRules(self):
+        ser = self.deviceDescriptor.serialConnection
+        self.send(ser,"udevadm control --reload-rules")
+
+
+    @label("create logs dir")
+    @progress(10)
+    @timeout(10)
+    def test_010_reloadRules(self):
+        ser = self.deviceDescriptor.serialConnection
+        self.send(ser,"mkdir -p /srv/logs/")
+        self.send(ser,"chmod 777 /srv/logs")
+
     @label("change hostname")
     @progress(6)
     @timeout(15)
-    def test_004_hostname(self):
+    def test_011_hostname(self):
         #if all has gone well, set the hostname and write it and serial to a file
         ser = self.deviceDescriptor.serialConnection
         deviceId = self.deviceDescriptor.deviceId = ser.send("hostname")
@@ -177,7 +191,7 @@ class NandConfig(TestCase):
         else:
             hostnameCounter += 1;
         
-        newName = HOSTNAME_FORMAT.format(number);
+        newName = FIXTURE_HOSTNAME_FORMAT.format(number);
         deviceId = self.deviceDescriptor.deviceId
         
         self.logHostAndSerial(newName,self.deviceDescriptor.serialNumber )
@@ -191,29 +205,22 @@ class NandConfig(TestCase):
         self.send(ser,cmd2)
         ser.flush()
 
-
-    @label("add syslog server")
-    @progress(10)
-    @timeout(10)
-    def test_009_repo(self):
-        ser = self.deviceDescriptor.serialConnection
-        cmd = "echo '*.*   @@seshat.local:514' | tee -a /etc/rsyslog.conf"
-        self.send(ser,cmd);
-        ser.flush()
         
     @label("Disconnecting")
     @progress(10)
     @timeout(10)
-    def test_010_disconnect(self):
+    def test_011_disconnect(self):
         ser = self.deviceDescriptor.serialConnection
+        self.send(ser,"poweroff", blind=True)
         ser.flush()
         ser.close()
         self.deviceDescriptor.serialConnection = None
 
 
-    def send(self,ser,cmd):
-        ser.send(cmd)
+    def send(self,ser,cmd, blind=False):
+        result = ser.send(cmd)
         time.sleep(.4)
+        return result
     
 def main():
     tl = TestLoader()
