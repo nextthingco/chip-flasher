@@ -11,8 +11,8 @@ import re
 from pexpect import fdpexpect
 import pexpect
 
-COMMAND_PROMPT = r'.*((chip|TN_|FIX_)\d\d\d).*[$#] '
-COMMAND_PROMPT_REGEX = re.compile(r'.*((chip|TN_|FIX_)\d\d\d).*[$#] ')
+COMMAND_PROMPT = r'.*(chip|(TN_|FIX_)\d\d\d).*[$#] '
+COMMAND_PROMPT_REGEX = re.compile(r'.*(chip|(TN_|FIX_)\d\d\d).*[$#] ')
 COMMAND_DELIMETER = "END_COMMAND" # careful not to put any special REGEX chars in this string
 DELIMETER_NEW_LINE_REGEX = re.compile(COMMAND_DELIMETER +  r"\r\n")
 DELIMITER_NEW_LINE_COMMAND_PROMPT_REGEX = re.compile(COMMAND_DELIMETER + r"\r\n" + COMMAND_PROMPT)
@@ -123,7 +123,7 @@ class SerialConnection(object):
             sawLogin = False # if already saw login prompt, don't send a second one. This is because login message contains the word login:
             while True:
                 try:
-                    index = self.tty.expect_list([LOGIN_REGEX, PASSWORD_REGEX, UBOOT_REGEX, COMMAND_PROMPT_REGEX, pexpect.EOF, pexpect.TIMEOUT,LOGIN_INCORRECT], timeout=30)
+                    index = self.tty.expect_list([LOGIN_REGEX, PASSWORD_REGEX, UBOOT_REGEX, COMMAND_PROMPT_REGEX, pexpect.EOF, pexpect.TIMEOUT,LOGIN_INCORRECT], timeout=50)
                 except Exception, e:
                     print ("couldn't read, maybe timeout")
 #                     serialLog.exception(e)

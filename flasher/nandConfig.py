@@ -173,7 +173,7 @@ class NandConfig(TestCase):
         global hostnameCounter
         number = hostnameCounter
         if HOSTNAME_ADD_PORT:
-            number += (int(self.deviceDescriptor.uid) - 1) #-1 because ports start at 1
+            number += int(self.deviceDescriptor.uid)  #so, if the base were 100 and we are on port 7, we'd get 107
         else:
             hostnameCounter += 1;
         
@@ -206,13 +206,14 @@ class NandConfig(TestCase):
     @timeout(10)
     def test_010_disconnect(self):
         ser = self.deviceDescriptor.serialConnection
+        self.send(ser,"poweroff", blind=True)
         ser.flush()
         ser.close()
         self.deviceDescriptor.serialConnection = None
 
 
-    def send(self,ser,cmd):
-        ser.send(cmd)
+    def send(self,ser,cmd, blind=False):
+        result = ser.send(cmd,blind)
         time.sleep(.4)
     
 def main():

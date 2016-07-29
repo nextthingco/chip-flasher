@@ -60,8 +60,8 @@ SERIAL_NUMBER_COMMAND = "cat /proc/cpuinfo | grep Serial | awk '{print $3}'"
 HOSTNAME_SERIAL_FILE="hostnameSerial.log"
 HOSTNAME_FORMAT='TN_{:03d}'
 
-HOSTNAME_COUNTER = 1
-HOSTNAME_ADD_PORT = True
+HOSTNAME_COUNTER = 0 #this is used as the base number. If HOSTNAME_ADD_PORT is set below, then the port number will be added to this.
+HOSTNAME_ADD_PORT = True #This is used for keeping a specific id for each CHIP if they are already physically labeled. The port # (starting at 1) is added to hostname_counter
 NAND_TEST_PROJECT="CHIP-nandTests"
 NAND_TEST_REPO = "git clone https://{0}:{1}@github.com/NextThingCo/" + NAND_TEST_PROJECT + ".git"
 NAND_TEST_FORMAT = "bash startTest.sh {0}"

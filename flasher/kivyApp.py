@@ -37,8 +37,8 @@ from controller import Controller
 from databaseLogger import DatabaseLogger
 
 OSX_FONT = "/Library/Fonts/Arial Unicode.ttf"
-# UBUNTU_FONT = "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
-UBUNTU_FONT = "/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-B.ttf"
+UBUNTU_FONT = "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
+#UBUNTU_FONT = "/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-B.ttf"
 if os.path.isfile(OSX_FONT):
     FONT_NAME = OSX_FONT
 else:

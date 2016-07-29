@@ -187,7 +187,7 @@ class FixtureConfig(TestCase):
         global hostnameCounter
         number = hostnameCounter
         if HOSTNAME_ADD_PORT:
-            number += (int(self.deviceDescriptor.uid) - 1) #-1 because ports start at 1
+            number += int(self.deviceDescriptor.uid)
         else:
             hostnameCounter += 1;
         
@@ -218,7 +218,7 @@ class FixtureConfig(TestCase):
 
 
     def send(self,ser,cmd, blind=False):
-        result = ser.send(cmd)
+        result = ser.send(cmd,blind)
         time.sleep(.4)
         return result
     
