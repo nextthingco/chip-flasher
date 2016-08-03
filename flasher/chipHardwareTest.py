@@ -12,8 +12,8 @@ import io
 import serial
 from ui_strings import *
 
-LOGIN = 'root'
-PASSWORD = 'chip'
+LOGIN = 'outernet'
+PASSWORD = 'outernet'
 ALL_TESTS_PASSED_REGEX = re.compile(r'.*### ALL TESTS PASSED ###.*')
 
 dummy = DeviceDescriptor.makeDummy()
@@ -26,10 +26,10 @@ HW_ADDR_REGEX = re.compile(r"mac=([\da-fA-F:]{14})") #parse out the mac address
 #Note that 301 is for no device found.
 errorCodeMap = {
     "Turn on wlan0": 302,
-    "Turn on wlan1": 303,
+#    "Turn on wlan1": 303,
     "Hardware list": 304,
     "I2C bus 0": 305,
-    "I2C bus 1": 306,
+#    "I2C bus 1": 306,
     "I2C bus 2": 307,
     "testing AXP209 on I2C bus 0": 308,
     "GPIO expander test": 309,
@@ -73,7 +73,8 @@ class ChipHardwareTest(TestCase):
         d = 'something'
         while not len(d) == 0:
             d = sio.read(2000);
-            data += d
+            clean = re.sub('[^\040-\176]','',d) #remove non-printables
+            data += clean
             print '-' * 50
             print ' %d bytes read' % (len(data))
             print '-' * 50
@@ -82,9 +83,15 @@ class ChipHardwareTest(TestCase):
 
         while not prompt_found:
             d = sio.read(100);
-            data += d
+            clean = re.sub('[^\040-\176]','',d) #remove non-printables
+            data += clean
             print '-' * 50
             print ' %d bytes read' % (len(data))
+            print '-' * 50
+	    print 'scanning for %s' % prompt_to_wait_for
+            print '-' * 50
+	    #print data[:-1]
+            print 'lastchar: {'+data[-20:-1]+'}'
             print '-' * 50
             if(data[:-1].endswith(prompt_to_wait_for)):
                 sio.write(unicode(answer_to_write + '\n'))
@@ -125,11 +132,12 @@ class ChipHardwareTest(TestCase):
 
         #login
 
-        self.answer_prompt(sio, 'login:', 'root')
-        self.answer_prompt(sio, 'Password:', 'chip', False)
-        self.answer_prompt(sio, '#', HW_ADDR_CMD+ ' && hwtest') #easiest to chain together commands
+        self.answer_prompt(sio, 'login:', LOGIN)
+        self.answer_prompt(sio, 'Password:', PASSWORD, False)
+        #self.answer_prompt(sio, '.*\$', HW_ADDR_CMD+ ' && hwtest') #easiest to chain together commands
 
-#         self.answer_prompt(sio, '#', 'hwtest')
+        self.answer_prompt(sio, '$ [0', 'sudo hwtest', False)
+        self.answer_prompt(sio, 'Password:', PASSWORD, False)
         d = self.scanfor(sio, r'.*### [^#]+ ###.*', 'poweroff')
         ser.close()
 
