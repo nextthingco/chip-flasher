@@ -79,7 +79,7 @@ class ChipHardwareTest(TestCase):
             print ' %d bytes read' % (len(data))
             print '-' * 50
 
-        print data
+        #print data
 
         while not prompt_found:
             d = sio.read(100);
@@ -138,7 +138,7 @@ class ChipHardwareTest(TestCase):
 
         self.answer_prompt(sio, '$ [0', 'sudo hwtest', False)
         self.answer_prompt(sio, 'Password:', PASSWORD, False)
-        d = self.scanfor(sio, r'.*### [^#]+ ###.*', 'poweroff')
+        d = self.scanfor(sio, r'.*### [^#]+ ###.*', 'sudo poweroff')
         ser.close()
 
         self.hwAddr(d)
@@ -226,7 +226,7 @@ class ChipHardwareTest(TestCase):
         
     def setUp(self):
         self.progressObservers = []
-        self.removeExcludedTests()
+#        self.removeExcludedTests()
 #         self.returnValues['uncorrectableBitflips'] = -1
 #         self.returnValues['correctableBitflips'] = 0
 #         self.returnValues['stdDevCorrectableBitflips'] = 0
@@ -268,6 +268,7 @@ class ChipHardwareTest(TestCase):
         self.output += details
         if result != 0:
             self.errorCode = result  # store it away for later use
+            self.errorNumber = result  # store it away for later use
         self.assertEqual(0, result)
 
     @classmethod
