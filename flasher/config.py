@@ -45,8 +45,8 @@ BLACK_COLOR = [0, 0, 0, 1]
 # Checking bitflips on NAND... 0 49.9 1.64012
 
 MAX_UNCORRECTABLE_BITFLIPS = 0
-MAX_CORRECTABLE_BITFLIPS = 300
-MAX_STD_DEV_CORRECTABLE_BITFLIPS = 20
+MAX_CORRECTABLE_BITFLIPS = 400
+MAX_STD_DEV_CORRECTABLE_BITFLIPS = 30
 
 MAX_BAD_BLOCKS = 100 #max allowed bad blocks in chip hardware test
 #MIN_BBT_BLOCKS = 3 # the minimum number of blocks needed for the bad block tables (bbt)
