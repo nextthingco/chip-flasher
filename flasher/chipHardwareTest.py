@@ -20,6 +20,7 @@ dummy = DeviceDescriptor.makeDummy()
 
 CONNECT_TIME = 60
 FINE_SERIAL_TIME = 45
+BUSY_RETRIES = 60
 
 #These erroer codes correspond to the ERROR messages echoed by the hwtest.sh script
 #Note that 301 is for no device found. 
@@ -105,13 +106,21 @@ def scanfor(sio,regexp_to_scan_for,answer_to_write):
   return data
 
 
+def openSerialConnection(serial_port):
+    for attempt in range(1,BUSY_RETRIES):
+        try:
+            return serial.Serial(serial_port,115200, timeout=1);
+        except:
+            time.sleep(1)
+    raise Exception("No Serial device found: " + self.deviceDescriptor.serial)
 #------------------------------------------------------------------
 def test(serial_port):
 #------------------------------------------------------------------
 
   print 'reading from %s:' % serial_port
 
-  ser = serial.Serial(serial_port,115200, timeout=1);
+  ser = openSerialConnection(serial_port)
+
   sio = io.TextIOWrapper(io.BufferedRWPair(ser,ser))
 
   #login
