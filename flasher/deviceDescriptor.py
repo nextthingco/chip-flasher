@@ -1,7 +1,8 @@
 import re
 from collections import OrderedDict
 import os.path
-UDEV_REGEX = re.compile(ur'.*KERNELS.*\"(.*)\".*ATTRS\{idVendor}.*\"(.*)\".*ATTRS\{idProduct\}.*\"(.*)\".*SYMLINK.*\"(.*)\"')
+# UDEV_REGEX = re.compile(ur'.*KERNELS.*\"(.*)\".*ATTRS\{idVendor}.*\"(.*)\".*ATTRS\{idProduct\}.*\"(.*)\".*SYMLINK.*\"(.*)\"')
+UDEV_REGEX = re.compile(ur'.*KERNELS.*\"(.*)\".*ATTRS\{idVendor}.*\"(.*)\".*ATTRS\{idProduct\}.*\"(.*)\".*GROUP.*\".*\".*MODE.*\".*\".*SYMLINK.*\"(.*)\"')
 SYMLINK_REGEX = re.compile(r".*chip-(.*)-(.*)-(.*)")
                            
 NAME_FROM_UDEV_REGEX = re.compile(r".*chip-(.*)-usb")
@@ -13,6 +14,7 @@ class DeviceDescriptor:
     DEVICE_FEL = 1
     DEVICE_FASTBOOT = 2
     DEVICE_SERIAL = 3
+    DEVICE_ETHERNET = 5
     DEVICE_WAITING_FOR_FASTBOOT = 4
     def __init__(self, uid, hub, kernel, vendor, product, type): #store off all values for convenience
         self.uid = uid
@@ -24,6 +26,7 @@ class DeviceDescriptor:
         self.fel = None
         self.fastboot = None
         self.serial = None
+        self.ethernet = None
         self.serialConnection = None #used when accessing device as a serial gadget
         self.widgetInfo = {} #widgets in GUI
     
@@ -93,8 +96,12 @@ class DeviceDescriptor:
                         descriptor.fel = device
                     elif vendor == '1f3a' and product == '1010':
                         descriptor.fastboot = device
+                    elif vendor == "0525" and product == 'a4aa':
+                        descriptor.serial = device
                     elif vendor == "0525" and product == 'a4a7':
                         descriptor.serial = device
+                    elif vendor == "2dfe" and product == 'beef':
+                        descriptor.ethernet = device
                     
                     if not hub in hubs: #add to hub list
                         hubs.append(hub)

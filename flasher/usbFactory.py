@@ -15,8 +15,10 @@ def symlinkToBusAddress(symlink):
     '''
     Search udev for the symlink, returning the bus and device numbers. returns None if not found
     '''
+    if not symlink.startswith('/dev/'):
+        symlink = '/dev/' + symlink
     try:
-        dev = pyudev.Devices.from_device_file(udevContext, '/dev/' + symlink) #will throw if not found
+        dev = pyudev.Devices.from_device_file(udevContext, symlink) #will throw if not found
     except:
         return None
     nodes = dev.device_node.split('/')

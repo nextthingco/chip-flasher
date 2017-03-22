@@ -20,7 +20,10 @@ class UdevMaker(object):
         self.win = win
         self.families = [['FEL Mode', 'usb', '1f3a', 'efe8', 'fel'],
                          ['Fastboot Mode', 'usb', '1f3a', '1010', 'fastboot'],
-                         ['Serial Gadget Mode', 'tty', '0525', 'a4a7', 'serial']]
+                         ['Serial Gadget Mode', 'tty', '0525', 'a4a7', 'serial'],
+                         ['Serial Gadget Mode 4.4', 'tty', '0525', 'a4aa', 'serial'],
+                         ['Ethernet Gadget', 'tty', '2dfe', 'beef', 'ethernet']
+                         ]
 
     def findDevice(self):
         lsusb = subprocess.Popen(
@@ -119,7 +122,7 @@ class UdevMaker(object):
                 for dev in devs:
                     subsystem_label = "SUBSYSTEM" if family[1] == "tty" else "SUBSYSTEMS"
                     rulesFile.write(
-                        '{0}=="{1}",  KERNELS=="{2}",   ATTRS{{idVendor}}=="{3}", ATTRS{{idProduct}}=="{4}",   SYMLINK+="chip-{5}-{6}-{7}"\n'.format(
+                        '{0}=="{1}",  KERNELS=="{2}",   ATTRS{{idVendor}}=="{3}", ATTRS{{idProduct}}=="{4}", GROUP="plugdev", MODE="0660", SYMLINK+="chip-{5}-{6}-{7}"\n'.format(
                             subsystem_label, family[1], dev['dev'], family[2], family[3], dev['port'], dev['hub'], family[4]
                             )
                         )
