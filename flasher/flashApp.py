@@ -37,13 +37,18 @@ from chp_controller import ChpController
 from databaseLogger import DatabaseLogger
 
 OSX_FONT = "/Library/Fonts/Arial Unicode.ttf"
+
+#Need this to get right font
+# wget http://ftp.us.debian.org/debian/pool/main/f/fonts-android/fonts-droid_4.4.4r2-6_all.deb
+# dpkg -i fonts*.deb
 UBUNTU_FONT = "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
+ 
 if os.path.isfile(OSX_FONT):
     FONT_NAME = OSX_FONT
 else:
     FONT_NAME = UBUNTU_FONT
 
-
+print FONT_NAME
 log = LogManager.get_global_log()
 
 
@@ -54,10 +59,10 @@ class FlashApp(App):
         super(FlashApp, self).__init__()
         self.progressQueue = Queue()
         self.stateListeners = []
-        chpFileName = '/home/howie/Downloads/stable-chip-pro-blinkenlights-b1-Toshiba_512M_SLC.chp'
 #         chpFileName = '/home/howie/Downloads/stable-gui-b149-nl-Hynix_8G_MLC.chp' #TODO get from config file
+        self.databaseLogger = DatabaseLogger()
 
-        self.controller = ChpController(self.progressQueue, chpFileName, log)
+        self.controller = ChpController(self.progressQueue, CHP_FILE_NAME, self.databaseLogger, log)
         Clock.schedule_interval(lambda x: self.processProgressQueue(x), 0.1)
         
 #         self.kivyUpdateTrigger = Clock.create_trigger(self._onUpdateTrigger.__get__(
@@ -67,16 +72,16 @@ class FlashApp(App):
 
     def build(self):
         self.controller.createProcesses()
-        self.databaseLogger = DatabaseLogger()
+        fileInfo = self.controller.getFileInfo()
         self.view = FlashView(deviceDescriptors=self.controller.deviceDescriptors,
-                             hubs=self.controller.hubs, fileInfo=self.controller.getFileInfo(),databaseLogger = self.databaseLogger)
+                             hubs=self.controller.hubs, fileInfo=fileInfo,databaseLogger = self.databaseLogger)
         # observe button events if GUI
         self.view.addMainButtonListener(
             self._onMainButton.__get__(self, FlashApp))
         self.view.controller = self.controller
         self.addStateListener(lambda info: self.view.onUpdateStateInfo(info))
         self.addStateListener(lambda info: self.databaseLogger.onUpdateStateInfo(info))
-        self.title = "Flasher v2"
+        self.title = "Flashing " + CHP_FILE_NAME
         return self.view
 
     def addStateListener(self,listener):
@@ -94,7 +99,8 @@ class FlashApp(App):
             progress = self.progressQueue.get()
             for listener in self.stateListeners:
                 listener(progress)
-            
+        
+        self.controller.checkForCallsFromChild()
 
     def on_stop(self):
         '''
@@ -110,7 +116,8 @@ class FlashApp(App):
         Handle button clicks on id column as triggers to do something
         :param button:
         '''
-        pass
+        self.controller.onTriggerDevice(button.id)
+
 
 class BoxStencil(BoxLayout, StencilView):
     pass
@@ -151,10 +158,6 @@ class FlashView(BoxLayout):
         flashStatsButton = Button(text="Flash Stats")
         buttonGrid.add_widget(flashStatsButton)
         flashStatsButton.bind(on_press=lambda button: self._stats("Flasher"))
-
-        hwStatsButton = Button(text="HW Test Stats")
-        buttonGrid.add_widget(hwStatsButton)
-        hwStatsButton.bind(on_press=lambda button: self._stats("ChipHardwareTest"))
 
         browseStatsButton = Button(text="Browse Stats")
         buttonGrid.add_widget(browseStatsButton)
@@ -262,20 +265,22 @@ class FlashView(BoxLayout):
         output = info.get('output')
 
         widgets = self.widgetsMap[uid]
-        if state:
+        
+        #checks below explicitly compare to None because empty string and 0 are important values
+        if state is not None:
             color = self._stateToColor[state]
             widgets.setColor(color)
 
-        if stateLabel:
+        if stateLabel is not None:
             widgets.stateLabel.text = stateLabel
 
-        if label:
+        if label is not None:
             widgets.label.text = label
 
-        if progress:
+        if progress is not None: #0 is a real value
             widgets.progress.value = progress
 
-        if output:
+        if output is not None:
             widgets.output = output
             # if the output detail is showing this output, it will be updated
             self._onShowOutput(None, uid)

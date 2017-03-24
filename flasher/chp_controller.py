@@ -9,7 +9,7 @@ from chp_flash import ChpFlash
 from deviceDescriptor import DeviceDescriptor
 from config import *
 import time
-from pprint import pprint
+from pprint import pprint, pformat
 
 def flash(progressQueue, connectionFromParent, args):
     flasher = ChpFlash(progressQueue, connectionFromParent, args)
@@ -24,32 +24,59 @@ class ProcessDescriptor(object):
         self.child_conn = child_conn
         
 class ChpController(object):
-    __slots__ = ('fileInfo', 'progressQueue', 'chpFileName', 'log', 'processDescriptors', 'deviceDescriptors', 'hubs', 'progressQueue') #using slots prevents bugs where members are created by accident
-    def __init__( self, progressQueue, chpFileName, log = None):
+    __slots__ = ('fileInfo', 'progressQueue', 'chpFileName', 'databaseLogger', 'log', 'processDescriptors', 'deviceDescriptors', 'hubs', 'progressQueue') #using slots prevents bugs where members are created by accident
+    def __init__( self, progressQueue, chpFileName, databaseLogger, log = None):
         self.progressQueue = progressQueue
         self.chpFileName = chpFileName
+        self.databaseLogger = databaseLogger
         self.log = log
         self.processDescriptors = OrderedDict()
         self.deviceDescriptors, self.hubs = DeviceDescriptor.readRules(UDEV_RULES_FILE, SORT_DEVICES, SORT_HUBS)
         self.fileInfo = None
         
     def getFileInfo(self):
-        return self.chpFileName
+        if not self.fileInfo:
+            self.fileInfo = "File: " + self.chpFileName
+            manifest = ChpFlash(None,None,{'chpFileName': self.chpFileName}).readManifest()
+            self.fileInfo += '\nManifest: ' + pformat(manifest,width=1)
+            
+        return self.fileInfo
             
     def createProcesses(self):
         for uid,dev in self.deviceDescriptors.iteritems():
-            if AUTO_START_ON_DEVICE_DETECTION:
-                parent_conn = child_conn = None
-            else:
-                parent_conn, child_conn = Pipe() #if using button push, then will send start trigger through pipe
+            parent_conn, child_conn = Pipe() #if using button push, then will send start trigger through pipe
             args = {'chpFileName': self.chpFileName, 'deviceDescriptor': dev}
             processDescriptor = self.processDescriptors[uid] = ProcessDescriptor(dev, parent_conn, child_conn)
             processDescriptor.process = Process(target = flash, args = (self.progressQueue, child_conn, args))
             processDescriptor.process.start()
+            
+    def checkForCallsFromChild(self):
+        for proc in self.processDescriptors.itervalues():
+            while proc.parent_conn.poll(): #check for requests from child
+                call = proc.parent_conn.recv()
+                
+                findChipId = call.get('findChipId')
+                if findChipId:
+                    data = self.databaseLogger.find(findChipId)
+                    proc.parent_conn.send({'findChipId':data})
     
     def joinAll(self):
         for processDescriptor in self.processDescriptors.itervalues():
-            processDescriptor.process.join()  
+            processDescriptor.process.join()
+        
+    def getStatsQueries(self,suiteName,where=None):
+        return ChpFlash.getStatsQueries(where)
+    
+    def onTriggerDevice(self,uid):
+        if CLICK_TRIGGERS_ALL:
+            procs = self.processDescriptors #going to send event to all of them
+        else:
+            procs = {uid: self.processDescriptors.get(uid)}
+            
+        for processDescriptor in procs.itervalues():
+            if processDescriptor.child_conn:
+                processDescriptor.parent_conn.send('start')
+
 
 def main():
     progressQueue = Queue() #multiprocessing version of queue

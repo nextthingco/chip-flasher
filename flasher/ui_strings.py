@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-UI_WAITING_FOR_DEVICE= u"Waiting for Device\n等待连接"
+UI_WAITING_FOR_DEVICE= u"Searching for Device\n等待连接"
 UI_LOGIN = u"Login\n登录"
 UI_HARDWARE_TEST = u"Hardware Test\n硬件测试"
 UI_POWERING_OFF = u"Powering off\n正在关机"
@@ -20,6 +20,7 @@ PAUSED_TEXT= u"Paused\n暂停"
 RUNNING_TEXT= u"Running\n运行中"
 FLASHING_TEXT= u"Flashing\n正在烧录固件"
 TESTING_TEXT= u"Testing\n测试中"
+
 
 PASS_TEXT= u"PASS\n通过"
 FAIL_TEXT= u"FAIL\n失败"

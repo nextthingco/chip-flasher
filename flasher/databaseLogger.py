@@ -7,17 +7,20 @@ from subprocess import Popen
 from collections import OrderedDict
 # from flasher import Flasher
 from config import *
+from pprint import pprint
 from runState import RunState
 from datetime import datetime, date
-
+from chp_flash import ChpFlash
+import itertools
 get_class = lambda x: globals()[x]
 
 class DatabaseLogger():
     COMMON_COLUMNS = [
-        ['chipId','TEXT'], #id of the CHIP from a barcode/QR code on the chip itself
+        ['chipId','TEXT','PRIMARY KEY'], #id of the CHIP from a barcode/QR code on the chip itself
         ['timestamp', 'TIMESTAMP'],   #time when test finished
         ['result', 'INTEGER'], # 1 for pass, 0 for fail
         ['error', 'INTEGER'],  #error code
+        ['attempts', 'INTEGER'],  #how many tries
         ['elapsedTime', 'INTEGER'], #how long it took in seconds
         ['port', 'TEXT'], #the name (number) of the port
         ['computer', 'TEXT'], #hostname
@@ -97,7 +100,7 @@ class DatabaseLogger():
         if hasattr(suiteClass,'statsTableColumns'):
             cols.extend(suiteClass.statsTableColumns())
 
-        formattedColumns = ', '.join(item[0] + ' ' + item[1] for item in cols) #make a comma separated string of space-separated fields
+        formattedColumns = ', '.join(' '.join(item) for item in cols) #make a comma separated string of space-separated fields
         return formattedColumns
 
     def _createTableIfNeeded(self,suiteClass):
@@ -107,40 +110,64 @@ class DatabaseLogger():
             self.con.commit()
         except Exception,e:
             print e
+    
+    def find(self, chipId):
+        findQuery = "SELECT * FROM {0} WHERE chipId='{1}'".format(ChpFlash.statsTableName(),chipId)
+        self.con.row_factory = sql.Row
+        cur = self.con.cursor()
+        cur.execute(findQuery)
+        row = cur.fetchone()
+        if row:
+            rowDict = dict(itertools.izip(row.keys(), row))
+            pprint(rowDict)
+            return rowDict
+        else:
+            return None
 
 
     def onUpdateStateInfo(self, info):
         '''
-        Observer callback from main thread. See Controller for details on params
+        Observer callback from main
         '''
         if not self.con: #no database connection, so ignore
             return
-        state = info.get('state')
+        state = info.get('runState')
         if not state in [RunState.PASS_STATE, RunState.FAIL_STATE]: #skip non ending states
             return
-        suiteClass = info.get('suiteClass')
+        suiteClass = ChpFlash
         if not suiteClass or not hasattr(suiteClass,'statsTableName'): #ignore if this test doesnt have a db table
             return
 
         uid = info['uid']
-        state = info.get('state')
-        errorNumber = info.get('errorNumber')
+        state = info.get('runState')
+        errorNumber = info.get('errorNumber') or 0
         returnValues = info.get('returnValues')
         elapsedTime = info.get('elapsedTime')
         chipId = info.get('chipId')
+            
         self._createTableIfNeeded(suiteClass)
         fields = []
         for field in self.COMMON_COLUMNS:
             fields.append(field[0])
+
+        attempts = 0
+        row = self.find(chipId)
+        if row:
+            attempts = int(row['attempts'])
+        attempts += 1
+
         values = ["'" + str(chipId) + "'", #chipId
                   "'" + str(datetime.fromtimestamp(time.time())) + "'", #timestamp
                   '1' if state == RunState.PASS_STATE else '0', #result
                   str(errorNumber), #error
+                  str(attempts),
                   str(elapsedTime), #elapsed
                   "'" + str(uid) + "'", #port
                   "'" + self.hostName + "'", #computer
                   "'" + RUN_NAME + "'"
                 ]
+
+        
         #now add in any fields and values from the dictionary for the specific test
         if hasattr(suiteClass,'statsTableColumns'):
             for col in suiteClass.statsTableColumns():
@@ -156,9 +183,9 @@ class DatabaseLogger():
 #         print fields
 #         print values
 
-        query = 'INSERT INTO {0} ({1}) VALUES ({2})'.format(suiteClass.statsTableName(),','.join(fields),','.join(values))
-        print "Writing to database:\n"
-        print query
+        query = 'INSERT OR REPLACE INTO {0} ({1}) VALUES ({2})'.format(suiteClass.statsTableName(),','.join(fields),','.join(values))
+#         print "Writing to database:\n"
+#         print query
         try:
             self.con.execute(query)
             self.con.commit()

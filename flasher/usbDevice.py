@@ -10,92 +10,26 @@ from struct import unpack, pack
 from collections import namedtuple
 import time
 from usbFactory import symlinkToBusAddress
-from pprint import pprint, pformat
+from pprint import pprint
 import datetime
 from math import floor
 from multiprocessing import Process, Queue, Pipe
 from ui_strings import *
 from runState import RunState
 import traceback
-from config import VERBOSE, AUTO_START_ON_DEVICE_DETECTION
-from fel import getSerialNumber
-MAGIC_COMMAND = 0
-COMMENT_COMMAND = 1
-READ_COMMAND = 2
-WRITE_COMMAND = 3
-USLEEP_COMMAND = 4
-MANIFEST_COMMAND = 5
-FEL_WRITE_COMMAND = 6
-FEL_READ_COMMAND = 7
-FEL_EXE_COMMAND = 8
+from config import VERBOSE
 
 
-FEL_VENDOR_ID=0x1f3a
-FEL_PRODUCT_ID=0xefe8
-FASTBOOT_VENDOR_ID=0x1f3a
-FASTBOOT_PRODUCT_ID=0x1010
-
-# crunch's ethernet gadget is 2dfe:beef
-POLLING_TIMEOUT = 20 #in seconds
 USB_TIMEOUT = 0; # 0 is unlimited
 
 CHIP_USB_INTERFACE = 0
 
-DONT_SEND_FASTBOOT_CONTINUE = True
-USB_WRITE_ATTEMPTS = 3
-USB_WRITE_RETRY_DELAY = 1
-
-FASTBOOT_RESULT_LENGTH=64
-FASTBOOT_OK_RESPONSE = 'OKAY'
-
-
-# typedef struct CommandHeader {
-#     unsigned int argument; // put this first in case of it being a magic number
-#     unsigned char command;
-#     unsigned char compressed;
-#     unsigned char version;
-#     unsigned char reserved; // for future use
-#     unsigned int dataLength;
-# } CommandHeaderType;
-COMMAND_HEADER_TYPE_FMT = '<IBBBBI'
-SIZEOF_HEADER = 12
-CommandHeaderType = namedtuple('Header', 'argument command compressed version reserved dataLength')
-def extract_header(record):
-    return CommandHeaderType._make(unpack(COMMAND_HEADER_TYPE_FMT, record))
-    
-
-usleep = lambda x: time.sleep(x/1000000.0)
-
-class FlashException(Exception):
-    def __init__(self,*args,**kwargs):
-        Exception.__init__(self,*args,**kwargs)
-
-dumpCount = 0
-def dump(buf):
-    res = ''
-    for c in buf:
-        res += "{:02x}".format(ord(c))
-    return res
-
-def dumps(buf):
-    res = ''
-    for c in buf:
-        res += "{:02x}".format(c)
-    return res
-        
-class ChpFlash(object):
-    __slots__ = ('progressQueue', 'connectionFromParent', 'deviceDescriptor','chpFileName','device','inEp','outEp', 'serialNumber', 'output') #using slots prevents bugs where members are created by accident
+class UsbDevice(object):
+    __slots__ = ('dev', 'inEp','outEp') #using slots prevents bugs where members are created by accident
     def __init__(self, progressQueue, connectionFromParent, args):
-#     deviceDescriptor, chpFileName):
-        self.progressQueue = progressQueue
-        self.connectionFromParent = connectionFromParent
-        self.deviceDescriptor = args.get('deviceDescriptor') #optional if just reading manifest
-        self.chpFileName = args['chpFileName']
-        self.device = None
+        self.dev = None
         self.inEp = None
         self.outEp = None
-        self.serialNumber = None
-        self.output = ''
     
     def findEndpoints(self, dev):
         dev.set_configuration()
@@ -179,16 +113,9 @@ class ChpFlash(object):
             self.serialNumber = None
         else:
             self.serialNumber = result[len(FASTBOOT_OK_RESPONSE):]
-            self.connectionFromParent.send({'findChipId':self.serialNumber})
-            result = self.connectionFromParent.recv()
-            if result:
-                dataDict = result['findChipId']
-                if dataDict:
-                    self.output += '\n' + pformat(dataDict)
-                else:
-                    self.output += '\n' + "First Flash"
-            else:
-                print "shouldn't happen"
+        
+    
+#         self.usbWrite('getvar:serialNo')
 
     def processComment(self, data):
         if VERBOSE:
@@ -227,24 +154,15 @@ class ChpFlash(object):
         return True
 
     def usbRead(self, dataLength):
-        result = self.inEp.read(dataLength, USB_TIMEOUT)
-        global dumpCount
-        dumpCount = dumpCount+1
-        print '{}--- usbRead({}) = {}'.format(dumpCount, dataLength, dumps(result))
-        return result
+        return self.inEp.read(dataLength, USB_TIMEOUT)
         
     def usbReadString(self,dataLength):
         resultBuffer = self.usbRead(dataLength) # raw read, not comparing result
         return ''.join((chr(c) for c in resultBuffer)) #convert the buffer into a string using a generator comprehension
 
     def usbWrite(self, data, dataLength = None):
-        global dumpCount
-        dumpCount = dumpCount+1
         if dataLength is None:
             dataLength = len(data)
-        
-        print '{}--- usbWrite({},{})'.format(dumpCount,dataLength, dump(data))
-    
         return self.outEp.write(data, USB_TIMEOUT)
 
     def read(self):
@@ -299,16 +217,16 @@ class ChpFlash(object):
         stage = WAITING_TEXT
         state = WAITING_TEXT
         self.serialNumber = None
-        self.output=''
-        self.notifyProgress({'progress': 0, 'runState': RunState.PASSIVE_STATE, 'stage': stage, 'state': state, 'output':self.output})
+        output=''
+        self.notifyProgress({'progress': 0, 'runState': RunState.PASSIVE_STATE, 'stage': stage, 'state': state, 'output':output})
         self.waitForStartTrigger() #This may just fall through if not using a button trigger
 
         
         startTime = time.time()
         stage = UI_WAITING_FOR_DEVICE
         state = RUNNING_TEXT
-        self.output = 'Start: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
-        self.notifyProgress({'runState': RunState.ACTIVE_STATE, 'state': state, 'stage':stage, 'output':self.output})
+        output = 'Start: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+        self.notifyProgress({'runState': RunState.ACTIVE_STATE, 'state': state, 'stage':stage, 'output':output})
         totalBytes = 0
         processedBytes = 0
         percentComplete = 0
@@ -325,8 +243,8 @@ class ChpFlash(object):
                     pid = header.argument & 0xffff
                     vid = header.argument >> 16
                     if self.isNewState(vid, pid):
-                        self.output += '\nWaiting for USB Device {:02x}:{:02x}'.format(vid, pid)
-                        self.notifyProgress({'output':self.output})
+                        output += '\nWaiting for USB Device {:02x}:{:02x}'.format(vid, pid)
+                        self.notifyProgress({'output':output})
                     self.waitForState(vid, pid)
                     if state is not FLASHING_TEXT: #if we got here, then we're about to start writing data
                         state = FLASHING_TEXT
@@ -339,11 +257,11 @@ class ChpFlash(object):
                         newStage, errorNumber = self.processComment(data)
                         if DONT_SEND_FASTBOOT_CONTINUE and newStage is PASS_TEXT:
                             done = True
-                            self.output += '\n'+ data + "\nDone (continue ignored to avoid booting)"
-                        else:  #newStage is not stage:
-                            self.output += '\n' + data
+                            output += '\n'+ data + "\nDone (continue ignored to avoid booting)"
+                        elif newStage is not stage:
+                            output += '\n' + data
                             stage = newStage
-                            self.notifyProgress({'stage': stage,'output':self.output})
+                            self.notifyProgress({'stage': stage,'output':output})
                     elif cmd == READ_COMMAND:
                         self.usbReadAndVerify(data, dataLength)
                     elif cmd == WRITE_COMMAND:
@@ -368,15 +286,15 @@ class ChpFlash(object):
             if VERBOSE:
                 print "exception",repr(e)
                 traceback.print_exc()
-            self.output += '\n' + repr(e)
-            self.output += '\n' + traceback.format_exc(e)
-            self.output += "\nProcessed {} bytes of {}".format(processedBytes, totalBytes)
-            self.notifyProgress({'runState': RunState.FAIL_STATE, 'errorNumber': errorNumber, 'state': FAIL_TEXT, 'output': self.output, 'elapsedTime':elapsedTime, 'chipId': self.serialNumber, 'returnValues':{'image':self.chpFileName}})
+            output += '\n' + repr(e)
+            output += '\n' + traceback.format_exc(e)
+            output += "\nProcessed {} bytes of {}".format(processedBytes, totalBytes)
+            self.notifyProgress({'runState': RunState.FAIL_STATE, 'errorNumber': errorNumber, 'state': FAIL_TEXT, 'output': output, 'elapsedTime':elapsedTime, 'chipId': self.serialNumber, 'returnValues':{'image':self.chpFileName}})
         else:
             elapsedTime = time.time() - startTime
 
-            self.output += '\nTotal Time {}'.format(datetime.timedelta(seconds=elapsedTime))
-            self.notifyProgress({'runState': RunState.PASS_STATE,'stage': stage, 'output': self.output, 'elapsedTime':elapsedTime ,'chipId': self.serialNumber, 'returnValues':{'image':self.chpFileName}}) #eventually write manifest too
+            output += '\nTotal Time {}'.format(datetime.timedelta(seconds=elapsedTime))
+            self.notifyProgress({'runState': RunState.PASS_STATE,'stage': stage, 'output': output, 'elapsedTime':elapsedTime ,'chipId': self.serialNumber, 'returnValues':{'image':self.chpFileName}}) #eventually write manifest too
         finally:
             self.releaseDevice()
         return True
@@ -387,7 +305,7 @@ class ChpFlash(object):
             self.progressQueue.put(progress)
     
     def waitForStartTrigger(self):
-        if not AUTO_START_ON_DEVICE_DETECTION: #if parent sends messages to start... flashing below is allowed fail waiting for FEL
+        if self.connectionFromParent: #if parent sends messages to start... flashing below is allowed fail waiting for FEL
             while self.connectionFromParent.poll(): # clear out any pending stuff
                 self.connectionFromParent.recv()
             self.connectionFromParent.recv() #now block until a message
