@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
 Terminal=false
-Name=chip-flasher
+Name=chip-pro-flasher
 Icon=/home/ntc/Desktop/CHIP-flasher/logo.png
-Exec=/home/ntc/Desktop/CHIP-flasher/gui.sh
+Exec=/home/ntc/Desktop/CHIP-flasher/pro.sh

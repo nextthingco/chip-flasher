@@ -1,6 +1,4 @@
 #!/bin/bash
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-DISPLAY=:0 sudo python -m ${DIR}/web/webapp
-
-#python -m web/webapp
+DISPLAY=:0 kivy ${DIR}/flasher/flashApp.py

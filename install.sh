@@ -45,27 +45,8 @@ function install_linux {
         install_package python-pip \
                         python-dev
     fi
-    if [[ -z "$( which gcc )" ]]; then
-        install_package build-essential
-    fi
-    if [[ -z "$( which mkimage )" ]]; then
-        install_package u-boot-tools
-    fi
     if [[ -z "$(which git)" ]]; then
         install_package git
-    fi
-    if [[ -z "$(which gksu)" ]]; then
-        install_package gksu
-    fi
-    if [[ -z "$(which fastboot)" ]]; then
-        install_package android-tools-fastboot
-    fi
-    if [[ -z "$(which img2simg)" ]]; then
-        install_package android-tools-fsutils
-    fi
-    if [[ -z "$( which pkg-config )" ]]; then
-        install_package pkg-config
-        install_package libusb-1.0-0-dev
     fi
     if [[ -z "$( which sqlitebrowser )" ]]; then
         install_package sqlitebrowser
@@ -82,20 +63,11 @@ function install_linux {
         install_package python-kivy
         sudo ln -s /usr/bin/python2.7 /usr/local/bin/kivy
     fi
-    if [[ -z "$( ${PIP} show pyserial)" ]]; then
-        ${PIP} install pyserial || error "could not install pyserial!"
-    fi
     if [[ -z "$( ${PIP} show libusb1)" ]]; then
         ${PIP} install libusb1 || error "could not install libusb1!"
     fi
-    if [[ -z "$( ${PIP} show flask)" ]]; then
-        ${PIP} install flask || error "could not install flask!"
-    fi
-    if [[ -z "$( ${PIP} show flask-socketio)" ]]; then
-        ${PIP} install flask-socketio || error "could not install flask-socketio!"
-    fi
-    if [[ -z "$( ${PIP} show eventlet)" ]]; then
-        ${PIP} install eventlet || error "could not install eventlet!"
+	if [[ -z "$( ${PIP} show pyudev)" ]]; then
+		${PIP} install pyudev || error "could not install pyudev!"
     fi
 
 }
@@ -104,93 +76,23 @@ function install_linux {
 function install_flasher {
 	HOMEDIR="$(eval echo "~${SUDO_USER}")"
 	if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher" ]]; then
-		git clone --branch=production https://github.com/NextThingCo/CHIP-flasher $HOMEDIR/Desktop/CHIP-flasher
+		git clone --branch=pro-beta https://github.com/NextThingCo/CHIP-flasher $HOMEDIR/Desktop/CHIP-flasher
 	else
 		pushd $HOMEDIR/Desktop/CHIP-flasher
 		git pull
 		popd
 	fi
-	if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher/tools" ]]; then
-		git clone --branch=chip/next https://github.com/NextThingCo/CHIP-tools $HOMEDIR/Desktop/CHIP-flasher/tools
-	else
-		pushd $HOMEDIR/Desktop/CHIP-flasher/tools
-		git pull
-		popd
-	fi
 
-	# if [[ ! -d "Desktop/CHIP-flasher/testjig" ]]; then
-	# 	git clone https://github.com/NextThingCo/ChipTestJig Desktop/CHIP-flasher/testjig
-	# else
-	# 	pushd Desktop/CHIP-flasher/testjig
-	# 	git pull
-	# 	popd
-	# fi
-	if [[ ! -f "$HOMEDIR/Desktop/CHIP-flasher/sunxi-tools/fel" ]]; then
-		if [[ ! -d "$HOMEDIR/Desktop/CHIP-flasher/sunxi-tools" ]]; then
-			git clone https://github.com/nextthingco/sunxi-tools $HOMEDIR/Desktop/CHIP-flasher/sunxi-tools
-		fi
-		make -C $HOMEDIR/Desktop/CHIP-flasher/sunxi-tools fel
-		ln -s "$HOMEDIR/Desktop/CHIP-flasher/sunxi-tools/fel" /usr/local/bin/fel
-	fi
 	if [[ "$(uname)" == "Linux" ]]; then
 		HOMEDIR="$(eval echo "~${SUDO_USER}")"
 		SCRIPTDIR="$HOMEDIR/Desktop/CHIP-flasher" #/flasher"
 		sed -i.bak "s%^\(Icon=\).*%\1${SCRIPTDIR}/logo.png%" $SCRIPTDIR/chip-flasher.desktop
-		sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/startFlash.sh%" $SCRIPTDIR/chip-flasher.desktop
+		sed -i.bak "s%^\(Exec=\).*%\1${SCRIPTDIR}/pro.sh%" $SCRIPTDIR/chip-flasher.desktop
 		cp ${SCRIPTDIR}/chip-flasher.desktop ${HOMEDIR}/Desktop
 		chown $(logname):$(logname) ${HOMEDIR}/Desktop/chip-flasher.desktop
         chown -R $(logname):$(logname) ${SCRIPTDIR}
 		usermod -a -G dialout "${SUDO_USER}"
 		usermod -a -G dialout "${SUDO_USER}"
-
-		cat <<-EOF | sudo tee /etc/udev/rules.d/flasher.rules
-			# FEL Mode
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.3",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-1-1-fel"
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.4",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-2-1-fel"
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.1",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-3-1-fel"
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.2.3",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-4-1-fel"
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.2.4",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-5-1-fel"
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.2.1",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-6-1-fel"
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.2.2",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-7-1-fel"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.2.3",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-8-2-fel"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.2.1",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-9-2-fel"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.2.4",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-10-2-fel"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.4",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-11-2-fel"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.2.2",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-12-2-fel"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.1",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-13-2-fel"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.3",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="efe8",       SYMLINK+="chip-14-2-fel"
-			# Fastboot Mode
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.3",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-1-1-fastboot"
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.4",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-2-2-fastboot"
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.1",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-3-2-fastboot"
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.2.3",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-4-2-fastboot"
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.2.4",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-5-2-fastboot"
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.2.1",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-6-2-fastboot"
-			SUBSYSTEMS=="usb",      KERNELS=="1-1.2.2",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-7-2-fastboot"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.3",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-8-2-flashboot"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.4",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-9-2-flashboot"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.1",       ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-10-2-flashboot"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.2.3",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-11-2-flashboot"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.2.4",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-12-2-flashboot"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.2.1",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-13-2-flashboot"
-			SUBSYSTEMS=="usb",      KERNELS=="1-2.2.2",     ATTRS{idVendor}=="1f3a",        ATTRS{idProduct}=="1010",       SYMLINK+="chip-14-2-flashboot"
-			# Serial Gadget Mode
-			SUBSYSTEM=="tty",       KERNELS=="1-1.3",       ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-1-1-serial"
-			SUBSYSTEM=="tty",       KERNELS=="1-1.4",       ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-2-1-serial"
-			SUBSYSTEM=="tty",       KERNELS=="1-1.1",       ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-3-1-serial"
-			SUBSYSTEM=="tty",       KERNELS=="1-1.2.3",     ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-4-1-serial"
-			SUBSYSTEM=="tty",       KERNELS=="1-1.2.4",     ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-5-1-serial"
-			SUBSYSTEM=="tty",       KERNELS=="1-1.2.1",     ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-6-1-serial"
-			SUBSYSTEM=="tty",       KERNELS=="1-1.2.2",     ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-7-1-serial"
-			SUBSYSTEM=="tty",       KERNELS=="1-2.3",       ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-8-2-serial"
-			SUBSYSTEM=="tty",       KERNELS=="1-2.4",       ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-9-2-serial"
-			SUBSYSTEM=="tty",       KERNELS=="1-2.1",       ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-10-2-serial"
-			SUBSYSTEM=="tty",       KERNELS=="1-2.2.3",     ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-11-2-serial"
-			SUBSYSTEM=="tty",       KERNELS=="1-2.2.4",     ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-12-2-serial"
-			SUBSYSTEM=="tty",       KERNELS=="1-2.2.1",     ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-13-2-serial"
-			SUBSYSTEM=="tty",       KERNELS=="1-2.2.2",     ATTRS{idVendor}=="0525",        ATTRS{idProduct}=="a4a7",       SYMLINK+="chip-14-2-serial"
-		EOF
-		sudo udevadm control --reload-rules
 	fi
 }
 

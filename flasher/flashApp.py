@@ -105,8 +105,6 @@ class FlashApp(App):
         '''
         Called from Kivy at end of run
         '''
-    #         PersistentData.write()
-    #         LogManager.close_all_logs()
         pass
 
 

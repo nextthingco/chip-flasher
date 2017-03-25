@@ -122,7 +122,7 @@ class DatabaseLogger():
                 rowDict = dict(itertools.izip(row.keys(), row))
                 return rowDict
         except Exception,e:
-            print "database problem",e
+            print "No database. Will create it",e
         return None
 
 
@@ -140,6 +140,8 @@ class DatabaseLogger():
             return
 
         uid = info['uid']
+        if not uid: #don't log nulls
+            return
         state = info.get('runState')
         errorNumber = info.get('errorNumber') or 0
         returnValues = info.get('returnValues')
