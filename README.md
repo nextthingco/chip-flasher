@@ -20,3 +20,8 @@ You can modify the variables in config.py to tailor the operator experience
 
 ##Logging/Stats
 Flashing stats are logged in a sqlite database. Currently a basic UI is in the app
+
+##fonts
+If the UI is showing rectangle for characters:
+wget http://ftp.us.debian.org/debian/pool/main/f/fonts-android/fonts-droid_4.4.4r2-6_all.deb
+dpkg -i fonts*.deb
