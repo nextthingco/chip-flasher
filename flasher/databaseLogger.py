@@ -112,17 +112,18 @@ class DatabaseLogger():
             print e
     
     def find(self, chipId):
-        findQuery = "SELECT * FROM {0} WHERE chipId='{1}'".format(ChpFlash.statsTableName(),chipId)
-        self.con.row_factory = sql.Row
-        cur = self.con.cursor()
-        cur.execute(findQuery)
-        row = cur.fetchone()
-        if row:
-            rowDict = dict(itertools.izip(row.keys(), row))
-            pprint(rowDict)
-            return rowDict
-        else:
-            return None
+        try:
+            findQuery = "SELECT * FROM {0} WHERE chipId='{1}'".format(ChpFlash.statsTableName(),chipId)
+            self.con.row_factory = sql.Row
+            cur = self.con.cursor()
+            cur.execute(findQuery)
+            row = cur.fetchone()
+            if row:
+                rowDict = dict(itertools.izip(row.keys(), row))
+                return rowDict
+        except Exception,e:
+            print "database problem",e
+        return None
 
 
     def onUpdateStateInfo(self, info):

@@ -13,12 +13,12 @@ from usbFactory import symlinkToBusAddress
 from pprint import pprint, pformat
 import datetime
 from math import floor
-from multiprocessing import Process, Queue, Pipe
+from multiprocessing import Process, Queue, Pipe, Lock
 from ui_strings import *
 from runState import RunState
 import traceback
-from config import VERBOSE, AUTO_START_ON_DEVICE_DETECTION
-from fel import getSerialNumber
+from config import VERBOSE, AUTO_START_ON_DEVICE_DETECTION, FEL_SLEEP_MULTIPLIER
+import fel
 MAGIC_COMMAND = 0
 COMMENT_COMMAND = 1
 READ_COMMAND = 2
@@ -37,17 +37,25 @@ FASTBOOT_PRODUCT_ID=0x1010
 
 # crunch's ethernet gadget is 2dfe:beef
 POLLING_TIMEOUT = 20 #in seconds
-USB_TIMEOUT = 0; # 0 is unlimited
+POLLING_DELAY_BETWEEN_RETRY = 1 # in seconds. cannot be 0
+POLLING_RETRIES = POLLING_TIMEOUT / POLLING_DELAY_BETWEEN_RETRY
+POLLING_NO_TIMEOUT = sys.maxsize
+USB_TIMEOUT = 0 # 0 is unlimited
 
 CHIP_USB_INTERFACE = 0
 
 DONT_SEND_FASTBOOT_CONTINUE = True
-USB_WRITE_ATTEMPTS = 3
-USB_WRITE_RETRY_DELAY = 1
+
+USB_RETRY_DELAY = 1
+USB_RETRY_ATTEMPTS = 3
 
 FASTBOOT_RESULT_LENGTH=64
 FASTBOOT_OK_RESPONSE = 'OKAY'
 
+ERROR_DEVICE_NOT_FOUND = 201
+ERROR_IN_SPL_OR_UBOOT = 202
+ERROR_IN_FASTBOOT = 203
+SUCCESS = 0
 
 # typedef struct CommandHeader {
 #     unsigned int argument; // put this first in case of it being a magic number
@@ -70,25 +78,32 @@ class FlashException(Exception):
     def __init__(self,*args,**kwargs):
         Exception.__init__(self,*args,**kwargs)
 
+TRACE_USB = False #used to dump bytes sent over USB to compare to sunxi-fel
 dumpCount = 0
 def dump(buf):
+    if len(buf) > 64:
+        return 'big'
+    
     res = ''
     for c in buf:
         res += "{:02x}".format(ord(c))
     return res
 
 def dumps(buf):
+    if len(buf) > 64:
+        return 'big'
     res = ''
     for c in buf:
         res += "{:02x}".format(c)
     return res
         
 class ChpFlash(object):
-    __slots__ = ('progressQueue', 'connectionFromParent', 'deviceDescriptor','chpFileName','device','inEp','outEp', 'serialNumber', 'output') #using slots prevents bugs where members are created by accident
-    def __init__(self, progressQueue, connectionFromParent, args):
+    __slots__ = ('progressQueue', 'connectionFromParent', 'lock', 'deviceDescriptor','chpFileName','device','inEp','outEp', 'serialNumber', 'output','writeCount') #using slots prevents bugs where members are created by accident
+    def __init__(self, progressQueue, connectionFromParent, lock, args):
 #     deviceDescriptor, chpFileName):
         self.progressQueue = progressQueue
         self.connectionFromParent = connectionFromParent
+        self.lock = lock
         self.deviceDescriptor = args.get('deviceDescriptor') #optional if just reading manifest
         self.chpFileName = args['chpFileName']
         self.device = None
@@ -96,6 +111,7 @@ class ChpFlash(object):
         self.outEp = None
         self.serialNumber = None
         self.output = ''
+        self.writeCount = 0
     
     def findEndpoints(self, dev):
         dev.set_configuration()
@@ -126,18 +142,14 @@ class ChpFlash(object):
     def isNewState(self, vid, pid):
         return not (self.device and self.device.idVendor == vid and self.device.idProduct == pid)
         
-    def waitForState(self, vid, pid, timeout=POLLING_TIMEOUT):
+    def waitForState(self, vid, pid, timeout=POLLING_RETRIES):
         if not self.isNewState(vid,pid):
             return False
-        self.releaseDevice()
-        fastboot = False
-        fel = False
+        self.releaseDevice(self.device)
         if vid == FEL_VENDOR_ID and pid == FEL_PRODUCT_ID:
             symlink = self.deviceDescriptor.fel
-            fel = True
         elif vid == FASTBOOT_VENDOR_ID and pid == FASTBOOT_PRODUCT_ID:
             symlink = self.deviceDescriptor.fastboot
-            fastboot = True
 
         if VERBOSE:
             print 'WAITING for {} {:02x}:{:02x} '.format(symlink,vid, pid)
@@ -147,53 +159,50 @@ class ChpFlash(object):
             if deviceAddress:
                 deviceAddress['idVendor'] = vid
                 deviceAddress['idProduct'] = pid
-                self.device = usb.core.find(**deviceAddress) #The search uses kwargs, so just convert the returned dict
-                if self.device:
-                    self.findEndpoints(self.device)
-                    if VERBOSE:
-                        print 'found device', deviceAddress
-                    if fastboot:
-                        self.onFastbootFound()
-                    elif fel:
-                        self.onFelFound()
-                    return True
+                device = usb.core.find(**deviceAddress) #The search uses kwargs, so just convert the returned dict
+                if device:
+                    try:
+                        self.findEndpoints(device)
+                    except Exception, e:
+                        print "Error trying to set endpoints",e
+                        print "Is another instance of this program running?"
+                        raise e
+                    else:
+                        self.device = device
+                        if symlink == self.deviceDescriptor.fel:
+                            self.onFoundFel()
+                        if VERBOSE:
+                            print 'found device', deviceAddress
+                        return True
+
+                        
 #             if VERBOSE:
 #                 print 'try ',i
-            time.sleep(1)
+            time.sleep(POLLING_DELAY_BETWEEN_RETRY)
         
 
         raise FlashException("Timeout waiting for vid:pid {:02x}:{:02x}".format(vid, pid))
     
-    def onFelFound(self):
-        self.serialNumber = getSerialNumber(self)
-        if VERBOSE:
-            print "serial number read from FEL" + self.serialNumber
-            
-    def onFastbootFound(self):
+    def onFoundFel(self):
+        self.serialNumber = self.readSerialNumber()
+        if self.serialNumber:
+            self.notifyProgress({'output':self.output})
+
+    def readFastbootVariable(self, variable):
         '''
-        Read serial number and save it off?
+        Read a variable from bastboot. e.g. 'serialno'
         '''
-        self.usbWrite("getvar:serialno")
+        self.usbWrite("getvar:"+ variable)
         result = self.usbReadString(FASTBOOT_RESULT_LENGTH)
         if not result or not result.startswith(FASTBOOT_OK_RESPONSE):
-            self.serialNumber = None
+            return None
         else:
-            self.serialNumber = result[len(FASTBOOT_OK_RESPONSE):]
-            self.connectionFromParent.send({'findChipId':self.serialNumber})
-            result = self.connectionFromParent.recv()
-            if result:
-                dataDict = result['findChipId']
-                if dataDict:
-                    self.output += '\n' + pformat(dataDict)
-                else:
-                    self.output += '\n' + "First Flash"
-            else:
-                print "shouldn't happen"
+            return result[len(FASTBOOT_OK_RESPONSE):]
 
     def processComment(self, data):
         if VERBOSE:
             print data
-        errorNumber = 202 #at this point, we've detected the device, so it's either a 202 or 203
+        errorNumber = ERROR_IN_SPL_OR_UBOOT #at this point, we've detected the device, so it's either a 202 or 203
         stage = None
         if 'fastboot' in data:
             if 'continue' in data:
@@ -204,7 +213,7 @@ class ChpFlash(object):
             elif 'uboot' in data:
                 stage = UI_UPLOAD_UBOOT
             elif 'UBI' in data:
-                errorNumber = 203
+                errorNumber = ERROR_IN_FASTBOOT
                 stage = UI_UPLOAD_UBI 
         else:
             if 'u-boot' in data:
@@ -228,24 +237,30 @@ class ChpFlash(object):
 
     def usbRead(self, dataLength):
         result = self.inEp.read(dataLength, USB_TIMEOUT)
-        global dumpCount
-        dumpCount = dumpCount+1
-        print '{}--- usbRead({}) = {}'.format(dumpCount, dataLength, dumps(result))
+        if TRACE_USB:
+            global dumpCount
+            dumpCount = dumpCount+1
+            print '{}--- usbRead({}) = {}'.format(dumpCount, dataLength, dumps(result))
         return result
         
     def usbReadString(self,dataLength):
+#         print("{}: usb read {}".format(self.deviceDescriptor.uid, dataLength))
         resultBuffer = self.usbRead(dataLength) # raw read, not comparing result
         return ''.join((chr(c) for c in resultBuffer)) #convert the buffer into a string using a generator comprehension
 
     def usbWrite(self, data, dataLength = None):
-        global dumpCount
-        dumpCount = dumpCount+1
         if dataLength is None:
             dataLength = len(data)
-        
-        print '{}--- usbWrite({},{})'.format(dumpCount,dataLength, dump(data))
+        if TRACE_USB:
+            global dumpCount
+            dumpCount = dumpCount+1
+            print '{}--- usbWrite({},{})'.format(dumpCount,dataLength, dump(data))
     
-        return self.outEp.write(data, USB_TIMEOUT)
+        try:
+            return self.outEp.write(data, USB_TIMEOUT)
+        except Exception,e:
+            print("{}: usb error write #{}, {}".format(self.deviceDescriptor.uid, self.writeCount,dataLength))
+            raise e            
 
     def read(self):
         '''
@@ -279,14 +294,14 @@ class ChpFlash(object):
                 return manifest
         return None
         
-    def releaseDevice(self):
-        if self.device:
+    def releaseDevice(self, device):
+        if device:
             try:
-                usb.util.release_interface(self.device, CHIP_USB_INTERFACE) #maybe not required to claim and release, but it can't hurt
+                usb.util.release_interface(device, CHIP_USB_INTERFACE) #maybe not required to claim and release, but it can't hurt
             except:
                 pass # unplugging can cause weird state, so just ignore it
             try:
-                usb.util.dispose_resources(self.device) #would get cleaned up anyway
+                usb.util.dispose_resources(device) #would get cleaned up anyway
             except:
                 pass # unplugging can cause weird state, so just ignore it
 
@@ -295,26 +310,24 @@ class ChpFlash(object):
         self.outEp = None
 
     def flash(self):
-        errorNumber = 201 #Hard coded 201 is an error in not detecting the device (timeout)
+        errorNumber = ERROR_DEVICE_NOT_FOUND #Hard coded 201 is an error in not detecting the device (timeout)
         stage = WAITING_TEXT
         state = WAITING_TEXT
         self.serialNumber = None
         self.output=''
         self.notifyProgress({'progress': 0, 'runState': RunState.PASSIVE_STATE, 'stage': stage, 'state': state, 'output':self.output})
         self.waitForStartTrigger() #This may just fall through if not using a button trigger
-
         
         startTime = time.time()
         stage = UI_WAITING_FOR_DEVICE
         state = RUNNING_TEXT
-        self.output = 'Start: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+        self.output += '\nStart: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
         self.notifyProgress({'runState': RunState.ACTIVE_STATE, 'state': state, 'stage':stage, 'output':self.output})
         totalBytes = 0
         processedBytes = 0
         percentComplete = 0
         done = False
-        self.releaseDevice()
-
+        self.writeCount = 0
         try:
             for header,data in self.read():
                 processedBytes += SIZEOF_HEADER
@@ -332,7 +345,10 @@ class ChpFlash(object):
                         state = FLASHING_TEXT
                         self.notifyProgress({'state':state})
                 elif cmd == USLEEP_COMMAND:
-                    usleep(header.argument / 1000)
+                    amount = FEL_SLEEP_MULTIPLIER * header.argument / 1000000.0
+                    if VERBOSE:
+                        print "sleeping for " + str( amount)
+                    time.sleep(amount)
                 else: #data commands
                     dataLength = header.dataLength
                     if cmd == COMMENT_COMMAND:
@@ -347,6 +363,7 @@ class ChpFlash(object):
                     elif cmd == READ_COMMAND:
                         self.usbReadAndVerify(data, dataLength)
                     elif cmd == WRITE_COMMAND:
+                        self.writeCount = self.writeCount +1
                         self.usbWrite(data, dataLength)
                     elif cmd == MANIFEST_COMMAND: #manifest needs to be before any reads/writes in the chp file for manifestInfoOnly to behave properly
                         manifest = self.processManifest(data)
@@ -371,33 +388,80 @@ class ChpFlash(object):
             self.output += '\n' + repr(e)
             self.output += '\n' + traceback.format_exc(e)
             self.output += "\nProcessed {} bytes of {}".format(processedBytes, totalBytes)
-            self.notifyProgress({'runState': RunState.FAIL_STATE, 'errorNumber': errorNumber, 'state': FAIL_TEXT, 'output': self.output, 'elapsedTime':elapsedTime, 'chipId': self.serialNumber, 'returnValues':{'image':self.chpFileName}})
+            self.notifyProgress({'runState': RunState.FAIL_STATE, 'errorNumber': errorNumber, 'state': FAIL_WITH_ERROR_CODE_TEXT.format(errorNumber), 'output': self.output, 'elapsedTime':elapsedTime, 'chipId': self.serialNumber, 'returnValues':{'image':self.chpFileName}})
+            return errorNumber
         else:
             elapsedTime = time.time() - startTime
 
             self.output += '\nTotal Time {}'.format(datetime.timedelta(seconds=elapsedTime))
             self.notifyProgress({'runState': RunState.PASS_STATE,'stage': stage, 'output': self.output, 'elapsedTime':elapsedTime ,'chipId': self.serialNumber, 'returnValues':{'image':self.chpFileName}}) #eventually write manifest too
         finally:
-            self.releaseDevice()
-        return True
+            self.releaseDevice(self.device)
+        return SUCCESS
 
     def notifyProgress(self, progress):
         if self.progressQueue:
             progress['uid'] = self.deviceDescriptor.uid
             self.progressQueue.put(progress)
     
+    def readSerialNumber(self):
+        serialNumber = fel.getSerialNumber(self)
+        if serialNumber:
+            # now, call the parent process asking it for an existing record in its databse
+            self.connectionFromParent.send({'findChipId':serialNumber})
+            result = self.connectionFromParent.recv()
+            if result:
+                dataDict = result['findChipId']
+                if dataDict:
+                    self.output += '\n' + pformat(dataDict)
+                else:
+                    self.output += '\n' + "First Flash"
+                return serialNumber
+            else:
+                print "shouldn't happen"
+        else:
+            print 'ERROR failed to read serial from FEL.'
+        return None
+
     def waitForStartTrigger(self):
         if not AUTO_START_ON_DEVICE_DETECTION: #if parent sends messages to start... flashing below is allowed fail waiting for FEL
             while self.connectionFromParent.poll(): # clear out any pending stuff
                 self.connectionFromParent.recv()
             self.connectionFromParent.recv() #now block until a message
-#         else: #if not waiting for click, wait for FEL indefinitely
-        self.waitForState(FEL_VENDOR_ID, FEL_PRODUCT_ID, sys.maxsize)
+            return True
+
+        if self.waitForState(FEL_VENDOR_ID, FEL_PRODUCT_ID, POLLING_NO_TIMEOUT):
+            serialNumber = self.readSerialNumber()
+            if serialNumber:
+                self.serialNumber = serialNumber
+                self.notifyProgress({'output':self.output})
+                return True
+            
+        return False
+#         for attempt in xrange(USB_RETRY_ATTEMPTS):
+#             try:
+#                 serialNumber = self.readSerialNumber()
+#                 if serialNumber:
+#                     self.serialNumber = serialNumber
+#                     self.notifyProgress({'output':self.output})
+#                     return True
+#             except Exception, e: #There is an issue with pipe errors, so try and catch them: https://github.com/libusb/libusb/issues/241
+#                 self.releaseDevice(self.device) #maybe try reset?
+#                 self.output += '\nFailed attempt {} at connecting to device. Error {}'.format(attempt,e)
+#                 self.notifyProgress({'output':self.output})
+#                 time.sleep(USB_RETRY_DELAY)
+# 
+#         return False
             
     def flashForever(self):
         while True:
             try:
-                self.flash()
+                if self.flash() == ERROR_DEVICE_NOT_FOUND:
+                    self.connectionFromParent.send({'clickMe':self.deviceDescriptor.uid})
+                    click = self.connectionFromParent.recv() #now block until a message
+                    if VERBOSE:
+                        print "Received {}".format(click)
+
                 self.waitForDisconnect()
                 self.notifyProgress({'progress':0, 'runState': RunState.DISCONNECTED_STATE, 'state': DISCONNECTED_TEXT})
             except KeyboardInterrupt:
@@ -431,7 +495,8 @@ class ChpFlash(object):
 def flash(progressQueue, connectionFromParent, args):
     flasher = ChpFlash(progressQueue, connectionFromParent, args)
     manifest = flasher.readManifest()
-    pprint(manifest)
+    if VERBOSE:
+        pprint(manifest)
     flasher.flashForever()
 
 

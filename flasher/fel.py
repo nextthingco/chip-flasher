@@ -102,14 +102,12 @@ def _readl_n(usb, address, count, scratch_addr):
     ]
     codeBuffer = pack('<' + str(len(arm_code)) + 'I', *arm_code)
     write(usb, codeBuffer, scratch_addr)
-        
     
     result = []
     for _ in xrange(count):
         exe(usb, scratch_addr)
         val = read(usb, scratch_addr + 28, 4)
         intVal = unpack_from('<I',val)[0]
-        print 'val is {:08x}'.format(intVal)
         result.append(intVal)
     
     return result
@@ -126,10 +124,8 @@ def write(usb, data, address):
     return _status(usb)
 
 def exe(usb, address):
-    z = _request(usb, FEL_RUN, address)
-    y = _status(usb)
-    print z,y
-    return y
+    _request(usb, FEL_RUN, address)
+    return _status(usb)
     
 ####################################################################    
 def getVersion(usb):
@@ -144,13 +140,8 @@ def getVersion(usb):
 def getSid(usb):
     version = getVersion(usb)
     sram_info = SRAM_INFO_MAP[version.soc_id]
-    try:
-        sss= _readl_n(usb, int(sram_info['sid_addr']), 4, int(sram_info['scratch_addr']))
-    except Exception, e:
-        print e
-    return sss
+    return _readl_n(usb, int(sram_info['sid_addr']), 4, int(sram_info['scratch_addr']))
 
-    
 def getSerialNumber(usb):
     sid = getSid(usb)
     serial = '{:08x}{:08x}'.format(sid[0],sid[3])

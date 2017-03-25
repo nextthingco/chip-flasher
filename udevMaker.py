@@ -144,6 +144,9 @@ def main():
     curses.nocbreak();
     curses.echo()
     curses.endwin()
+    print 'Now you must: '
+    print 'sudo cp {} /etc/udev/rules.d/.'.format(sys.argv[1])
+    print 'sudo udevadm control --reload-rules'
     return 0
     
     

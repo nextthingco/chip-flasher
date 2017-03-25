@@ -4,15 +4,16 @@ Created on Mar 15, 2017
 @author: howie
 '''
 from collections import OrderedDict
-from multiprocessing import Process, Queue, Pipe
+from sets import Set
+from multiprocessing import Process, Queue, Pipe, Lock
 from chp_flash import ChpFlash
 from deviceDescriptor import DeviceDescriptor
 from config import *
 import time
 from pprint import pprint, pformat
 
-def flash(progressQueue, connectionFromParent, args):
-    flasher = ChpFlash(progressQueue, connectionFromParent, args)
+def flash(progressQueue, connectionFromParent, lock, args):
+    flasher = ChpFlash(progressQueue, connectionFromParent, lock, args)
 #     manifest = flasher.flash(True)
     flasher.flashForever()
 
@@ -24,12 +25,14 @@ class ProcessDescriptor(object):
         self.child_conn = child_conn
         
 class ChpController(object):
-    __slots__ = ('fileInfo', 'progressQueue', 'chpFileName', 'databaseLogger', 'log', 'processDescriptors', 'deviceDescriptors', 'hubs', 'progressQueue') #using slots prevents bugs where members are created by accident
+    __slots__ = ('fileInfo', 'progressQueue', 'chpFileName', 'lock', 'databaseLogger', 'awaitingClick', 'log', 'processDescriptors', 'deviceDescriptors', 'hubs', 'progressQueue') #using slots prevents bugs where members are created by accident
     def __init__( self, progressQueue, chpFileName, databaseLogger, log = None):
         self.progressQueue = progressQueue
         self.chpFileName = chpFileName
         self.databaseLogger = databaseLogger
         self.log = log
+        self.lock = Lock()
+        self.awaitingClick=Set()
         self.processDescriptors = OrderedDict()
         self.deviceDescriptors, self.hubs = DeviceDescriptor.readRules(UDEV_RULES_FILE, SORT_DEVICES, SORT_HUBS)
         self.fileInfo = None
@@ -37,7 +40,7 @@ class ChpController(object):
     def getFileInfo(self):
         if not self.fileInfo:
             self.fileInfo = "File: " + self.chpFileName
-            manifest = ChpFlash(None,None,{'chpFileName': self.chpFileName}).readManifest()
+            manifest = ChpFlash(None,None,None,{'chpFileName': self.chpFileName}).readManifest()
             self.fileInfo += '\nManifest: ' + pformat(manifest,width=1)
             
         return self.fileInfo
@@ -47,18 +50,20 @@ class ChpController(object):
             parent_conn, child_conn = Pipe() #if using button push, then will send start trigger through pipe
             args = {'chpFileName': self.chpFileName, 'deviceDescriptor': dev}
             processDescriptor = self.processDescriptors[uid] = ProcessDescriptor(dev, parent_conn, child_conn)
-            processDescriptor.process = Process(target = flash, args = (self.progressQueue, child_conn, args))
+            processDescriptor.process = Process(target = flash, args = (self.progressQueue, child_conn, self.lock, args))
             processDescriptor.process.start()
             
     def checkForCallsFromChild(self):
         for proc in self.processDescriptors.itervalues():
             while proc.parent_conn.poll(): #check for requests from child
                 call = proc.parent_conn.recv()
-                
                 findChipId = call.get('findChipId')
                 if findChipId:
                     data = self.databaseLogger.find(findChipId)
                     proc.parent_conn.send({'findChipId':data})
+                clickMe = call.get('clickMe')
+                if clickMe:
+                    self.awaitingClick.add(int(clickMe))
     
     def joinAll(self):
         for processDescriptor in self.processDescriptors.itervalues():
@@ -72,9 +77,15 @@ class ChpController(object):
             procs = self.processDescriptors #going to send event to all of them
         else:
             procs = {uid: self.processDescriptors.get(uid)}
-            
-        for processDescriptor in procs.itervalues():
+        for procUid,processDescriptor in procs.iteritems():
+            pid = int(procUid)
             if processDescriptor.child_conn:
+                if pid in self.awaitingClick: #if explicitly clicked on an item that's awaiting input
+                    if uid == procUid or not CLICK_ONLY_APPLIES_TO_SINGLE_201:
+                        self.awaitingClick.remove(pid)
+                    else:
+                        continue #don't send click unless explicitly clicked on
+                
                 processDescriptor.parent_conn.send('start')
 
 

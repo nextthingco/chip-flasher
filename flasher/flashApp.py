@@ -48,7 +48,6 @@ if os.path.isfile(OSX_FONT):
 else:
     FONT_NAME = UBUNTU_FONT
 
-print FONT_NAME
 log = LogManager.get_global_log()
 
 
