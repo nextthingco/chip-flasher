@@ -1,0 +1,19 @@
+Source: chip-flasher
+Section: unknown
+Priority: optional
+Maintainer: Ben Young <software@nextthing.co>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.5
+Homepage: https://github.com/nextthingco/chip-flasher
+
+Package: chip-flasher
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
+ python2.7,
+ python-kivy,
+ python-pip,
+ python-dev,
+ sqlitebrowser,
+ fonts-droid
+Description: Bulk CHP flasher
+ Bulk CHP flasher
