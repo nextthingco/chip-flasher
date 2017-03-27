@@ -6,14 +6,14 @@ Created on Mar 15, 2017
 import sys
 import usb.core
 import json
-from struct import unpack, pack
+from struct import unpack
 from collections import namedtuple
 import time
 from usbFactory import symlinkToBusAddress
 from pprint import pprint, pformat
 import datetime
 from math import floor
-from multiprocessing import Process, Queue, Pipe, Lock
+from multiprocessing import Process, Queue, Pipe
 from ui_strings import *
 from runState import RunState
 import traceback

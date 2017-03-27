@@ -1,4 +1,32 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
+import sys
+
+from config import *
+
+#perform some sanity checks so we can fail fast
+if not os.path.exists(CHP_FILE_NAME):
+    print "Error! The .chp file specified in config.py could not be found: " + CHP_FILE_NAME
+    sys.exit(-1)
+
+if not os.path.exists(UDEV_RULES_FILE):
+    print "Error! The udev rules file specified in config.py could not be found: " + UDEV_RULES_FILE
+    sys.exit(-1)
+    
+#Need this to get right font
+# wget http://ftp.us.debian.org/debian/pool/main/f/fonts-android/fonts-droid_4.4.4r2-6_all.deb
+# dpkg -i fonts*.deb
+if os.path.isfile(OSX_FONT):
+    FONT_NAME = OSX_FONT
+else:
+    FONT_NAME = UBUNTU_FONT
+
+if not os.path.exists(FONT_NAME):
+    print "Error! The font specified in config.py could not be found: " + FONT_NAME
+    sys.exit(-1)
+    
+
 from kivy.config import Config
 # Config.set('graphics', 'fullscreen', '1')
 Config.set('graphics', 'width', '1024')
@@ -8,67 +36,40 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.boxlayout import BoxLayout
-from kivy.core.window import Window
 from kivy.uix.behaviors import ButtonBehavior
-from kivy.graphics import Color
 from kivy.lang import Builder
 from logmanager import LogManager
 from kivy.properties import StringProperty
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.core.window import Window
 from kivy.uix.popup import Popup
 from kivy.uix.stencilview import StencilView
-from collections import OrderedDict
-import collections
-import os
-import sys
-from multiprocessing import Process, Queue, Pipe
 
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.splitter import Splitter
 
-from deviceDescriptor import DeviceDescriptor
 from runState import RunState
-from config import *
 from ui_strings import *
-from chp_controller import ChpController
+from chp_controller import ChpController, PROGRESS_UPDATE_SIGNAL
 from databaseLogger import DatabaseLogger
+from pydispatch import dispatcher
 
-OSX_FONT = "/Library/Fonts/Arial Unicode.ttf"
 
-#Need this to get right font
-# wget http://ftp.us.debian.org/debian/pool/main/f/fonts-android/fonts-droid_4.4.4r2-6_all.deb
-# dpkg -i fonts*.deb
-UBUNTU_FONT = "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
- 
-if os.path.isfile(OSX_FONT):
-    FONT_NAME = OSX_FONT
-else:
-    FONT_NAME = UBUNTU_FONT
 
 log = LogManager.get_global_log()
 
 
 class FlashApp(App):
-    __slots__ = ('progressQueue', 'controller', 'kivyUpdateTrigger', 'databaseLogger', 'view', 'stateListeners') #using slots prevents bugs where members are created by accident
+    __slots__ = ('controller', 'kivyUpdateTrigger', 'databaseLogger', 'view', 'stateListeners') #using slots prevents bugs where members are created by accident
 
     def __init__(self):
         super(FlashApp, self).__init__()
-        self.progressQueue = Queue()
-        self.stateListeners = []
-#         chpFileName = '/home/howie/Downloads/stable-gui-b149-nl-Hynix_8G_MLC.chp' #TODO get from config file
         self.databaseLogger = DatabaseLogger()
 
-        self.controller = ChpController(self.progressQueue, CHP_FILE_NAME, self.databaseLogger, log)
-        Clock.schedule_interval(lambda x: self.processProgressQueue(x), 0.1)
+        self.controller = ChpController(CHP_FILE_NAME, self.databaseLogger, log)
+        Clock.schedule_interval(lambda x: self.controller.checkForChanges(), 0.1) #the controller must check for changes periodically
         
-#         self.kivyUpdateTrigger = Clock.create_trigger(self._onUpdateTrigger.__get__(
-#             self, FlashApp))  # kivy Trigger that will be set when added to queue
-#         # this will be called everytime an update is added to the queue
-#         self.controller.addUpdateQueueListener(self.kivyUpdateTrigger)
-
     def build(self):
         self.controller.createProcesses()
         fileInfo = self.controller.getFileInfo()
@@ -78,35 +79,8 @@ class FlashApp(App):
         self.view.addMainButtonListener(
             self._onMainButton.__get__(self, FlashApp))
         self.view.controller = self.controller
-        self.addStateListener(lambda info: self.view.onUpdateStateInfo(info))
-        self.addStateListener(lambda info: self.databaseLogger.onUpdateStateInfo(info))
         self.title = "Flashing " + CHP_FILE_NAME
         return self.view
-
-    def addStateListener(self,listener):
-        '''
-        Add an observer to state change events
-        :param listener:
-        '''
-        self.stateListeners.append(listener)
-
-    def processProgressQueue(self, x):
-        '''
-        Get any pending progress updates from the processes
-        '''
-        while not self.progressQueue.empty():
-            progress = self.progressQueue.get()
-            for listener in self.stateListeners:
-                listener(progress)
-        
-        self.controller.checkForCallsFromChild()
-
-    def on_stop(self):
-        '''
-        Called from Kivy at end of run
-        '''
-        pass
-
 
     def _onMainButton(self, button):
         '''
@@ -131,6 +105,8 @@ class FlashView(BoxLayout):
         self.hubs = kwargs['hubs']
         self.fileInfo = kwargs['fileInfo']
         self.databaseLogger = kwargs['databaseLogger']
+        dispatcher.connect(self.onUpdateStateInfo.__get__(self,FlashView), signal = PROGRESS_UPDATE_SIGNAL, sender=dispatcher.Any) #subscribe to updates
+
         self.widgetsMap = {}
         # the uid of of what's being shown in the output (detail) view to the
         # right of the splitter
@@ -396,10 +372,6 @@ class ScrollableLabel(ScrollView):
 
 ##########################################################################
 if __name__ == '__main__':
-    suite = None
-    if len(sys.argv) == 2:
-       suite = sys.argv[1]
-
     app = FlashApp()
     try:
         app.run()

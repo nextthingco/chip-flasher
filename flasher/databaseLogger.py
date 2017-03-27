@@ -1,5 +1,4 @@
 import sqlite3 as sql
-import sys
 import time
 import socket
 
@@ -7,10 +6,11 @@ from subprocess import Popen
 from collections import OrderedDict
 # from flasher import Flasher
 from config import *
-from pprint import pprint
 from runState import RunState
-from datetime import datetime, date
+from datetime import datetime
 from chp_flash import ChpFlash
+from pydispatch import dispatcher
+from chp_controller import PROGRESS_UPDATE_SIGNAL
 import itertools
 get_class = lambda x: globals()[x]
 
@@ -85,6 +85,8 @@ class DatabaseLogger():
     def __init__( self, **kwargs ):
         self.con = None
         self.hostName = socket.gethostname()
+        dispatcher.connect(self.onUpdateStateInfo.__get__(self,DatabaseLogger), signal = PROGRESS_UPDATE_SIGNAL, sender=dispatcher.Any) #subscribe to updates
+
         if 'LOG_DB' in globals():
             try:
                 self.con = sql.connect(self._fileName(),detect_types=sql.PARSE_DECLTYPES)

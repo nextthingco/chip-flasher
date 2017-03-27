@@ -1,6 +1,9 @@
-# CHP_FILE_NAME='/home/howie/Downloads/stable-server-b149-Toshiba_4G_MLC.chp'
-# CHP_FILE_NAME='/home/howie/Downloads/stable-chip-pro-vu_meter-b3-Toshiba_512M_SLC.chp'
-CHP_FILE_NAME='/home/howie/Downloads/stable-chip-pro-blinkenlights-b1-Toshiba_512M_SLC.chp'
+#specify the .chp file you want to use.
+CHP_FILE_NAME='/home/debian/Desktop/CHIP-flasher/flash_me.chp'
+#Note that if you download the file with a browser, it will be ready to use. However, if you want to download from the command line,
+#you need to decompress the file explicitly (the browser does this automatically). For example:
+# curl -s --compressed https://d2rchup4fs07xx.cloudfront.net/extension/chp-gz/stable-chip-pro-blinkenlights-b1-Toshiba_512M_SLC.chp > flash_me.chp
+
 
 AUTO_START_ON_DEVICE_DETECTION = False #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled. In this mode, it is not obvious to spot 201 timeouts
 CLICK_TRIGGERS_ALL = True #If any click is equivalent to clicking on all
@@ -39,3 +42,6 @@ DISCONNECTED_COLOR = [.3, .3, .3, 1] #when device is disconnected
 WHITE_COLOR = [ 1, 1, 1, 1]
 YELLOW_COLOR = [ 1, 1, 0, 1]
 PAUSED_COLOR = [ 1, .5, 0, 1]
+
+OSX_FONT = "/Library/Fonts/Arial Unicode.ttf"
+UBUNTU_FONT = "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"

@@ -1,7 +1,6 @@
 import re
 from collections import OrderedDict
 import os.path
-# UDEV_REGEX = re.compile(ur'.*KERNELS.*\"(.*)\".*ATTRS\{idVendor}.*\"(.*)\".*ATTRS\{idProduct\}.*\"(.*)\".*SYMLINK.*\"(.*)\"')
 UDEV_REGEX = re.compile(ur'.*KERNELS.*\"(.*)\".*ATTRS\{idVendor}.*\"(.*)\".*ATTRS\{idProduct\}.*\"(.*)\".*GROUP.*\".*\".*MODE.*\".*\".*SYMLINK.*\"(.*)\"')
 SYMLINK_REGEX = re.compile(r".*chip-(.*)-(.*)-(.*)")
                            
@@ -16,13 +15,13 @@ class DeviceDescriptor:
     DEVICE_SERIAL = 3
     DEVICE_ETHERNET = 5
     DEVICE_WAITING_FOR_FASTBOOT = 4
-    def __init__(self, uid, hub, kernel, vendor, product, type): #store off all values for convenience
+    def __init__(self, uid, hub, kernel, vendor, product, _type): #store off all values for convenience
         self.uid = uid
         self.hub = hub
         self.kernel = kernel
         self.vendor = vendor
         self.product = product
-        self.type = type
+        self.type = _type
         self.fel = None
         self.fastboot = None
         self.serial = None
@@ -82,12 +81,12 @@ class DeviceDescriptor:
                     symlinkMatch = SYMLINK_REGEX.match(symlink) #parse out the uid, hub and type from the symlink
                     uid = symlinkMatch.group(1)
                     hub = symlinkMatch.group(2)
-                    type = symlinkMatch.group(3)
+                    _type = symlinkMatch.group(3)
                     
                     if uid in descriptorMap:
                         descriptor = descriptorMap[uid]
                     else:
-                        descriptor = DeviceDescriptor(uid,hub,kernel,vendor,product,type)
+                        descriptor = DeviceDescriptor(uid,hub,kernel,vendor,product,_type)
                         descriptorMap[uid] = descriptor
                     device = '/dev/' + symlink  
                     

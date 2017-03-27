@@ -5,12 +5,14 @@ Created on Mar 15, 2017
 '''
 from collections import OrderedDict
 from sets import Set
-from multiprocessing import Process, Queue, Pipe, Lock
+from multiprocessing import Process, Pipe, Lock, Queue
 from chp_flash import ChpFlash
 from deviceDescriptor import DeviceDescriptor
 from config import *
-import time
-from pprint import pprint, pformat
+from pprint import pformat
+from pydispatch import dispatcher
+
+PROGRESS_UPDATE_SIGNAL = "stateUpdate"
 
 def flash(progressQueue, connectionFromParent, lock, args):
     flasher = ChpFlash(progressQueue, connectionFromParent, lock, args)
@@ -26,12 +28,13 @@ class ProcessDescriptor(object):
         
 class ChpController(object):
     __slots__ = ('fileInfo', 'progressQueue', 'chpFileName', 'lock', 'databaseLogger', 'awaitingClick', 'log', 'processDescriptors', 'deviceDescriptors', 'hubs', 'progressQueue') #using slots prevents bugs where members are created by accident
-    def __init__( self, progressQueue, chpFileName, databaseLogger, log = None):
-        self.progressQueue = progressQueue
+    def __init__( self, chpFileName, databaseLogger, log = None):
+
         self.chpFileName = chpFileName
         self.databaseLogger = databaseLogger
         self.log = log
         self.lock = Lock()
+        self.progressQueue = Queue()
         self.awaitingClick=Set()
         self.processDescriptors = OrderedDict()
         self.deviceDescriptors, self.hubs = DeviceDescriptor.readRules(UDEV_RULES_FILE, SORT_DEVICES, SORT_HUBS)
@@ -52,7 +55,19 @@ class ChpController(object):
             processDescriptor = self.processDescriptors[uid] = ProcessDescriptor(dev, parent_conn, child_conn)
             processDescriptor.process = Process(target = flash, args = (self.progressQueue, child_conn, self.lock, args))
             processDescriptor.process.start()
-            
+    
+    def checkForChanges(self):
+        self.processProgressQueue()
+        self.checkForCallsFromChild();
+        
+    def processProgressQueue(self):
+        '''
+        Get any pending progress updates from the processes
+        '''
+        while not self.progressQueue.empty():
+            progress = self.progressQueue.get()
+            dispatcher.send(signal = PROGRESS_UPDATE_SIGNAL, info = progress, sender=self)
+       
     def checkForCallsFromChild(self):
         for proc in self.processDescriptors.itervalues():
             while proc.parent_conn.poll(): #check for requests from child
@@ -88,33 +103,3 @@ class ChpController(object):
                 
                 processDescriptor.parent_conn.send('start')
 
-
-def main():
-    progressQueue = Queue() #multiprocessing version of queue
-#     chpFileName = '/home/howie/Downloads/stable-chip-pro-blinkenlights-b1-Toshiba_512M_SLC.chp'
-    chpFileName = '/home/howie/Downloads/stable-gui-b149-nl-Hynix_8G_MLC.chp'
-
-    chpController = ChpController(progressQueue, chpFileName)
-    chpController.createProcesses()
-    i = 0
-    try:
-        while True:
-            i = i +1
-            while not progressQueue.empty():
-                progress = progressQueue.get()
-                print progress
-            time.sleep(.1)
-            if i % 50 == 0:
-                for uid, processDescriptor in chpController.processDescriptors.iteritems():
-                    if processDescriptor.child_conn:
-                        processDescriptor.parent_conn.send("start")
-    except KeyboardInterrupt:
-        chpController.joinAll() # wait for all of them to exit. The keyboard interrupt is sent to them automatically by Python
-
-     
-#         thread.join()
-#------------------------------------------------------------------
-if __name__ == "__main__":
-#------------------------------------------------------------------
-    exit( main() )
-    

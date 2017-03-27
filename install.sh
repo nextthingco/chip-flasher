@@ -69,7 +69,12 @@ function install_linux {
 	if [[ -z "$( ${PIP} show pyudev)" ]]; then
 		${PIP} install pyudev || error "could not install pyudev!"
     fi
-
+	if [[ -z "$( ${PIP} show pyusb)" ]]; then
+		${PIP} install pyusb || error "could not install pyusb!"
+    fi
+	if [[ -z "$( ${PIP} show PyDispatcher)" ]]; then
+		${PIP} install PyDispatcher || error "could not install PyDispatcher!"
+    fi
 }
 
 
