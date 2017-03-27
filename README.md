@@ -28,10 +28,10 @@ click on one of the columns to start flashing all of them instead of clicking th
 This setting only applies when AUTO_START_ON_DEVICE_DETECTION = False. Then if a 201 error happens, the operator must explicitly click on the device which had the error to clear out the error for the next CHIP. If this value is false, then
 all 201 errors will use the CLICK_TRIGGERS_ALL setting.
 
-##Logging/Stats
+## Logging/Stats
 Flashing stats are logged in a sqlite database. Currently a basic UI is in the app
 
-##fonts
+## fonts
 On ubuntu there was an issue with the UI is showing rectangle for characters. The solution was to uninstall all droid fonts and then:
 wget http://ftp.us.debian.org/debian/pool/main/f/fonts-android/fonts-droid_4.4.4r2-6_all.deb
 dpkg -i fonts*.deb
