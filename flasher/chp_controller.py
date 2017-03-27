@@ -16,7 +16,6 @@ PROGRESS_UPDATE_SIGNAL = "stateUpdate"
 
 def flash(progressQueue, connectionFromParent, lock, args):
     flasher = ChpFlash(progressQueue, connectionFromParent, lock, args)
-#     manifest = flasher.flash(True)
     flasher.flashForever()
 
 class ProcessDescriptor(object):
@@ -33,7 +32,7 @@ class ChpController(object):
         self.chpFileName = chpFileName
         self.databaseLogger = databaseLogger
         self.log = log
-        self.lock = Lock()
+        self.lock = Lock() #currently unused, but may need in future
         self.progressQueue = Queue()
         self.awaitingClick=Set()
         self.processDescriptors = OrderedDict()

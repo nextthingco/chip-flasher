@@ -438,20 +438,6 @@ class ChpFlash(object):
                 return True
             
         return False
-#         for attempt in xrange(USB_RETRY_ATTEMPTS):
-#             try:
-#                 serialNumber = self.readSerialNumber()
-#                 if serialNumber:
-#                     self.serialNumber = serialNumber
-#                     self.notifyProgress({'output':self.output})
-#                     return True
-#             except Exception, e: #There is an issue with pipe errors, so try and catch them: https://github.com/libusb/libusb/issues/241
-#                 self.releaseDevice(self.device) #maybe try reset?
-#                 self.output += '\nFailed attempt {} at connecting to device. Error {}'.format(attempt,e)
-#                 self.notifyProgress({'output':self.output})
-#                 time.sleep(USB_RETRY_DELAY)
-# 
-#         return False
             
     def flashForever(self):
         while True:
