@@ -1,0 +1,3 @@
+udevMaker.py /usr/bin/
+flasher/*.py /usr/bin/
+
