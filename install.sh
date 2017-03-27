@@ -51,7 +51,12 @@ function install_linux {
     if [[ -z "$( which sqlitebrowser )" ]]; then
         install_package sqlitebrowser
     fi
-
+    
+#remove droid fonts before installing font that works    
+    sudo apt-get remove fonts-droid*
+	wget http://ftp.us.debian.org/debian/pool/main/f/fonts-android/fonts-droid_4.4.4r2-6_all.deb
+	sudo dpkg -i fonts*.deb
+	rm fonts-droid_4.4.4r2-6_all.deb
 #On CHIP, need to configure the package libusb
     if [[ ${ARM} ]]; then
         sudo ln -s /usr/lib/arm-linux-gnueabihf/pkgconfig/libusb-1.0.pc /usr/share/pkgconfig/libusb-1.0.pc
