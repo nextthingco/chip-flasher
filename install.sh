@@ -53,7 +53,7 @@ function install_linux {
     fi
     
 #remove droid fonts before installing font that works    
-    sudo apt-get remove fonts-droid*
+    sudo apt-get remove -y fonts-droid*
 	wget http://ftp.us.debian.org/debian/pool/main/f/fonts-android/fonts-droid_4.4.4r2-6_all.deb
 	sudo dpkg -i fonts*.deb
 	rm fonts-droid_4.4.4r2-6_all.deb
