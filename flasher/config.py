@@ -1,5 +1,8 @@
+import os
 #specify the .chp file you want to use.
-CHP_FILE_NAME='/home/debian/Desktop/CHIP-flasher/flash_me.chp'
+# CHP_FILE_NAME='/home/debian/Desktop/CHIP-flasher/flash_me.chp'
+CHP_FILE_NAME=os.environ['HOME'] + '/Downloads/stable-chip-pro-blinkenlights-b1-Toshiba_512M_SLC.chp'
+
 #Note that if you download the file with a browser, it will be ready to use. However, if you want to download from the command line,
 #you need to decompress the file explicitly (the browser does this automatically). For example:
 # curl -s --compressed https://d2rchup4fs07xx.cloudfront.net/extension/chp-gz/stable-chip-pro-blinkenlights-b1-Toshiba_512M_SLC.chp > flash_me.chp
@@ -10,6 +13,8 @@ CLICK_TRIGGERS_ALL = True #If any click is equivalent to clicking on all
 CLICK_ONLY_APPLIES_TO_SINGLE_201 = True #If true, then operator must explicity click on a 201 row to clear the error. Otherwise, will use value of CLICK_TRIGGERS_ALL above
 #also note a fringe case: If device is plugged in but in a non-fel state when the app starts, it will need to be disconnected to clear the 201 failure
 
+
+DONT_SEND_FASTBOOT_CONTINUE = True #Depending on the .chp file, the device might boot after fastboot. By setting this to TRUE, we prevent that from happening.
 
 VERBOSE = False #whether more details/errors appear in console
 
