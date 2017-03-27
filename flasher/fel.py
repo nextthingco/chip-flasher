@@ -59,10 +59,10 @@ SRAM_INFO_MAP = {
 
 def _usbRequest(usb, requestType, length):
     requestBuffer = pack(USB_REQUEST_FORMAT, AWUC,0,length,USB_CMD_LEN,requestType,length)
-    return usb.usbWrite(requestBuffer)
+    return usb.write(requestBuffer)
 
 def _usbResponse(usb):
-    response = usb.usbReadString(RESPONSE_BUFFER_LENGTH)
+    response = usb.readString(RESPONSE_BUFFER_LENGTH)
     return response.startswith(AWUS_RESPONSE)
 
 def _status(usb):
@@ -71,12 +71,12 @@ def _status(usb):
 def _usbWrite(usb, data):
     dataLength = len(data)
     _usbRequest(usb, AW_USB_WRITE, dataLength)
-    usb.usbWrite(data,dataLength)
+    usb.write(data,dataLength)
     return _usbResponse(usb)
 
 def _usbRead(usb, length):
     _usbRequest(usb, AW_USB_READ, length)
-    data = usb.usbRead(length)
+    data = usb.read(length)
     _usbResponse(usb)
     return data
 
