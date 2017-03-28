@@ -14,7 +14,6 @@ import subprocess
 from chp_flash import ChpFlash
 from deviceDescriptor import DeviceDescriptor
 from config import *
-from pprint import pformat
 from pydispatch import dispatcher
 
 PROGRESS_UPDATE_SIGNAL = "stateUpdate"
@@ -72,12 +71,16 @@ class ChpController(object):
 
     def getFileInfo(self):
         '''
-        Get the manifest info of a chp file
+        Get the manifest info of a chp file as a dictionary
         '''
         if not self.fileInfo:
-            self.fileInfo = "File: " + self.chpFileName
-            manifest = ChpFlash(None,None,None,{'chpFileName': self.chpFileName}).readManifest()
-            self.fileInfo += '\nManifest: ' + pformat(manifest,width=1)
+            self.fileInfo = {'file': self.chpFileName}
+            manifest = ChpFlash.manifest(self.chpFileName)
+            if manifest:
+                self.fileInfo['size']=manifest['totalBytes']
+                self.fileInfo['nand']=manifest['nandChip']['id']
+                if self.fileInfo['nand'] == "Toshiba_512M_MLC": #fix for old improper manifests
+                    self.fileInfo['nand'] = "Toshiba_512M_SLC"
             
         return self.fileInfo
             
@@ -140,6 +143,9 @@ class ChpController(object):
         return ChpFlash.getStatsQueries(where)
 
     def powerOff(self):
+        '''
+        Will poweroff the computer
+        '''
         try:
             subprocess.Popen( ["systemctl","poweroff"])
         except Exception,e:

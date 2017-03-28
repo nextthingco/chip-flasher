@@ -1,13 +1,21 @@
+'''
+Created on Mar 15, 2017
+
+@author: howie
+
+Module to parse udev rules which are used to both identify usb devices, and format the flasher GUI
+'''
 import re
 from collections import OrderedDict
-import os.path
 UDEV_REGEX = re.compile(ur'.*KERNELS.*\"(.*)\".*ATTRS\{idVendor}.*\"(.*)\".*ATTRS\{idProduct\}.*\"(.*)\".*GROUP.*\".*\".*MODE.*\".*\".*SYMLINK.*\"(.*)\"')
 SYMLINK_REGEX = re.compile(r".*chip-(.*)-(.*)-(.*)")
                            
 NAME_FROM_UDEV_REGEX = re.compile(r".*chip-(.*)-usb")
 
-
 class DeviceDescriptor:
+    '''
+    Class which holds the udev values for a single port
+    '''
     DEVICE_NULL = -1 #no state yet
     DEVICE_DISCONNECTED = 0
     DEVICE_FEL = 1
@@ -16,6 +24,15 @@ class DeviceDescriptor:
     DEVICE_ETHERNET = 5
     DEVICE_WAITING_FOR_FASTBOOT = 4
     def __init__(self, uid, hub, kernel, vendor, product, _type): #store off all values for convenience
+        '''
+        Constructor. Values come from udev rules
+        :param uid:
+        :param hub:
+        :param kernel:
+        :param vendor:
+        :param product:
+        :param _type:
+        '''
         self.uid = uid
         self.hub = hub
         self.kernel = kernel
@@ -26,32 +43,6 @@ class DeviceDescriptor:
         self.fastboot = None
         self.serial = None
         self.ethernet = None
-        self.serialConnection = None #used when accessing device as a serial gadget
-        self.widgetInfo = {} #widgets in GUI
-    
-    def getDeviceState(self):
-        if self.isFel():
-            return self.DEVICE_FEL
-        elif self.isSerial():
-            return self.DEVICE_SERIAL
-        elif self.isFastBoot():
-            return self.DEVICE_FASTBOOT
-        else:
-            return self.DEVICE_DISCONNECTED
-    
-    def isFel(self):
-        return self.fel and os.path.exists(self.fel)
-   
-    def isFastBoot(self):
-        return self.fastboot and os.path.exists(self.fastboot)
-
-    def isSerial(self):
-        return self.serial and os.path.exists(self.serial)
-    
-    @staticmethod
-    def makeDummy():
-        return DeviceDescriptor('0','0','0','0','0','0-0-0')
-    
     
     @staticmethod
     def readRules(rulesFilePath, sortDevices = True, sortHubs = True):

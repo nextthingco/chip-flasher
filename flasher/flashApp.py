@@ -35,7 +35,7 @@ if not os.path.exists(FONT_NAME):
     
 import logging
 from kivy.logger import Logger
-Logger.setLevel(logging.ERROR) #kivy still sends a few logs, but this hides most
+# Logger.setLevel(logging.WARNING) #kivy still sends a few logs, but this hides most
 
 from kivy.config import Config
 # Config.set('graphics', 'fullscreen', '1')
@@ -103,7 +103,7 @@ class FlashApp(App):
         Send along button clicks to controller. Was unable to directly do this because of weird could not create weak reference issue.
         :param button:
         '''
-        self.controller.onTriggerDevice(button)
+        self.controller.onTriggerDevice(button.id)
         
 class FlashView(BoxLayout):
     '''
@@ -133,7 +133,12 @@ class FlashView(BoxLayout):
         self.outputTitle = Label(
             text=" ", font_size=20, color=YELLOW_COLOR, size_hint=(1, .1))
         outputView.add_widget(self.outputTitle)  # add in a title
-
+        info = BoxLayout(orientation='vertical', size_hint=(1,.3))
+        info.add_widget(Label(text="Flashing History", font_size=18, size_hint=(1,.1)))
+        self.historyContainer = BoxLayout(orientation='vertical', valign='top')
+        info.add_widget(self.historyContainer)
+        outputView.add_widget(info)
+        
         self.output = ScrollableLabel()
         outputView.add_widget(self.output)
         buttonGrid = GridLayout(cols=5,size_hint=(1,.15),valign="bottom")
@@ -244,7 +249,7 @@ class FlashView(BoxLayout):
         label = info.get('stage')
         progress = info.get('progress')
         output = info.get('output')
-
+        history = info.get('history')
         widgets = self.widgetsMap[uid]
         
         #checks below explicitly compare to None because empty string and 0 are important values
@@ -265,11 +270,32 @@ class FlashView(BoxLayout):
             widgets.output = output
             # if the output detail is showing this output, it will be updated
             self._onShowOutput(None, uid)
-
-
+        
+        if history is not None:
+            widgets.history = self._dictWidget(history)
+            self._onShowOutput(None, uid)
 ##########################################################################
 # Privates
 ##########################################################################
+    def _dictWidget(self,dictionary):
+        parent = GridLayout(cols=2, row_default_height=.1, valign='top')
+#         for caption,value in dictionary.iteritems():
+        for caption in sorted(dictionary.iterkeys()):
+            value = dictionary[caption]
+            if caption.startswith('filler'):
+                caption = ''
+            # http://stackoverflow.com/questions/31638788/python-kivy-align-text-to-the-left-side-of-a-label
+            captionLabel = Label(text=caption, halign='left',  size_hint=(.3,1))
+            captionLabel.bind(size=captionLabel.setter('text_size')) 
+            parent.add_widget(captionLabel)
+
+            valueLabel = Label(text=str(value), halign='left')
+            valueLabel.bind(size=valueLabel.setter('text_size')) 
+            parent.add_widget(valueLabel)
+            
+        return parent
+
+
     def _onClickedMainButton(self, button):
         '''
         When the button is clicked, notify all listeners
@@ -296,6 +322,8 @@ class FlashView(BoxLayout):
         color = widgets.label.color  # use same color as state
         self._setOutputDetailTitle(title, color)
         self.output.text = widgets.output
+        self.historyContainer.clear_widgets()
+        self.historyContainer.add_widget(widgets.history)
 
     def _setOutputDetailTitle(self, title, color=None):
         '''
@@ -307,16 +335,27 @@ class FlashView(BoxLayout):
             self.outputTitle.color = color
 
     def _stats(self,suiteName):
+        '''
+        Show the stats window
+        :param suiteName: ChpFlash
+        '''
         queries = self.controller.getStatsQueries(suiteName,self.databaseLogger.TODAY)
         formatted = self.databaseLogger.computeAndFormatStats(queries)
         popup = Popup(title=suiteName + ' stats for today',content=Label(text=formatted),size_hint=(None, None), size=(600, 600))
         popup.open()
 
     def _fileInfo(self):
-        popup = Popup(title='File Info',content=Label(text=self.fileInfo),size_hint=(None, None), size=(600, 600))
+        '''
+        Show the file info window
+        '''
+        content = self._dictWidget(self.fileInfo)
+        popup = Popup(title='File Info',content=content,size_hint=(None, None), valign="top", size=(600, 200))
         popup.open()
 
     def _powerOff(self):
+        '''
+        Show power off popup
+        '''
         bl = BoxLayout(size_hint=(1, 1))
         bl.add_widget(Label(text=POWER_OFF_TEXT,font_name=FONT_NAME))
         yes = Button(text=YES_TEXT,font_name=FONT_NAME)
@@ -331,6 +370,9 @@ class FlashView(BoxLayout):
         popup.open()
 
     def _browseStats(self):
+        '''
+        Launch sqlite browser
+        '''
         self.databaseLogger.launchSqlitebrowser()
 
 class Widgets:
@@ -344,6 +386,7 @@ class Widgets:
         self.label = None
         self.progress = None
         self.output = ""  # This is actually the output text for the widget
+        self.history = None
 
     def setColor(self, color):
         '''

@@ -49,16 +49,3 @@ def closeDevice(deviceInfo):
 
 #does this need to be called        self.usbContext.exit()
         
-
-def main():
-    devInfo = openDevice('usb-chip')
-    
-    print dev
-    closeDevice(dev)
-    print "done"
-
-#------------------------------------------------------------------
-if __name__ == "__main__":
-#------------------------------------------------------------------
-    exit( main() )
-    

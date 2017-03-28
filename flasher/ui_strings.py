@@ -19,6 +19,7 @@ PAUSED_TEXT= u"Paused\n暂停"
 
 RUNNING_TEXT= u"Running\n运行中"
 FLASHING_TEXT= u"Flashing\n正在烧录固件"
+FLASHING_TEXT_TEMPLATE= u"Flashing ({})\n正在烧录固件"
 TESTING_TEXT= u"Testing\n测试中"
 
 

@@ -2,6 +2,8 @@
 Created on Mar 15, 2017
 
 @author: howie
+
+FEL commands in Python
 '''
 from struct import unpack, pack, unpack_from
 from collections import namedtuple
@@ -56,7 +58,7 @@ SRAM_INFO_MAP = {
     }
 }
 
-
+# Low level calls
 def _usbRequest(usb, requestType, length):
     requestBuffer = pack(USB_REQUEST_FORMAT, AWUC,0,length,USB_CMD_LEN,requestType,length)
     return usb.write(requestBuffer)

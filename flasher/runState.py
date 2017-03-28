@@ -1,8 +1,14 @@
-#states
+'''
+Created on Mar 15, 2017
+
+@author: howie
+
+Constants
+'''
 
 class RunState:
     '''
-    Helper class to keep track of the correspondance between a device and its state info
+    Constants for run state to show in GUI 
     '''
     DISCONNECTED_STATE = -1
     PASSIVE_STATE = 0
@@ -12,18 +18,4 @@ class RunState:
     PASS_STATE = 4
     FAIL_STATE = 5
     IDLE_STATE = 6
-
-    def __init__(self, uid):
-        self.uid = uid
-        self.state = self.PASSIVE_STATE
-        self.output = " "
-        
-    def isActive(self):
-        return self.state == self.ACTIVE_STATE
-    
-    def isIdle(self):
-        return self.state in [self.PASSIVE_STATE, self.PAUSED_STATE, self.PROMPT_STATE, self.IDLE_STATE]
-    
-    def isDone(self):
-        return self.state in [self.PASS_STATE, self.FAIL_STATE]
         

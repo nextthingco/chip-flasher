@@ -8,7 +8,7 @@ import json
 from struct import unpack
 from collections import namedtuple
 import time
-from pprint import pprint, pformat
+from pprint import pprint
 import datetime
 from math import floor
 from ui_strings import *
@@ -67,7 +67,7 @@ class ChpFlash(object):
     '''
     Main routine to flash a single CHIP from a .chp file. It loops through the file and processes the headers/data, sending and receiving data to/from the device
     '''
-    __slots__ = ('progressQueue', 'connectionFromParent', 'lock', 'deviceDescriptor','devicePort', 'chpFileName','devicePort', 'serialNumber', 'output') #using slots prevents bugs where members are created by accident
+    __slots__ = ('progressQueue', 'connectionFromParent', 'lock', 'deviceDescriptor','devicePort', 'chpFileName','devicePort', 'serialNumber', 'output', 'history') #using slots prevents bugs where members are created by accident
 
     def __init__(self, progressQueue, connectionFromParent, lock, args):
         '''
@@ -85,6 +85,7 @@ class ChpFlash(object):
         self.devicePort = DevicePort(self.deviceDescriptor, self.onFoundFel.__get__(self,ChpFlash))
         self.serialNumber = None
         self.output = ''
+        self.history = {}
     
     def processComment(self, data):
         '''
@@ -169,7 +170,8 @@ class ChpFlash(object):
         state = WAITING_TEXT
         self.serialNumber = None
         self.output=''
-        self.notifyProgress({'progress': 0, 'runState': RunState.PASSIVE_STATE, 'stage': stage, 'state': state, 'output':self.output})
+        self.history = {}
+        self.notifyProgress({'progress': 0, 'runState': RunState.PASSIVE_STATE, 'stage': stage, 'state': state, 'output':self.output, 'history':self.history })
         
         self.waitForStartTrigger() #This may just fall through if not using a button trigger
         
@@ -202,7 +204,11 @@ class ChpFlash(object):
                     self.devicePort.waitForState(vid, pid)
                     if state is not FLASHING_TEXT: #if we got here, then we're about to start writing data
                         state = FLASHING_TEXT
-                        self.notifyProgress({'state':state})
+                        stateToShow = state
+                        attempts = self.history.get('attempts')
+                        if attempts and int(attempts) != 0:
+                            stateToShow = FLASHING_TEXT_TEMPLATE.format(attempts)
+                        self.notifyProgress({'state':stateToShow})
                 elif cmd == USLEEP_COMMAND:
                     amount = FEL_SLEEP_MULTIPLIER * header.argument / 1000000.0
                     if VERBOSE:
@@ -270,8 +276,6 @@ class ChpFlash(object):
         This is called as a callback from the DevicePort when it finds a FEL device. When that happens, we read its serial number
         '''
         self.serialNumber = self.readSerialNumber()
-        if self.serialNumber:
-            self.notifyProgress({'output':self.output})
 
     def readSerialNumber(self):
         '''
@@ -286,9 +290,14 @@ class ChpFlash(object):
             if result:
                 dataDict = result['findChipId']
                 if dataDict:
-                    self.output += '\n' + pformat(dataDict)
+                    self.history = dataDict
                 else:
-                    self.output += '\nFirst Flash: {}'.format(serialNumber)
+                    self.history = {'attempts' : '0','chipId':serialNumber}
+                    for i in xrange(8):
+                        self.history['filler'+str(i)] = ''
+                
+                self.notifyProgress({'history':self.history})
+
                 return serialNumber
             else:
                 print "shouldn't happen"
@@ -329,7 +338,9 @@ class ChpFlash(object):
             except KeyboardInterrupt:
                 return
 
-
+    @staticmethod
+    def manifest(chpFileName):
+        return ChpFlash(None,None,None,{'chpFileName': chpFileName}).readManifest()
 ####################################################################################################
 # Database stuff. This is a bit overkill how it's done 
     @staticmethod
