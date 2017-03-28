@@ -1,5 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+'''
+Created on Mar 15, 2017
+
+@author: howie
+
+This is the entrypoint for a Kivy-based flasher app. As it stands now, it is painless to use something other
+than Kivy (e.g. Qt, Gtk, ncurses, web server...) 
+'''
+
 import os
 import sys
 
@@ -14,9 +24,6 @@ if not os.path.exists(UDEV_RULES_FILE):
     print "Error! The udev rules file specified in config.py could not be found: " + UDEV_RULES_FILE
     sys.exit(-1)
     
-#Need this to get right font
-# wget http://ftp.us.debian.org/debian/pool/main/f/fonts-android/fonts-droid_4.4.4r2-6_all.deb
-# dpkg -i fonts*.deb
 if os.path.isfile(OSX_FONT):
     FONT_NAME = OSX_FONT
 else:
@@ -53,47 +60,55 @@ from kivy.uix.splitter import Splitter
 
 from runState import RunState
 from ui_strings import *
-from chp_controller import ChpController, PROGRESS_UPDATE_SIGNAL
+from chp_controller import ChpController, PROGRESS_UPDATE_SIGNAL, TRIGGER_SIGNAL
 from databaseLogger import DatabaseLogger
 from pydispatch import dispatcher
 
-
-
 class FlashApp(App):
-    __slots__ = ('controller', 'kivyUpdateTrigger', 'databaseLogger', 'view', 'stateListeners') #using slots prevents bugs where members are created by accident
+    '''
+    The main app of the program. This class does little except creating the controller, database helper, and kivy view
+    '''
+    __slots__ = ('controller', 'databaseLogger', 'view') #using slots prevents bugs where members are created by accident
 
     def __init__(self):
+        '''
+        Constructor. It initializes the main components of the app
+        '''
         super(FlashApp, self).__init__()
         self.databaseLogger = DatabaseLogger()
         log = Logger
 
         self.controller = ChpController(CHP_FILE_NAME, self.databaseLogger, log)
+        try:
+            dispatcher.connect(self.onTriggerDevice.__get__(self ,FlashApp), signal = TRIGGER_SIGNAL, sender=dispatcher.Any) #subscribe to button clicks
+        except Exception,e:
+            print e
+
         Clock.schedule_interval(lambda x: self.controller.checkForChanges(), 0.1) #the controller must check for changes periodically
         
     def build(self):
+        '''
+        Called from kivy to create the view
+        '''
         self.controller.createProcesses()
         fileInfo = self.controller.getFileInfo()
         self.view = FlashView(deviceDescriptors=self.controller.deviceDescriptors,
                              hubs=self.controller.hubs, fileInfo=fileInfo,databaseLogger = self.databaseLogger)
-        # observe button events if GUI
-        self.view.addMainButtonListener(
-            self._onMainButton.__get__(self, FlashApp))
-        self.view.controller = self.controller
+        self.view.controller = self.controller #TODO can this be eliminated?
         self.title = "Flashing " + CHP_FILE_NAME
         return self.view
-
-    def _onMainButton(self, button):
+    
+    def onTriggerDevice(self, button):
         '''
-        Handle button clicks on id column as triggers to do something
+        Send along button clicks to controller. Was unable to directly do this because of weird could not create weak reference issue.
         :param button:
         '''
-        self.controller.onTriggerDevice(button.id)
-
-
-class BoxStencil(BoxLayout, StencilView):
-    pass
-
+        self.controller.onTriggerDevice(button)
+        
 class FlashView(BoxLayout):
+    '''
+    Kivy view for the app. Standard V in MVC. It updates in response to observed events, and creates click events
+    '''
 
     def __init__(self, **kwargs):
         '''
@@ -209,13 +224,6 @@ class FlashView(BoxLayout):
         self.add_widget(hubPanels)
         self.add_widget(splitter)
 
-    def addMainButtonListener(self, listener):
-        '''
-        Add an observer to the main button. The Main app will listen to button clicks
-        :param listener:
-        '''
-        self.mainButtonListeners.append(listener)
-
     # static
     _stateToColor = {RunState.PASSIVE_STATE: PASSIVE_COLOR, RunState.PASS_STATE: SUCCESS_COLOR, RunState.FAIL_STATE: FAIL_COLOR, RunState.PROMPT_STATE: PROMPT_COLOR,
                      RunState.ACTIVE_STATE: ACTIVE_COLOR, RunState.PAUSED_STATE: PAUSED_COLOR, RunState.IDLE_STATE: PASSIVE_COLOR, RunState.DISCONNECTED_STATE: DISCONNECTED_COLOR}
@@ -265,10 +273,9 @@ class FlashView(BoxLayout):
     def _onClickedMainButton(self, button):
         '''
         When the button is clicked, notify all listeners
-        :param button:
+        :param button: The button (uid) that was clicked
         '''
-        for listener in self.mainButtonListeners:
-            listener(button)
+        dispatcher.send(signal = TRIGGER_SIGNAL, button = button, sender=self)
 
     def _onShowOutput(self, button, uid=None):
         '''
@@ -349,6 +356,11 @@ class Widgets:
         self.label.color = color
         self.progress.color = color
 
+class BoxStencil(BoxLayout, StencilView):
+    '''
+    Mixin to create a box layout that clips its contents
+    '''
+    pass
 
 class LabelButton(ButtonBehavior, Label):
     '''
@@ -364,7 +376,6 @@ Builder.load_string('''
         text_size: self.width, None
         text: root.text
 ''')
-
 
 
 class ScrollableLabel(ScrollView):

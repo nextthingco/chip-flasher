@@ -1,10 +1,17 @@
+'''
+Created on Mar 15, 2017
+
+@author: howie
+
+This module interacts with a backing sqlite3 database. It's used to keep track of flashing stats for each device. 
+There is one row for each device. The PK is the serial number
+'''
 import sqlite3 as sql
 import time
 import socket
 
 from subprocess import Popen
 from collections import OrderedDict
-# from flasher import Flasher
 from config import *
 from runState import RunState
 from datetime import datetime
@@ -12,9 +19,14 @@ from chp_flash import ChpFlash
 from pydispatch import dispatcher
 from chp_controller import PROGRESS_UPDATE_SIGNAL
 import itertools
-get_class = lambda x: globals()[x]
+get_class = lambda x: globals()[x] # A shortcut to serach for a class by name
 
 class DatabaseLogger():
+    '''
+    This class (should be singleton) is used to interact with the database
+    '''
+    
+    #columns common to all tables (hwtest and flashing)
     COMMON_COLUMNS = [
         ['chipId','TEXT','PRIMARY KEY'], #id of the CHIP from a barcode/QR code on the chip itself
         ['timestamp', 'TIMESTAMP'],   #time when test finished
@@ -28,11 +40,33 @@ class DatabaseLogger():
     ]
 
     TODAY = " strftime('%Y-%m-%d', timestamp) == strftime('%Y-%m-%d', datetime('now','localtime')) "
+    
+    def __init__( self, **kwargs ):
+        '''
+        Constructor
+        '''
+        self.con = None
+        self.hostName = socket.gethostname()
+        dispatcher.connect(self.onUpdateStateInfo.__get__(self,DatabaseLogger), signal = PROGRESS_UPDATE_SIGNAL, sender=dispatcher.Any) #subscribe to updates
+
+        if 'LOG_DB' in globals():
+            try:
+                self.con = sql.connect(self._fileName(),detect_types=sql.PARSE_DECLTYPES)
+            except Exception,e:
+                print e
 
     def computeAndFormatStats(self,queries):
+        '''
+        Helper function
+        :param queries:
+        '''
         return self.formatStats(self.computeStats(queries))
 
     def computeStats(self,queries):
+        '''
+        Go through the queries that are requested and execute the on the database sotring results in a dict
+        :param queries:
+        '''
         dict = OrderedDict()
         try:
             for query in queries:
@@ -62,6 +96,11 @@ class DatabaseLogger():
         return dict
 
     def formatStats(self,stats,level=0):
+        '''
+        Temporary solution to format the stats
+        :param stats:
+        :param level:
+        '''
         formatted = ""
         for key,val in stats.iteritems():
             formatted  = formatted + "   " * level #indent
@@ -74,30 +113,33 @@ class DatabaseLogger():
         return formatted
 
     def _fileName(self):
+        '''
+        Generate a name for the stats sqlite3 file
+        '''
         return self.hostName + "_" + LOG_DB
 
     def launchSqlitebrowser(self):
+        '''
+        Spawn a process which runs the sqlitebrowser tool on the file
+        '''
         try:
             Popen( ["sqlitebrowser",self._fileName()]) #spawns
         except Exception, e:
             print e
 
-    def __init__( self, **kwargs ):
-        self.con = None
-        self.hostName = socket.gethostname()
-        dispatcher.connect(self.onUpdateStateInfo.__get__(self,DatabaseLogger), signal = PROGRESS_UPDATE_SIGNAL, sender=dispatcher.Any) #subscribe to updates
-
-        if 'LOG_DB' in globals():
-            try:
-                self.con = sql.connect(self._fileName(),detect_types=sql.PARSE_DECLTYPES)
-            except Exception,e:
-                print e
 
     def __del__(self):
+        '''
+        Destructor. Clean up connection
+        '''
         if self.con:
             self.con.close()
 
     def _formattedColumns(self,suiteClass):
+        '''
+        Helper function to generate the SQL for a query
+        :param suiteClass:
+        '''
         cols = list(self.COMMON_COLUMNS) #copy common ones
         if hasattr(suiteClass,'statsTableColumns'):
             cols.extend(suiteClass.statsTableColumns())
@@ -106,6 +148,10 @@ class DatabaseLogger():
         return formattedColumns
 
     def _createTableIfNeeded(self,suiteClass):
+        '''
+        Create the table if it doesn't exist yet
+        :param suiteClass: e.g. ChpFlash
+        '''
         create = 'create table if not exists {0} ({1})'.format(suiteClass.statsTableName(), self._formattedColumns(suiteClass))
         try:
             self.con.execute(create)
@@ -114,6 +160,10 @@ class DatabaseLogger():
             print e
     
     def find(self, chipId):
+        '''
+        Find a CHIP in the database
+        :param chipId: serial number
+        '''
         try:
             findQuery = "SELECT * FROM {0} WHERE chipId='{1}'".format(ChpFlash.statsTableName(),chipId)
             self.con.row_factory = sql.Row
@@ -129,6 +179,11 @@ class DatabaseLogger():
 
 
     def onUpdateStateInfo(self, info):
+        '''
+        Respond to device state changes, only caring about PASS and FAIL states
+        Log results to database
+        :param info:
+        '''
         '''
         Observer callback from main
         '''
@@ -185,12 +240,7 @@ class DatabaseLogger():
                     value = "'" + value + "'"
                 values.append(str(value)) #look up the field in the dictionary
 
-#         print fields
-#         print values
-
         query = 'INSERT OR REPLACE INTO {0} ({1}) VALUES ({2})'.format(suiteClass.statsTableName(),','.join(fields),','.join(values))
-#         print "Writing to database:\n"
-#         print query
         try:
             self.con.execute(query)
             self.con.commit()

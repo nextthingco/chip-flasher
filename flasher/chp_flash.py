@@ -251,7 +251,7 @@ class ChpFlash(object):
         else: # Success
             elapsedTime = time.time() - startTime
             self.output += '\nTotal Time {}'.format(datetime.timedelta(seconds=elapsedTime))
-            self.notifyProgress({'runState': RunState.PASS_STATE,'stage': stage, 'output': self.output, 'elapsedTime':elapsedTime ,'chipId': self.serialNumber, 'returnValues':{'image':self.chpFileName}}) #eventually write manifest too
+            self.notifyProgress({'runState': RunState.PASS_STATE,'stage': stage, 'state': PASS_TEXT, 'output': self.output, 'elapsedTime':elapsedTime ,'chipId': self.serialNumber, 'returnValues':{'image':self.chpFileName}}) #eventually write manifest too
         finally:
             self.devicePort.releaseDevice()
         return SUCCESS
