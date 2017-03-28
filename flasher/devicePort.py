@@ -5,7 +5,7 @@ Created on Mar 15, 2017
 '''
 import sys
 import usb.core
-from config import VERBOSE
+from config import VERBOSE, POLLING_TIMEOUT
 import time
 from usbFactory import symlinkToBusAddress
 
@@ -14,7 +14,6 @@ FEL_PRODUCT_ID=0xefe8
 FASTBOOT_VENDOR_ID=0x1f3a
 FASTBOOT_PRODUCT_ID=0x1010
 
-POLLING_TIMEOUT = 20 #in seconds
 POLLING_DELAY_BETWEEN_RETRY = 1 # in seconds. cannot be 0
 POLLING_RETRIES = POLLING_TIMEOUT / POLLING_DELAY_BETWEEN_RETRY
 POLLING_NO_TIMEOUT = sys.maxsize

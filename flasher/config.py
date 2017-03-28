@@ -21,6 +21,9 @@ VERBOSE = False #whether more details/errors appear in console
 #because the device isn't ready yet. The multiplier below can be used to multiply that time to increase the delay
 FEL_SLEEP_MULTIPLIER = 2.0
 
+#How long to wait for a device to show up before reporting an error
+POLLING_TIMEOUT = 20 #in seconds
+
 #This is the file you produced by running udevmaker.py and copying and reloading rules
 UDEV_RULES_FILE = '/etc/udev/rules.d/flasher.rules'
 

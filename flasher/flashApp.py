@@ -26,6 +26,9 @@ if not os.path.exists(FONT_NAME):
     print "Error! The font specified in config.py could not be found: " + FONT_NAME
     sys.exit(-1)
     
+import logging
+from kivy.logger import Logger
+Logger.setLevel(logging.ERROR) #kivy still sends a few logs, but this hides most
 
 from kivy.config import Config
 # Config.set('graphics', 'fullscreen', '1')
@@ -62,7 +65,7 @@ class FlashApp(App):
     def __init__(self):
         super(FlashApp, self).__init__()
         self.databaseLogger = DatabaseLogger()
-        log = None
+        log = Logger
 
         self.controller = ChpController(CHP_FILE_NAME, self.databaseLogger, log)
         Clock.schedule_interval(lambda x: self.controller.checkForChanges(), 0.1) #the controller must check for changes periodically
