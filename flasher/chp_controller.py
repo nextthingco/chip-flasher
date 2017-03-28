@@ -10,6 +10,7 @@ progress/state updates, which are managed by a Queue.
 from collections import OrderedDict
 from sets import Set
 from multiprocessing import Process, Pipe, Lock, Queue
+import subprocess
 from chp_flash import ChpFlash
 from deviceDescriptor import DeviceDescriptor
 from config import *
@@ -17,6 +18,7 @@ from pprint import pformat
 from pydispatch import dispatcher
 
 PROGRESS_UPDATE_SIGNAL = "stateUpdate"
+TRIGGER_SIGNAL = 'start'
 
 def flash(progressQueue, connectionFromParent, lock, args):
     '''
@@ -67,7 +69,7 @@ class ChpController(object):
         self.processDescriptors = OrderedDict()
         self.deviceDescriptors, self.hubs = DeviceDescriptor.readRules(UDEV_RULES_FILE, SORT_DEVICES, SORT_HUBS) #read the UDEV info
         self.fileInfo = None #cached info about the .chp file
-        
+
     def getFileInfo(self):
         '''
         Get the manifest info of a chp file
@@ -83,6 +85,7 @@ class ChpController(object):
         '''
         Creates and starts a new flasher process. These processes flash in a loop, so they don't need to be restarted.
         '''
+
         for uid,dev in self.deviceDescriptors.iteritems():
             parent_conn, child_conn = Pipe() #if using button push, then will send start trigger through pipe
             args = {'chpFileName': self.chpFileName, 'deviceDescriptor': dev}
@@ -135,7 +138,13 @@ class ChpController(object):
         :param where: Filter expression
         '''
         return ChpFlash.getStatsQueries(where)
-    
+
+    def powerOff(self):
+        try:
+            subprocess.Popen( ["systemctl","poweroff"])
+        except Exception,e:
+            print e    
+            
     def onTriggerDevice(self,uid):
         '''
         In response to a user click, send the click to the appropriate subprocesses. If that subprocesses is
