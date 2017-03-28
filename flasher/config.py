@@ -7,8 +7,8 @@ CHP_FILE_NAME=os.environ['HOME'] + '/Desktop/CHIP-flasher/flash_me.chp'
 # curl -s --compressed https://d2rchup4fs07xx.cloudfront.net/extension/chp-gz/stable-chip-pro-blinkenlights-b1-Toshiba_512M_SLC.chp > flash_me.chp
 
 
-AUTO_START_ON_DEVICE_DETECTION = False #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled. In this mode, it is not obvious to spot 201 timeouts
-CLICK_TRIGGERS_ALL = True #If any click is equivalent to clicking on all
+AUTO_START_ON_DEVICE_DETECTION = True #When this is true, the test suite will be run automatically when polling detects device. Button input to start runs is disabled. In this mode, it is not obvious to spot 201 timeouts
+CLICK_TRIGGERS_ALL = False #If any click is equivalent to clicking on all
 CLICK_ONLY_APPLIES_TO_SINGLE_201 = True #If true, then operator must explicity click on a 201 row to clear the error. Otherwise, will use value of CLICK_TRIGGERS_ALL above
 #also note a fringe case: If device is plugged in but in a non-fel state when the app starts, it will need to be disconnected to clear the 201 failure
 
