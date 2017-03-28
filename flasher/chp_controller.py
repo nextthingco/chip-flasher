@@ -15,6 +15,13 @@ from pydispatch import dispatcher
 PROGRESS_UPDATE_SIGNAL = "stateUpdate"
 
 def flash(progressQueue, connectionFromParent, lock, args):
+    '''
+    Body of the flashing subprocesses
+    :param progressQueue: multiprocessing.Queue which will be sent progress updates
+    :param connectionFromParent: From the Port that was created by the controller
+    :param lock: Currently unused. Old flasher required a mutex, so thought it might be a useful placeholder for the future just in case
+    :param args: Dictionary of args to pass along to the flasher. currently just the chp file name
+    '''
     flasher = ChpFlash(progressQueue, connectionFromParent, lock, args)
     flasher.flashForever()
 
@@ -24,6 +31,7 @@ class ProcessDescriptor(object):
         self.deviceDescriptor = deviceDescriptor
         self.parent_conn = parent_conn
         self.child_conn = child_conn
+        self.process = None
         
 class ChpController(object):
     __slots__ = ('fileInfo', 'progressQueue', 'chpFileName', 'lock', 'databaseLogger', 'awaitingClick', 'log', 'processDescriptors', 'deviceDescriptors', 'hubs', 'progressQueue') #using slots prevents bugs where members are created by accident
@@ -48,6 +56,9 @@ class ChpController(object):
         return self.fileInfo
             
     def createProcesses(self):
+        '''
+        Creates and starts a new flasher process. These processes flash in a loop, so they don't need to be restarted.
+        '''
         for uid,dev in self.deviceDescriptors.iteritems():
             parent_conn, child_conn = Pipe() #if using button push, then will send start trigger through pipe
             args = {'chpFileName': self.chpFileName, 'deviceDescriptor': dev}

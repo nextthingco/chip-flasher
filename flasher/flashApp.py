@@ -38,7 +38,6 @@ from kivy.uix.progressbar import ProgressBar
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.lang import Builder
-from logmanager import LogManager
 from kivy.properties import StringProperty
 from kivy.app import App
 from kivy.clock import Clock
@@ -57,15 +56,13 @@ from pydispatch import dispatcher
 
 
 
-log = LogManager.get_global_log()
-
-
 class FlashApp(App):
     __slots__ = ('controller', 'kivyUpdateTrigger', 'databaseLogger', 'view', 'stateListeners') #using slots prevents bugs where members are created by accident
 
     def __init__(self):
         super(FlashApp, self).__init__()
         self.databaseLogger = DatabaseLogger()
+        log = None
 
         self.controller = ChpController(CHP_FILE_NAME, self.databaseLogger, log)
         Clock.schedule_interval(lambda x: self.controller.checkForChanges(), 0.1) #the controller must check for changes periodically
