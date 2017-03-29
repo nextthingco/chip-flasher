@@ -15,7 +15,7 @@ build:
   stage: build
   script:
     - docker pull computermouth/sudeb
-    - docker run --privileged -v $PWD:/opt/build/deb -w /opt/build/deb --rm computermouth/sudeb /bin/bash -c "sudo apt-get update -qq && sudo apt-get install -qq -y dpkg-dev debhelper && dpkg-buildpackage -b && cp ../*.deb ."
+    - docker run --privileged -v $PWD:/opt/build/deb -w /opt/build/deb --rm computermouth/sudeb /bin/bash -c "pwd && touch ../file && sudo apt-get update -qq && sudo apt-get install -qq -y dpkg-dev debhelper && dpkg-buildpackage -b && cp ../*.deb ."
     - ls -lsah
     - echo "UPLOAD!!!"
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
