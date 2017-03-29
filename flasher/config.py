@@ -1,6 +1,6 @@
 import os
 #specify the .chp file you want to use. Can be an absolute path, or using environment variable. 
-CHP_FILE_NAME=os.environ['HOME'] + '/Desktop/CHIP-flasher/flash_me.chp'
+CHP_FILE_NAME='/usr/share/factory-deb/flash_me.chp'
 
 #Note that if you download the file with a browser, it will be ready to use. However, if you want to download from the command line,
 #you need to decompress the file explicitly (the browser does this automatically). For example:
