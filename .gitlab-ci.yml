@@ -1,0 +1,33 @@
+image: docker:latest
+
+services:
+  - docker:dind
+
+stages:
+  - build
+  - upload
+
+variables:
+  UPLOAD_CONTAINER: $CI_REGISTRY/nextthingco/ci-tools:stable
+  ARTIFACT_0: /upload/chip-flasher_0.1_all.deb
+
+build:
+  stage: build
+  script:
+    - docker pull computermouth/sudeb
+    - docker run --privileged -v $PWD:/opt/factory -w /opt/factory --rm computermouth/sudeb /bin/bash -c "sudo apt-get update -qq && sudo apt-get install -y dpkg-dev && dpkg-buildpackage && cp ../*.deb ."
+    - ls -lsah
+    - echo "UPLOAD!!!"
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+    - docker pull $UPLOAD_CONTAINER
+    - docker run
+      -e GHVAR_AWS_ID=${GHVAR_AWS_ID}
+      -e GHVAR_AWS_PW=${GHVAR_AWS_PW}
+      -e GHVAR_AWS_REGION=${GHVAR_AWS_REGION}
+      -e CI_PROJECT_NAME=${CI_PROJECT_NAME}
+      -e CI_BUILD_REF_NAME=${CI_BUILD_REF_SLUG}
+      -e CI_BUILD_ID=${CI_BUILD_ID}
+      -e ARTIFACT_0=${ARTIFACT_0}
+      --rm -v $PWD:/upload -w /upload
+      $UPLOAD_CONTAINER ci-s3-upload
+      ${ARTIFACT_0}
